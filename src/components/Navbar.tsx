@@ -9,7 +9,6 @@ const links = [
   { href: "/nominations", label: "Nominations", icon: "🎯" },
   { href: "/elections", label: "Elections", icon: "🗳️" },
   { href: "/history", label: "History", icon: "📜" },
-  { href: "/members", label: "Members", icon: "👥" },
 ];
 
 interface NavbarUser {
@@ -61,10 +60,13 @@ export default function Navbar({ user }: { user: NavbarUser }) {
         })}
       </div>
       <div className="p-4 border-t border-[var(--color-border)]">
-        <div className="flex items-center gap-2 mb-3">
+        <Link
+          href="/profile"
+          className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity"
+        >
           <span className="text-xl">{user.avatar}</span>
           <span className="text-sm font-medium truncate">{user.name}</span>
-        </div>
+        </Link>
         <button
           onClick={handleLogout}
           disabled={loggingOut}
