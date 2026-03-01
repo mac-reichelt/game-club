@@ -46,6 +46,25 @@ function getOpenElection(db: ReturnType<typeof getDb>) {
   return { election, games, voterIds: voters.map((v) => v.member_id) };
 }
 
+function getElectionHistory(db: ReturnType<typeof getDb>): Record<number, { id: number; name: string; closed_at: string | null }[]> {
+  const rows = db
+    .prepare(
+      `SELECT eg.game_id, e.id, e.name, e.closed_at
+       FROM election_games eg
+       JOIN elections e ON eg.election_id = e.id
+       WHERE e.status = 'closed'
+       ORDER BY e.closed_at DESC`
+    )
+    .all() as { game_id: number; id: number; name: string; closed_at: string | null }[];
+
+  const map: Record<number, { id: number; name: string; closed_at: string | null }[]> = {};
+  for (const row of rows) {
+    if (!map[row.game_id]) map[row.game_id] = [];
+    map[row.game_id].push({ id: row.id, name: row.name, closed_at: row.closed_at });
+  }
+  return map;
+}
+
 function getStoreIcon(storeName: string): string {
   const icons: Record<string, string> = {
     "Steam": "🎮",
@@ -70,6 +89,7 @@ export default async function NominationsPage() {
 
   const nominations = getNominations(db);
   const openElection = getOpenElection(db);
+  const electionHistory = getElectionHistory(db);
   const hasVoted = openElection
     ? openElection.voterIds.includes(user.id)
     : false;
@@ -150,6 +170,7 @@ export default async function NominationsPage() {
               } catch { /* ignore */ }
               const trailerUrl = game.trailer_url || "";
               const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(game.title + " official trailer")}`;
+              const pastElections = electionHistory[game.id] || [];
 
               return (
               <div
@@ -172,6 +193,22 @@ export default async function NominationsPage() {
                     <p className="text-sm text-[var(--color-text-muted)] mt-2">
                       {game.description}
                     </p>
+                  )}
+
+                  {/* Past elections */}
+                  {pastElections.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      <span className="text-xs text-[var(--color-text-muted)]">Past elections:</span>
+                      {pastElections.map((el) => (
+                        <a
+                          key={el.id}
+                          href={`/history/${el.id}`}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors"
+                        >
+                          🗳️ {el.name}
+                        </a>
+                      ))}
+                    </div>
                   )}
 
                   {/* Store links + trailer */}
