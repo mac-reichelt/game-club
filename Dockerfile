@@ -12,6 +12,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Ensure public directory exists for Next.js standalone copy
+RUN mkdir -p public
+
 RUN npm run build
 
 # Stage 3: Production runtime
