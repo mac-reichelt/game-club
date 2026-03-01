@@ -35,11 +35,50 @@ export default function NominationForm() {
   const [title, setTitle] = useState("");
   const [platform, setPlatform] = useState("");
   const [description, setDescription] = useState("");
+  const [linksText, setLinksText] = useState("");
 
   // Store/trailer data from RAWG
   const [storesJson, setStoresJson] = useState("");
   const [trailerUrl, setTrailerUrl] = useState("");
   const [loadingDetails, setLoadingDetails] = useState(false);
+
+  function inferStoreName(domain: string): string {
+    if (domain.includes("steampowered") || domain.includes("store.steam")) return "Steam";
+    if (domain.includes("playstation")) return "PlayStation Store";
+    if (domain.includes("microsoft") || domain.includes("xbox")) return "Xbox Store";
+    if (domain.includes("nintendo")) return "Nintendo Store";
+    if (domain.includes("epicgames")) return "Epic Games";
+    if (domain.includes("gog.com")) return "GOG";
+    if (domain.includes("itch.io")) return "itch.io";
+    if (domain.includes("apple.com")) return "App Store";
+    if (domain.includes("play.google")) return "Google Play";
+    return domain;
+  }
+
+  function parseLinks(text: string): { stores: string; trailer: string } {
+    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+    const stores: { name: string; url: string; domain: string }[] = [];
+    let trailer = "";
+
+    for (const line of lines) {
+      try {
+        const url = new URL(line);
+        const host = url.hostname.replace("www.", "");
+        if (host.includes("youtube.com") || host.includes("youtu.be")) {
+          if (!trailer) trailer = line;
+        } else {
+          stores.push({ name: inferStoreName(host), url: line, domain: host });
+        }
+      } catch {
+        // skip non-URL lines
+      }
+    }
+
+    return {
+      stores: stores.length > 0 ? JSON.stringify(stores) : "",
+      trailer,
+    };
+  }
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -144,6 +183,7 @@ export default function NominationForm() {
     setTitle("");
     setPlatform("");
     setDescription("");
+    setLinksText("");
     setSearchError("");
     setStoresJson("");
     setTrailerUrl("");
@@ -153,6 +193,16 @@ export default function NominationForm() {
     e.preventDefault();
     setSubmitting(true);
 
+    let finalStores = storesJson;
+    let finalTrailer = trailerUrl;
+
+    // For manual mode, parse the links textarea
+    if (manualMode && linksText.trim()) {
+      const parsed = parseLinks(linksText);
+      finalStores = parsed.stores;
+      if (parsed.trailer) finalTrailer = parsed.trailer;
+    }
+
     const res = await fetch("/api/games", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -160,8 +210,8 @@ export default function NominationForm() {
         title: title.trim(),
         platform: platform.trim() || undefined,
         description: description.trim() || undefined,
-        storesJson: storesJson || undefined,
-        trailerUrl: trailerUrl || undefined,
+        storesJson: finalStores || undefined,
+        trailerUrl: finalTrailer || undefined,
       }),
     });
 
@@ -371,18 +421,18 @@ export default function NominationForm() {
             </div>
           )}
 
-          {/* Editable description when game selected */}
+          {/* Trailer link input when game selected */}
           {selectedGame && (
             <div className="mb-4">
               <label className="block text-sm text-[var(--color-text-muted)] mb-1">
-                Why should we play this?
+                Trailer Link
               </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={2}
-                className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)] resize-none"
-                placeholder="Optional pitch for the group..."
+              <input
+                type="url"
+                value={trailerUrl}
+                onChange={(e) => setTrailerUrl(e.target.value)}
+                className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
+                placeholder="YouTube or video URL (leave blank to auto-search)"
               />
             </div>
           )}
@@ -390,42 +440,32 @@ export default function NominationForm() {
       ) : (
         <>
           {/* Manual entry mode */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm text-[var(--color-text-muted)] mb-1">
-                Game Title *
-              </label>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
-                placeholder="e.g. Hades"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-[var(--color-text-muted)] mb-1">
-                Platform
-              </label>
-              <input
-                value={platform}
-                onChange={(e) => setPlatform(e.target.value)}
-                className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
-                placeholder="e.g. PC, PS5, Switch"
-              />
-            </div>
+          <div className="mb-4">
+            <label className="block text-sm text-[var(--color-text-muted)] mb-1">
+              Game Title *
+            </label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
+              placeholder="e.g. Hades"
+            />
           </div>
           <div className="mb-4">
             <label className="block text-sm text-[var(--color-text-muted)] mb-1">
-              Description
+              Links
             </label>
             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
+              value={linksText}
+              onChange={(e) => setLinksText(e.target.value)}
+              rows={3}
               className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)] resize-none"
-              placeholder="Why should we play this?"
+              placeholder={"Paste store or trailer links, one per line\ne.g. https://store.steampowered.com/app/1145360/\nhttps://www.youtube.com/watch?v=..."}
             />
+            <p className="text-xs text-[var(--color-text-muted)] mt-1">
+              YouTube links become the trailer. Others show as store links.
+            </p>
           </div>
         </>
       )}
