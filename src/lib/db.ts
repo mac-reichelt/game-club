@@ -44,12 +44,38 @@ function initSchema(db: Database.Database) {
       avg_rating REAL
     );
 
-    CREATE TABLE IF NOT EXISTS votes (
+    CREATE TABLE IF NOT EXISTS elections (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-      member_id INTEGER NOT NULL REFERENCES members(id),
+      name TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open', 'closed')),
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      UNIQUE(game_id, member_id)
+      closed_at TEXT,
+      winner_id INTEGER REFERENCES games(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS election_games (
+      election_id INTEGER NOT NULL REFERENCES elections(id) ON DELETE CASCADE,
+      game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+      PRIMARY KEY (election_id, game_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS ballots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      election_id INTEGER NOT NULL REFERENCES elections(id) ON DELETE CASCADE,
+      member_id INTEGER NOT NULL REFERENCES members(id),
+      game_id INTEGER NOT NULL REFERENCES games(id),
+      rank INTEGER NOT NULL CHECK(rank >= 1),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(election_id, member_id, rank),
+      UNIQUE(election_id, member_id, game_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS election_rounds (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      election_id INTEGER NOT NULL REFERENCES elections(id) ON DELETE CASCADE,
+      round_number INTEGER NOT NULL,
+      eliminated_game_id INTEGER REFERENCES games(id),
+      summary TEXT NOT NULL DEFAULT ''
     );
 
     CREATE TABLE IF NOT EXISTS reviews (

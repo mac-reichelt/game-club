@@ -1,5 +1,5 @@
 import getDb from "@/lib/db";
-import { GameWithVotes, ReviewWithMember, Member } from "@/lib/types";
+import { GameWithNominator, ReviewWithMember, Member } from "@/lib/types";
 import { notFound } from "next/navigation";
 import ReviewForm from "./ReviewForm";
 
@@ -8,16 +8,15 @@ export const dynamic = "force-dynamic";
 function getGame(
   db: ReturnType<typeof getDb>,
   id: number
-): GameWithVotes | null {
+): GameWithNominator | null {
   return db
     .prepare(
-      `SELECT g.*, m.name as nominatorName,
-        (SELECT COUNT(*) FROM votes v WHERE v.game_id = g.id) as voteCount
+      `SELECT g.*, m.name as nominatorName
        FROM games g
        JOIN members m ON g.nominated_by = m.id
        WHERE g.id = ?`
     )
-    .get(id) as GameWithVotes | null;
+    .get(id) as GameWithNominator | null;
 }
 
 function getReviews(

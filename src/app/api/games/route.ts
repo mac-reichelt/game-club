@@ -5,8 +5,7 @@ export async function GET() {
   const db = getDb();
   const games = db
     .prepare(
-      `SELECT g.*, m.name as nominatorName,
-        (SELECT COUNT(*) FROM votes v WHERE v.game_id = g.id) as voteCount
+      `SELECT g.*, m.name as nominatorName
        FROM games g
        JOIN members m ON g.nominated_by = m.id
        ORDER BY g.nominated_at DESC`

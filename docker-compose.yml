@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - gameclub-data:/app/data
+    environment:
+      - NODE_ENV=production
+
+volumes:
+  gameclub-data:

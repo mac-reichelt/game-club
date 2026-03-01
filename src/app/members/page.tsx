@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 interface MemberWithStats extends Member {
   nominationCount: number;
-  voteCount: number;
+  ballotCount: number;
   reviewCount: number;
 }
 
@@ -18,7 +18,7 @@ function getMembersWithStats(
       `SELECT m.*,
         m.joined_at as joinedAt,
         (SELECT COUNT(*) FROM games g WHERE g.nominated_by = m.id) as nominationCount,
-        (SELECT COUNT(*) FROM votes v WHERE v.member_id = m.id) as voteCount,
+        (SELECT COUNT(DISTINCT election_id) FROM ballots b WHERE b.member_id = m.id) as ballotCount,
         (SELECT COUNT(*) FROM reviews r WHERE r.member_id = m.id) as reviewCount
        FROM members m
        ORDER BY m.name`
@@ -68,7 +68,7 @@ export default function MembersPage() {
                 </div>
               </div>
               <div className="bg-[var(--color-bg)] rounded-lg p-2.5 text-center">
-                <div className="text-lg font-bold">{member.voteCount}</div>
+                <div className="text-lg font-bold">{member.ballotCount}</div>
                 <div className="text-xs text-[var(--color-text-muted)]">
                   Votes
                 </div>

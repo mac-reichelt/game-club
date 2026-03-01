@@ -1,77 +1,90 @@
 import getDb from "@/lib/db";
-import { GameWithVotes } from "@/lib/types";
+import { GameWithNominator, ElectionWithWinner } from "@/lib/types";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-function getCurrentGame(db: ReturnType<typeof getDb>): GameWithVotes | null {
+function getCurrentGame(db: ReturnType<typeof getDb>): GameWithNominator | null {
   return db
     .prepare(
-      `SELECT g.*, m.name as nominatorName,
-        (SELECT COUNT(*) FROM votes v WHERE v.game_id = g.id) as voteCount
+      `SELECT g.*, m.name as nominatorName
        FROM games g
        JOIN members m ON g.nominated_by = m.id
        WHERE g.status = 'current'
        LIMIT 1`
     )
-    .get() as GameWithVotes | null;
+    .get() as GameWithNominator | null;
 }
 
-function getUpcomingGames(db: ReturnType<typeof getDb>): GameWithVotes[] {
+function getNominatedGames(db: ReturnType<typeof getDb>): GameWithNominator[] {
   return db
     .prepare(
-      `SELECT g.*, m.name as nominatorName,
-        (SELECT COUNT(*) FROM votes v WHERE v.game_id = g.id) as voteCount
+      `SELECT g.*, m.name as nominatorName
        FROM games g
        JOIN members m ON g.nominated_by = m.id
        WHERE g.status = 'nominated'
-       ORDER BY voteCount DESC
+       ORDER BY g.nominated_at DESC
        LIMIT 5`
     )
-    .all() as GameWithVotes[];
+    .all() as GameWithNominator[];
 }
 
-function getRecentlyCompleted(db: ReturnType<typeof getDb>): GameWithVotes[] {
+function getRecentElections(db: ReturnType<typeof getDb>): ElectionWithWinner[] {
   return db
     .prepare(
-      `SELECT g.*, m.name as nominatorName,
-        (SELECT COUNT(*) FROM votes v WHERE v.game_id = g.id) as voteCount
+      `SELECT e.*,
+        g.title as winnerTitle,
+        g.platform as winnerPlatform,
+        (SELECT COUNT(DISTINCT b.member_id) FROM ballots b WHERE b.election_id = e.id) as ballotCount
+       FROM elections e
+       LEFT JOIN games g ON e.winner_id = g.id
+       WHERE e.status = 'closed'
+       ORDER BY e.closed_at DESC
+       LIMIT 3`
+    )
+    .all() as ElectionWithWinner[];
+}
+
+function getRecentlyCompleted(db: ReturnType<typeof getDb>): GameWithNominator[] {
+  return db
+    .prepare(
+      `SELECT g.*, m.name as nominatorName
        FROM games g
        JOIN members m ON g.nominated_by = m.id
        WHERE g.status = 'completed'
        ORDER BY g.completed_date DESC
        LIMIT 3`
     )
-    .all() as GameWithVotes[];
+    .all() as GameWithNominator[];
 }
 
 function getStats(db: ReturnType<typeof getDb>) {
   const memberCount = (
-    db.prepare("SELECT COUNT(*) as count FROM members").get() as {
-      count: number;
-    }
+    db.prepare("SELECT COUNT(*) as count FROM members").get() as { count: number }
   ).count;
   const completedCount = (
-    db
-      .prepare("SELECT COUNT(*) as count FROM games WHERE status = 'completed'")
-      .get() as { count: number }
+    db.prepare("SELECT COUNT(*) as count FROM games WHERE status = 'completed'").get() as { count: number }
   ).count;
   const nominationCount = (
-    db
-      .prepare("SELECT COUNT(*) as count FROM games WHERE status = 'nominated'")
-      .get() as { count: number }
+    db.prepare("SELECT COUNT(*) as count FROM games WHERE status = 'nominated'").get() as { count: number }
   ).count;
-  return { memberCount, completedCount, nominationCount };
+  const electionCount = (
+    db.prepare("SELECT COUNT(*) as count FROM elections WHERE status = 'closed'").get() as { count: number }
+  ).count;
+  const openElection = db
+    .prepare("SELECT id FROM elections WHERE status = 'open' LIMIT 1")
+    .get() as { id: number } | undefined;
+  return { memberCount, completedCount, nominationCount, electionCount, hasOpenElection: !!openElection };
 }
 
 function Stars({ rating }: { rating: number | null }) {
-  if (rating === null) return <span className="text-[var(--color-text-muted)]">No ratings</span>;
+  if (rating === null) return <span className="text-[var(--color-text-muted)] text-sm">No ratings</span>;
   return (
-    <span className="flex gap-0.5">
+    <span className="flex gap-0.5 items-center">
       {[1, 2, 3, 4, 5].map((i) => (
         <span
           key={i}
-          className={i <= Math.round(rating) ? "text-[var(--color-star)]" : "text-[var(--color-border)]"}
+          className={`text-sm ${i <= Math.round(rating) ? "text-[var(--color-star)]" : "text-[var(--color-border)]"}`}
         >
           ★
         </span>
@@ -86,7 +99,8 @@ function Stars({ rating }: { rating: number | null }) {
 export default function Dashboard() {
   const db = getDb();
   const currentGame = getCurrentGame(db);
-  const upcoming = getUpcomingGames(db);
+  const nominations = getNominatedGames(db);
+  const recentElections = getRecentElections(db);
   const recent = getRecentlyCompleted(db);
   const stats = getStats(db);
 
@@ -95,11 +109,12 @@ export default function Dashboard() {
       <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-4 gap-4 mb-8">
         {[
           { label: "Members", value: stats.memberCount, icon: "👥" },
           { label: "Games Completed", value: stats.completedCount, icon: "✅" },
           { label: "Nominations", value: stats.nominationCount, icon: "🎯" },
+          { label: "Elections Held", value: stats.electionCount, icon: "🗳️" },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -107,9 +122,7 @@ export default function Dashboard() {
           >
             <div className="flex items-center gap-3 mb-1">
               <span className="text-2xl">{stat.icon}</span>
-              <span className="text-sm text-[var(--color-text-muted)]">
-                {stat.label}
-              </span>
+              <span className="text-sm text-[var(--color-text-muted)]">{stat.label}</span>
             </div>
             <div className="text-3xl font-bold">{stat.value}</div>
           </div>
@@ -138,9 +151,7 @@ export default function Dashboard() {
               </p>
               <p className="text-sm text-[var(--color-text-muted)]">
                 Nominated by{" "}
-                <span className="text-[var(--color-text)]">
-                  {currentGame.nominatorName}
-                </span>
+                <span className="text-[var(--color-text)]">{currentGame.nominatorName}</span>
                 {currentGame.scheduled_date &&
                   ` · Started ${new Date(currentGame.scheduled_date).toLocaleDateString()}`}
               </p>
@@ -153,17 +164,55 @@ export default function Dashboard() {
               href="/nominations"
               className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] font-medium"
             >
-              Vote on nominations →
+              {stats.hasOpenElection ? "Vote in the current election →" : "Nominate and start a vote →"}
             </Link>
           </div>
         )}
       </section>
 
-      {/* Top Nominations */}
+      {/* Recent Elections */}
+      {recentElections.length > 0 && (
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <span>🗳️</span> Recent Elections
+            </h2>
+            <Link
+              href="/elections"
+              className="text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]"
+            >
+              View all →
+            </Link>
+          </div>
+          <div className="grid gap-3">
+            {recentElections.map((election) => (
+              <Link
+                key={election.id}
+                href={`/elections/${election.id}`}
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4 flex items-center justify-between hover:border-[var(--color-primary)] transition-colors"
+              >
+                <div>
+                  <span className="font-medium">{election.name}</span>
+                  <span className="text-sm text-[var(--color-text-muted)] ml-2">
+                    · {election.ballotCount} voter(s)
+                  </span>
+                </div>
+                {election.winnerTitle && (
+                  <span className="text-[var(--color-accent)] font-medium flex items-center gap-1">
+                    🏆 {election.winnerTitle}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Nominations */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <span>🎯</span> Top Nominations
+            <span>🎯</span> Nominations
           </h2>
           <Link
             href="/nominations"
@@ -172,16 +221,13 @@ export default function Dashboard() {
             View all →
           </Link>
         </div>
-        {upcoming.length > 0 ? (
+        {nominations.length > 0 ? (
           <div className="grid gap-3">
-            {upcoming.map((game, idx) => (
+            {nominations.map((game) => (
               <div
                 key={game.id}
                 className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4 flex items-center gap-4"
               >
-                <span className="text-lg font-bold text-[var(--color-text-muted)] w-6 text-center">
-                  {idx + 1}
-                </span>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold truncate">{game.title}</h3>
                   <p className="text-sm text-[var(--color-text-muted)]">
@@ -189,19 +235,13 @@ export default function Dashboard() {
                     {game.platform && ` · ${game.platform}`}
                   </p>
                 </div>
-                <div className="flex items-center gap-1 text-[var(--color-accent)] font-semibold">
-                  <span>▲</span> {game.voteCount}
-                </div>
               </div>
             ))}
           </div>
         ) : (
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 text-center text-[var(--color-text-muted)]">
             No nominations yet.{" "}
-            <Link
-              href="/nominations"
-              className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]"
-            >
+            <Link href="/nominations" className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">
               Nominate a game →
             </Link>
           </div>

@@ -1,20 +1,19 @@
 import getDb from "@/lib/db";
-import { GameWithVotes } from "@/lib/types";
+import { GameWithNominator } from "@/lib/types";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-function getCompletedGames(db: ReturnType<typeof getDb>): GameWithVotes[] {
+function getCompletedGames(db: ReturnType<typeof getDb>): GameWithNominator[] {
   return db
     .prepare(
-      `SELECT g.*, m.name as nominatorName,
-        (SELECT COUNT(*) FROM votes v WHERE v.game_id = g.id) as voteCount
+      `SELECT g.*, m.name as nominatorName
        FROM games g
        JOIN members m ON g.nominated_by = m.id
        WHERE g.status = 'completed'
        ORDER BY g.completed_date DESC`
     )
-    .all() as GameWithVotes[];
+    .all() as GameWithNominator[];
 }
 
 function Stars({ rating }: { rating: number | null }) {

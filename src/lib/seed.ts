@@ -11,7 +11,13 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-const db = new Database(path.join(DATA_DIR, "gameclub.db"));
+const dbPath = path.join(DATA_DIR, "gameclub.db");
+// Remove existing database so we start fresh
+if (fs.existsSync(dbPath)) {
+  fs.unlinkSync(dbPath);
+}
+
+const db = new Database(dbPath);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
@@ -38,12 +44,38 @@ db.exec(`
     avg_rating REAL
   );
 
-  CREATE TABLE IF NOT EXISTS votes (
+  CREATE TABLE IF NOT EXISTS elections (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-    member_id INTEGER NOT NULL REFERENCES members(id),
+    name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open', 'closed')),
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    UNIQUE(game_id, member_id)
+    closed_at TEXT,
+    winner_id INTEGER REFERENCES games(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS election_games (
+    election_id INTEGER NOT NULL REFERENCES elections(id) ON DELETE CASCADE,
+    game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    PRIMARY KEY (election_id, game_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS ballots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    election_id INTEGER NOT NULL REFERENCES elections(id) ON DELETE CASCADE,
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    game_id INTEGER NOT NULL REFERENCES games(id),
+    rank INTEGER NOT NULL CHECK(rank >= 1),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(election_id, member_id, rank),
+    UNIQUE(election_id, member_id, game_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS election_rounds (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    election_id INTEGER NOT NULL REFERENCES elections(id) ON DELETE CASCADE,
+    round_number INTEGER NOT NULL,
+    eliminated_game_id INTEGER REFERENCES games(id),
+    summary TEXT NOT NULL DEFAULT ''
   );
 
   CREATE TABLE IF NOT EXISTS reviews (
@@ -57,10 +89,7 @@ db.exec(`
   );
 `);
 
-// Clear existing data
-db.exec("DELETE FROM reviews; DELETE FROM votes; DELETE FROM games; DELETE FROM members;");
-
-// Insert members
+// ----- Members -----
 const insertMember = db.prepare(
   "INSERT INTO members (name, avatar, joined_at) VALUES (?, ?, ?)"
 );
@@ -71,147 +100,161 @@ const members = [
   { name: "Casey", avatar: "🐉", joined: "2025-02-10" },
   { name: "Riley", avatar: "🌟", joined: "2025-03-01" },
 ];
-
 for (const m of members) {
   insertMember.run(m.name, m.avatar, m.joined);
 }
 
-// Insert games
+// ----- Games -----
 const insertGame = db.prepare(
   `INSERT INTO games (title, platform, description, nominated_by, nominated_at, status, scheduled_date, completed_date, avg_rating)
    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 );
 
-// Completed games
-insertGame.run(
-  "Hades",
-  "PC / Switch",
-  "Roguelike dungeon crawler from Supergiant Games. Fight your way out of the Underworld.",
-  1,
-  "2025-01-20",
-  "completed",
-  "2025-01-20",
-  "2025-02-15",
-  4.5
+// Games that went through past elections (completed)
+// Game 1: Hades
+insertGame.run("Hades", "PC / Switch", "Roguelike dungeon crawler from Supergiant Games.", 1, "2025-01-20", "completed", "2025-02-01", "2025-02-28", null);
+// Game 2: Celeste
+insertGame.run("Celeste", "PC / Switch", "Precision platformer about climbing a mountain.", 2, "2025-01-22", "completed", "2025-03-01", "2025-03-31", null);
+// Game 3: Outer Wilds
+insertGame.run("Outer Wilds", "PC / PS5 / Xbox", "Explore a solar system stuck in a time loop.", 3, "2025-01-25", "completed", "2025-04-01", "2025-04-30", null);
+// Game 4: Disco Elysium (current - won most recent election)
+insertGame.run("Disco Elysium", "PC / PS5", "RPG detective game with incredible writing.", 4, "2025-03-10", "current", "2025-05-01", null, null);
+
+// Games that lost in past elections (back to nominated)
+// Game 5: Hollow Knight
+insertGame.run("Hollow Knight", "PC / Switch", "Metroidvania in a vast underground kingdom of insects.", 5, "2025-01-20", "nominated", null, null, null);
+// Game 6: Return of the Obra Dinn
+insertGame.run("Return of the Obra Dinn", "PC / Switch", "Deduction puzzle: figure out what happened to a ship's crew.", 2, "2025-02-15", "nominated", null, null, null);
+
+// Fresh nominations (never in an election yet)
+// Game 7: Baldur's Gate 3
+insertGame.run("Baldur's Gate 3", "PC / PS5", "Epic D&D RPG with incredible depth.", 1, "2025-05-10", "nominated", null, null, null);
+// Game 8: Inscryption
+insertGame.run("Inscryption", "PC", "Card-based odyssey blending deckbuilding with escape-room puzzles.", 3, "2025-05-12", "nominated", null, null, null);
+
+// ----- Elections -----
+
+// == Election 1: February 2025 ==
+// Candidates: Hades(1), Celeste(2), Hollow Knight(5)
+// Winner: Hades
+db.prepare("INSERT INTO elections (name, status, created_at, closed_at, winner_id) VALUES (?, 'closed', ?, ?, ?)").run(
+  "Game of the Month - February 2025", "2025-01-28", "2025-01-30", 1
+);
+// Election games
+db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(1, 1);
+db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(1, 2);
+db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(1, 5);
+
+// Ballots for election 1
+const insertBallot = db.prepare(
+  "INSERT INTO ballots (election_id, member_id, game_id, rank) VALUES (?, ?, ?, ?)"
+);
+// Alex: Hades > Celeste > Hollow Knight
+insertBallot.run(1, 1, 1, 1); insertBallot.run(1, 1, 2, 2); insertBallot.run(1, 1, 5, 3);
+// Jordan: Celeste > Hades > Hollow Knight
+insertBallot.run(1, 2, 2, 1); insertBallot.run(1, 2, 1, 2); insertBallot.run(1, 2, 5, 3);
+// Sam: Hades > Hollow Knight > Celeste
+insertBallot.run(1, 3, 1, 1); insertBallot.run(1, 3, 5, 2); insertBallot.run(1, 3, 2, 3);
+// Casey: Hollow Knight > Hades > Celeste
+insertBallot.run(1, 4, 5, 1); insertBallot.run(1, 4, 1, 2); insertBallot.run(1, 4, 2, 3);
+// Riley: Hades > Celeste > Hollow Knight
+insertBallot.run(1, 5, 1, 1); insertBallot.run(1, 5, 2, 2); insertBallot.run(1, 5, 5, 3);
+
+// Rounds
+db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
+  1, 1, 5, "Round 1: Hades: 3, Celeste: 1, Hollow Knight: 1. Eliminated: Hollow Knight."
+);
+db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
+  1, 2, null, "Hades wins with 4/5 votes (majority)."
 );
 
-insertGame.run(
-  "Celeste",
-  "PC / Switch",
-  "Precision platformer about climbing a mountain. Beautiful story about mental health.",
-  2,
-  "2025-02-20",
-  "completed",
-  "2025-02-20",
-  "2025-03-20",
-  4.8
+// == Election 2: March 2025 ==
+// Candidates: Celeste(2), Outer Wilds(3), Hollow Knight(5)
+// Winner: Celeste
+db.prepare("INSERT INTO elections (name, status, created_at, closed_at, winner_id) VALUES (?, 'closed', ?, ?, ?)").run(
+  "Game of the Month - March 2025", "2025-02-25", "2025-02-28", 2
+);
+db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(2, 2);
+db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(2, 3);
+db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(2, 5);
+
+// Ballots for election 2
+// Alex: Celeste > Outer Wilds > Hollow Knight
+insertBallot.run(2, 1, 2, 1); insertBallot.run(2, 1, 3, 2); insertBallot.run(2, 1, 5, 3);
+// Jordan: Celeste > Hollow Knight > Outer Wilds
+insertBallot.run(2, 2, 2, 1); insertBallot.run(2, 2, 5, 2); insertBallot.run(2, 2, 3, 3);
+// Sam: Outer Wilds > Celeste > Hollow Knight
+insertBallot.run(2, 3, 3, 1); insertBallot.run(2, 3, 2, 2); insertBallot.run(2, 3, 5, 3);
+// Casey: Hollow Knight > Celeste > Outer Wilds
+insertBallot.run(2, 4, 5, 1); insertBallot.run(2, 4, 2, 2); insertBallot.run(2, 4, 3, 3);
+
+db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
+  2, 1, 3, "Round 1: Celeste: 2, Outer Wilds: 1, Hollow Knight: 1. Eliminated: Hollow Knight."
+);
+db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
+  2, 2, null, "Celeste wins with 3/4 votes (majority)."
 );
 
-insertGame.run(
-  "Outer Wilds",
-  "PC / PS5 / Xbox",
-  "Explore a solar system stuck in a time loop. One of the best exploration games ever made.",
-  3,
-  "2025-04-01",
-  "completed",
-  "2025-04-01",
-  "2025-05-01",
-  4.2
+// == Election 3: April 2025 ==
+// Candidates: Outer Wilds(3), Hollow Knight(5), Obra Dinn(6)
+// Winner: Outer Wilds
+db.prepare("INSERT INTO elections (name, status, created_at, closed_at, winner_id) VALUES (?, 'closed', ?, ?, ?)").run(
+  "Game of the Month - April 2025", "2025-03-28", "2025-03-30", 3
+);
+db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(3, 3);
+db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(3, 5);
+db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(3, 6);
+
+// Ballots for election 3
+// Alex: Outer Wilds > Obra Dinn > Hollow Knight
+insertBallot.run(3, 1, 3, 1); insertBallot.run(3, 1, 6, 2); insertBallot.run(3, 1, 5, 3);
+// Jordan: Obra Dinn > Outer Wilds > Hollow Knight
+insertBallot.run(3, 2, 6, 1); insertBallot.run(3, 2, 3, 2); insertBallot.run(3, 2, 5, 3);
+// Sam: Outer Wilds > Hollow Knight > Obra Dinn
+insertBallot.run(3, 3, 3, 1); insertBallot.run(3, 3, 5, 2); insertBallot.run(3, 3, 6, 3);
+// Casey: Hollow Knight > Outer Wilds > Obra Dinn
+insertBallot.run(3, 4, 5, 1); insertBallot.run(3, 4, 3, 2); insertBallot.run(3, 4, 6, 3);
+// Riley: Outer Wilds > Obra Dinn > Hollow Knight
+insertBallot.run(3, 5, 3, 1); insertBallot.run(3, 5, 6, 2); insertBallot.run(3, 5, 5, 3);
+
+db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
+  3, 1, null, "Outer Wilds wins with 3/5 votes (majority)."
 );
 
-// Current game
-insertGame.run(
-  "Disco Elysium",
-  "PC / PS5",
-  "RPG where you play a detective with amnesia. Incredible writing and world-building.",
-  4,
-  "2025-05-15",
-  "current",
-  "2025-06-01",
-  null,
-  null
+// == Election 4: May 2025 ==
+// Candidates: Disco Elysium(4), Hollow Knight(5), Obra Dinn(6)
+// Winner: Disco Elysium
+db.prepare("INSERT INTO elections (name, status, created_at, closed_at, winner_id) VALUES (?, 'closed', ?, ?, ?)").run(
+  "Game of the Month - May 2025", "2025-04-28", "2025-04-30", 4
+);
+db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(4, 4);
+db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(4, 5);
+db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(4, 6);
+
+// Ballots for election 4
+// Alex: Disco Elysium > Obra Dinn > Hollow Knight
+insertBallot.run(4, 1, 4, 1); insertBallot.run(4, 1, 6, 2); insertBallot.run(4, 1, 5, 3);
+// Jordan: Obra Dinn > Disco Elysium > Hollow Knight
+insertBallot.run(4, 2, 6, 1); insertBallot.run(4, 2, 4, 2); insertBallot.run(4, 2, 5, 3);
+// Sam: Disco Elysium > Hollow Knight > Obra Dinn
+insertBallot.run(4, 3, 4, 1); insertBallot.run(4, 3, 5, 2); insertBallot.run(4, 3, 6, 3);
+// Casey: Hollow Knight > Disco Elysium > Obra Dinn
+insertBallot.run(4, 4, 5, 1); insertBallot.run(4, 4, 4, 2); insertBallot.run(4, 4, 6, 3);
+// Riley: Disco Elysium > Obra Dinn > Hollow Knight
+insertBallot.run(4, 5, 4, 1); insertBallot.run(4, 5, 6, 2); insertBallot.run(4, 5, 5, 3);
+
+db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
+  4, 1, null, "Disco Elysium wins with 3/5 votes (majority)."
 );
 
-// Nominated games
-insertGame.run(
-  "Baldur's Gate 3",
-  "PC / PS5",
-  "Epic D&D RPG. Massive, choice-driven adventure with incredible depth.",
-  1,
-  "2025-06-10",
-  "nominated",
-  null,
-  null,
-  null
-);
-
-insertGame.run(
-  "Hollow Knight",
-  "PC / Switch",
-  "Metroidvania set in a vast underground kingdom of insects.",
-  5,
-  "2025-06-12",
-  "nominated",
-  null,
-  null,
-  null
-);
-
-insertGame.run(
-  "Return of the Obra Dinn",
-  "PC / Switch",
-  "Deduction puzzle game. Figure out what happened to a missing ship's crew.",
-  2,
-  "2025-06-15",
-  "nominated",
-  null,
-  null,
-  null
-);
-
-insertGame.run(
-  "Inscryption",
-  "PC",
-  "Card-based odyssey that blends deckbuilding with escape-room puzzles and psychological horror.",
-  3,
-  "2025-06-18",
-  "nominated",
-  null,
-  null,
-  null
-);
-
-// Insert votes for nominated games
-const insertVote = db.prepare(
-  "INSERT INTO votes (game_id, member_id) VALUES (?, ?)"
-);
-
-// BG3 gets lots of votes
-insertVote.run(5, 1);
-insertVote.run(5, 2);
-insertVote.run(5, 3);
-insertVote.run(5, 4);
-
-// Hollow Knight gets some votes
-insertVote.run(6, 1);
-insertVote.run(6, 3);
-insertVote.run(6, 5);
-
-// Obra Dinn gets a couple votes
-insertVote.run(7, 2);
-insertVote.run(7, 4);
-
-// Inscryption gets one vote
-insertVote.run(8, 5);
-
-// Insert reviews for completed games
+// ----- Reviews (for completed games) -----
 const insertReview = db.prepare(
   "INSERT INTO reviews (game_id, member_id, rating, comment) VALUES (?, ?, ?, ?)"
 );
 
 // Hades reviews
 insertReview.run(1, 1, 5, "Incredible gameplay loop. The story keeps you coming back.");
-insertReview.run(1, 2, 4, "Great combat but got a bit repetitive for me after 50 hours.");
+insertReview.run(1, 2, 4, "Great combat but got a bit repetitive after 50 hours.");
 insertReview.run(1, 3, 5, "Perfect game. Music, art, gameplay — all top tier.");
 insertReview.run(1, 4, 4, "Loved the characters and voice acting.");
 
@@ -239,7 +282,7 @@ for (const gameId of [1, 2, 3]) {
 console.log("✅ Database seeded successfully!");
 console.log("   - 5 members");
 console.log("   - 8 games (3 completed, 1 current, 4 nominated)");
-console.log("   - 10 votes");
+console.log("   - 4 closed elections with ranked choice ballots");
 console.log("   - 13 reviews");
 
 db.close();
