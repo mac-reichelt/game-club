@@ -36,6 +36,11 @@ export default function NominationForm() {
   const [platform, setPlatform] = useState("");
   const [description, setDescription] = useState("");
 
+  // Store/trailer data from RAWG
+  const [storesJson, setStoresJson] = useState("");
+  const [trailerUrl, setTrailerUrl] = useState("");
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -82,7 +87,7 @@ export default function NominationForm() {
     debounceRef.current = setTimeout(() => searchGames(value), 350);
   }
 
-  function selectGame(game: SearchResult) {
+  async function selectGame(game: SearchResult) {
     setSelectedGame(game);
     setQuery(game.name);
     setShowResults(false);
@@ -95,6 +100,24 @@ export default function NominationForm() {
         .filter(Boolean)
         .join(" · ")
     );
+
+    // Fetch store links and trailers
+    setLoadingDetails(true);
+    try {
+      const res = await fetch(`/api/games/search/${game.id}`);
+      if (res.ok) {
+        const details = await res.json();
+        if (details.stores && details.stores.length > 0) {
+          setStoresJson(JSON.stringify(details.stores));
+        }
+        if (details.trailerUrl) {
+          setTrailerUrl(details.trailerUrl);
+        }
+      }
+    } catch {
+      // Silently fail — stores/trailer are optional
+    }
+    setLoadingDetails(false);
   }
 
   function switchToManual() {
@@ -122,6 +145,8 @@ export default function NominationForm() {
     setPlatform("");
     setDescription("");
     setSearchError("");
+    setStoresJson("");
+    setTrailerUrl("");
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -135,6 +160,8 @@ export default function NominationForm() {
         title: title.trim(),
         platform: platform.trim() || undefined,
         description: description.trim() || undefined,
+        storesJson: storesJson || undefined,
+        trailerUrl: trailerUrl || undefined,
       }),
     });
 
@@ -319,6 +346,26 @@ export default function NominationForm() {
                   <span className="inline-block mt-1 px-1.5 py-0.5 text-xs rounded bg-green-500/20 text-green-400">
                     Metacritic: {selectedGame.metacritic}
                   </span>
+                )}
+                {loadingDetails && (
+                  <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                    Loading store links...
+                  </p>
+                )}
+                {!loadingDetails && storesJson && (
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {(JSON.parse(storesJson) as { name: string; url: string }[]).map((store) => (
+                      <a
+                        key={store.url}
+                        href={store.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs rounded bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
+                      >
+                        🔗 {store.name}
+                      </a>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>

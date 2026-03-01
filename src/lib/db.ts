@@ -37,6 +37,8 @@ function initSchema(db: Database.Database) {
       platform TEXT NOT NULL DEFAULT '',
       description TEXT NOT NULL DEFAULT '',
       image_url TEXT NOT NULL DEFAULT '',
+      stores_json TEXT NOT NULL DEFAULT '',
+      trailer_url TEXT NOT NULL DEFAULT '',
       nominated_by INTEGER NOT NULL REFERENCES members(id),
       nominated_at TEXT NOT NULL DEFAULT (datetime('now')),
       status TEXT NOT NULL DEFAULT 'nominated' CHECK(status IN ('nominated', 'current', 'completed')),
@@ -114,6 +116,20 @@ function initSchema(db: Database.Database) {
     .all() as { name: string }[];
   if (!electionCols.some((c) => c.name === "closes_at")) {
     db.exec("ALTER TABLE elections ADD COLUMN closes_at TEXT");
+  }
+
+  const gameCols = db
+    .prepare("PRAGMA table_info(games)")
+    .all() as { name: string }[];
+  if (!gameCols.some((c) => c.name === "stores_json")) {
+    db.exec(
+      "ALTER TABLE games ADD COLUMN stores_json TEXT NOT NULL DEFAULT ''"
+    );
+  }
+  if (!gameCols.some((c) => c.name === "trailer_url")) {
+    db.exec(
+      "ALTER TABLE games ADD COLUMN trailer_url TEXT NOT NULL DEFAULT ''"
+    );
   }
 }
 

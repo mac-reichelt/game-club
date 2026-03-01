@@ -1,5 +1,5 @@
 import getDb from "@/lib/db";
-import { GameWithNominator, Election } from "@/lib/types";
+import { GameWithNominator, Election, StoreLink } from "@/lib/types";
 import { requireAuth } from "@/lib/auth";
 import { checkAndCloseExpiredElections } from "@/lib/elections";
 import NominationForm from "./NominationForm";
@@ -44,6 +44,21 @@ function getOpenElection(db: ReturnType<typeof getDb>) {
     .all(election.id) as { member_id: number }[];
 
   return { election, games, voterIds: voters.map((v) => v.member_id) };
+}
+
+function getStoreIcon(storeName: string): string {
+  const icons: Record<string, string> = {
+    "Steam": "🎮",
+    "PlayStation Store": "🎮",
+    "Xbox Store": "🎮",
+    "Nintendo Store": "🎮",
+    "Epic Games": "🎮",
+    "GOG": "🎮",
+    "App Store": "📱",
+    "Google Play": "📱",
+    "itch.io": "🕹️",
+  };
+  return icons[storeName] || "🔗";
 }
 
 export default async function NominationsPage() {
@@ -128,7 +143,15 @@ export default async function NominationsPage() {
 
         <div className="grid gap-3">
           {nominations.length > 0 ? (
-            nominations.map((game) => (
+            nominations.map((game) => {
+              let stores: StoreLink[] = [];
+              try {
+                if (game.stores_json) stores = JSON.parse(game.stores_json);
+              } catch { /* ignore */ }
+              const trailerUrl = game.trailer_url || "";
+              const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(game.title + " official trailer")}`;
+
+              return (
               <div
                 key={game.id}
                 className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5"
@@ -150,9 +173,48 @@ export default async function NominationsPage() {
                       {game.description}
                     </p>
                   )}
+
+                  {/* Store links + trailer */}
+                  <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[var(--color-border)]">
+                    {stores.map((store) => (
+                        <a
+                          key={store.url}
+                          href={store.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+                          title={`View on ${store.name}`}
+                        >
+                          <span>{getStoreIcon(store.name)}</span>
+                          {store.name}
+                        </a>
+                      ))}
+                      {trailerUrl ? (
+                        <a
+                          href={trailerUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+                          title="Watch trailer"
+                        >
+                          <span>▶</span> Trailer
+                        </a>
+                      ) : (
+                        <a
+                          href={youtubeSearchUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+                          title="Search for trailer on YouTube"
+                        >
+                          <span>▶</span> Find Trailer
+                        </a>
+                      )}
+                    </div>
                 </div>
               </div>
-            ))
+              );
+            })
           ) : (
             <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-8 text-center text-[var(--color-text-muted)]">
               <p className="text-lg mb-1">No nominations yet</p>

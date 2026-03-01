@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       `SELECT g.*, m.name as nominated_by_name
        FROM games g
        LEFT JOIN members m ON g.nominated_by = m.id
-       ORDER BY g.created_at DESC`
+       ORDER BY g.nominated_at DESC`
     )
     .all();
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
   const db = getDb();
   const body = await request.json();
-  const { title, platform, description } = body;
+  const { title, platform, description, storesJson, trailerUrl } = body;
 
   if (!title) {
     return NextResponse.json(
@@ -56,10 +56,17 @@ export async function POST(request: NextRequest) {
 
   const result = db
     .prepare(
-      `INSERT INTO games (title, platform, description, nominated_by, status)
-       VALUES (?, ?, ?, ?, 'nominated')`
+      `INSERT INTO games (title, platform, description, stores_json, trailer_url, nominated_by, status)
+       VALUES (?, ?, ?, ?, ?, ?, 'nominated')`
     )
-    .run(title, platform || null, description || null, user.id);
+    .run(
+      title,
+      platform || null,
+      description || null,
+      storesJson || "",
+      trailerUrl || "",
+      user.id
+    );
 
   return NextResponse.json(
     { id: result.lastInsertRowid, title, nominatedBy: user.id },

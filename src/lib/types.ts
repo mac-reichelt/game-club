@@ -11,12 +11,20 @@ export interface Game {
   platform: string;
   description: string;
   image_url: string;
+  stores_json: string;
+  trailer_url: string;
   nominated_by: number;
   nominated_at: string;
   status: "nominated" | "current" | "completed";
   scheduled_date: string | null;
   completed_date: string | null;
   avg_rating: number | null;
+}
+
+export interface StoreLink {
+  name: string;
+  url: string;
+  domain: string;
 }
 
 export interface Election {
