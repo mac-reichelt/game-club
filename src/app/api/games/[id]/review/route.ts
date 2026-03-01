@@ -1,53 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
 import getDb from "@/lib/db";
+import { getUserFromToken } from "@/lib/auth";
 
+// POST /api/games/[id]/review - submit a review (uses session user)
+// Body: { rating, comment? }
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const user = getUserFromToken(
+    request.cookies.get("session_token")?.value
+  );
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const db = getDb();
-  const body = await request.json();
-  const { memberId, rating, comment } = body;
-
-  if (!memberId || !rating) {
-    return NextResponse.json(
-      { error: "memberId and rating are required" },
-      { status: 400 }
-    );
-  }
-
-  if (rating < 1 || rating > 5) {
-    return NextResponse.json(
-      { error: "Rating must be between 1 and 5" },
-      { status: 400 }
-    );
-  }
-
   const gameId = parseInt(id);
+  const body = await request.json();
+  const { rating, comment } = body;
 
-  try {
+  if (!rating || rating < 1 || rating > 10) {
+    return NextResponse.json(
+      { error: "Rating must be between 1 and 10" },
+      { status: 400 }
+    );
+  }
+
+  // Check game exists
+  const game = db.prepare("SELECT id FROM games WHERE id = ?").get(gameId);
+  if (!game) {
+    return NextResponse.json(
+      { error: "Game not found" },
+      { status: 404 }
+    );
+  }
+
+  // Upsert review
+  const existing = db
+    .prepare("SELECT id FROM reviews WHERE game_id = ? AND member_id = ?")
+    .get(gameId, user.id);
+
+  if (existing) {
+    db.prepare(
+      "UPDATE reviews SET rating = ?, comment = ? WHERE game_id = ? AND member_id = ?"
+    ).run(rating, comment || null, gameId, user.id);
+  } else {
     db.prepare(
       "INSERT INTO reviews (game_id, member_id, rating, comment) VALUES (?, ?, ?, ?)"
-    ).run(gameId, memberId, rating, comment || "");
-
-    // Update average rating
-    const avg = db
-      .prepare(
-        "SELECT AVG(rating) as avg FROM reviews WHERE game_id = ?"
-      )
-      .get(gameId) as { avg: number };
-
-    db.prepare("UPDATE games SET avg_rating = ? WHERE id = ?").run(
-      avg.avg,
-      gameId
-    );
-
-    return NextResponse.json({ success: true }, { status: 201 });
-  } catch {
-    return NextResponse.json(
-      { error: "Already reviewed this game" },
-      { status: 409 }
-    );
+    ).run(gameId, user.id, rating, comment || null);
   }
+
+  return NextResponse.json({ success: true }, { status: existing ? 200 : 201 });
 }

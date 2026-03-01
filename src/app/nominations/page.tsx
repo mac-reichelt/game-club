@@ -1,9 +1,10 @@
 import getDb from "@/lib/db";
-import { GameWithNominator, Member, Election } from "@/lib/types";
+import { GameWithNominator, Election } from "@/lib/types";
+import { requireAuth } from "@/lib/auth";
+import { checkAndCloseExpiredElections } from "@/lib/elections";
 import NominationForm from "./NominationForm";
 import BallotForm from "./BallotForm";
-import StartElectionButton from "./StartElectionButton";
-import CloseElectionButton from "./CloseElectionButton";
+import CountdownTimer from "@/components/CountdownTimer";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +18,6 @@ function getNominations(db: ReturnType<typeof getDb>): GameWithNominator[] {
        ORDER BY g.nominated_at DESC`
     )
     .all() as GameWithNominator[];
-}
-
-function getMembers(db: ReturnType<typeof getDb>): Member[] {
-  return db.prepare("SELECT * FROM members ORDER BY name").all() as Member[];
 }
 
 function getOpenElection(db: ReturnType<typeof getDb>) {
@@ -49,11 +46,18 @@ function getOpenElection(db: ReturnType<typeof getDb>) {
   return { election, games, voterIds: voters.map((v) => v.member_id) };
 }
 
-export default function NominationsPage() {
+export default async function NominationsPage() {
+  const user = await requireAuth();
   const db = getDb();
+
+  // Auto-close expired elections
+  checkAndCloseExpiredElections(db);
+
   const nominations = getNominations(db);
-  const members = getMembers(db);
   const openElection = getOpenElection(db);
+  const hasVoted = openElection
+    ? openElection.voterIds.includes(user.id)
+    : false;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -78,10 +82,9 @@ export default function NominationsPage() {
                   cast · {openElection.games.length} candidates
                 </p>
               </div>
-              <CloseElectionButton
-                electionId={openElection.election.id}
-                voteCount={openElection.voterIds.length}
-              />
+              {openElection.election.closes_at && (
+                <CountdownTimer closesAt={openElection.election.closes_at} />
+              )}
             </div>
 
             <div className="grid gap-2 mb-4">
@@ -108,26 +111,20 @@ export default function NominationsPage() {
             <BallotForm
               electionId={openElection.election.id}
               games={openElection.games}
-              members={members}
-              voterIds={openElection.voterIds}
+              hasVoted={hasVoted}
             />
           </div>
         </section>
       )}
 
       {/* Nominate */}
-      <NominationForm members={members} />
+      <NominationForm />
 
       {/* Nominations List */}
       <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">
-            Nominated Games ({nominations.length})
-          </h2>
-          {!openElection && nominations.length >= 2 && (
-            <StartElectionButton games={nominations} />
-          )}
-        </div>
+        <h2 className="text-xl font-semibold mb-4">
+          Nominated Games ({nominations.length})
+        </h2>
 
         <div className="grid gap-3">
           {nominations.length > 0 ? (

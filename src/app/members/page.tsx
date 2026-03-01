@@ -1,5 +1,6 @@
 import getDb from "@/lib/db";
 import { Member } from "@/lib/types";
+import { requireAuth } from "@/lib/auth";
 import AddMemberForm from "./AddMemberForm";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,8 @@ function getMembersWithStats(
     .all() as MemberWithStats[];
 }
 
-export default function MembersPage() {
+export default async function MembersPage() {
+  await requireAuth();
   const db = getDb();
   const members = getMembersWithStats(db);
 

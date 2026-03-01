@@ -1,13 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import getDb from "@/lib/db";
+import { getUserFromToken } from "@/lib/auth";
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 // GET /api/elections - list all elections
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const user = getUserFromToken(
+    request.cookies.get("session_token")?.value
+  );
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const db = getDb();
   const elections = db
     .prepare(
@@ -24,9 +41,14 @@ export async function GET() {
 }
 
 // POST /api/elections - create a new election
-// Automatically names it "Game of the Month - <month> <year>"
-// Body: { gameIds: number[] } - IDs of nominated games to include
+// Body: { gameIds: number[] }
 export async function POST(request: NextRequest) {
+  const user = getUserFromToken(
+    request.cookies.get("session_token")?.value
+  );
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const db = getDb();
   const body = await request.json();
   const { gameIds } = body as { gameIds?: number[] };
@@ -38,13 +60,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Check for already open election
   const openElection = db
     .prepare("SELECT id FROM elections WHERE status = 'open'")
     .get();
   if (openElection) {
     return NextResponse.json(
-      { error: "An election is already open. Close it before starting a new one." },
+      {
+        error:
+          "An election is already open. Close it before starting a new one.",
+      },
       { status: 409 }
     );
   }
@@ -53,7 +77,9 @@ export async function POST(request: NextRequest) {
   const name = `Game of the Month - ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
 
   const result = db
-    .prepare("INSERT INTO elections (name) VALUES (?)")
+    .prepare(
+      "INSERT INTO elections (name, closes_at) VALUES (?, datetime('now', '+72 hours'))"
+    )
     .run(name);
   const electionId = result.lastInsertRowid;
 

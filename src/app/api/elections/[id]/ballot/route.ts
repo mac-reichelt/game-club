@@ -1,25 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import getDb from "@/lib/db";
+import { getUserFromToken } from "@/lib/auth";
+import { Election } from "@/lib/types";
 
 // POST /api/elections/[id]/ballot - submit a ranked choice ballot
-// Body: { memberId: number, rankings: number[] }
-// rankings is an ordered array of game IDs (index 0 = 1st choice)
+// Body: { rankings: number[] } (memberId comes from session)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const user = getUserFromToken(
+    request.cookies.get("session_token")?.value
+  );
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const db = getDb();
   const electionId = parseInt(id);
   const body = await request.json();
-  const { memberId, rankings } = body as {
-    memberId: number;
-    rankings: number[];
-  };
+  const { rankings } = body as { rankings: number[] };
 
-  if (!memberId || !rankings || rankings.length === 0) {
+  if (!rankings || rankings.length === 0) {
     return NextResponse.json(
-      { error: "memberId and rankings are required" },
+      { error: "Rankings are required" },
       { status: 400 }
     );
   }
@@ -27,11 +31,22 @@ export async function POST(
   // Check election is open
   const election = db
     .prepare("SELECT * FROM elections WHERE id = ? AND status = 'open'")
-    .get(electionId);
+    .get(electionId) as Election | undefined;
   if (!election) {
     return NextResponse.json(
       { error: "Election not found or already closed" },
       { status: 404 }
+    );
+  }
+
+  // Check deadline hasn't passed
+  if (
+    election.closes_at &&
+    new Date(election.closes_at + "Z") <= new Date()
+  ) {
+    return NextResponse.json(
+      { error: "Voting deadline has passed" },
+      { status: 410 }
     );
   }
 
@@ -40,10 +55,10 @@ export async function POST(
     .prepare(
       "SELECT id FROM ballots WHERE election_id = ? AND member_id = ?"
     )
-    .get(electionId, memberId);
+    .get(electionId, user.id);
   if (existingBallot) {
     return NextResponse.json(
-      { error: "Member has already voted in this election" },
+      { error: "You have already voted in this election" },
       { status: 409 }
     );
   }
@@ -70,7 +85,7 @@ export async function POST(
   );
   const insertMany = db.transaction((rankings: number[]) => {
     for (let i = 0; i < rankings.length; i++) {
-      insertBallot.run(electionId, memberId, rankings[i], i + 1);
+      insertBallot.run(electionId, user.id, rankings[i], i + 1);
     }
   });
 

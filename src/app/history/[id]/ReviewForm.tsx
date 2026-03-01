@@ -1,16 +1,9 @@
 "use client";
 
-import { Member } from "@/lib/types";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function ReviewForm({
-  gameId,
-  members,
-}: {
-  gameId: number;
-  members: Member[];
-}) {
+export default function ReviewForm({ gameId }: { gameId: number }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [rating, setRating] = useState(0);
@@ -27,7 +20,6 @@ export default function ReviewForm({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        memberId: Number(formData.get("memberId")),
         rating,
         comment: formData.get("comment"),
       }),
@@ -38,6 +30,9 @@ export default function ReviewForm({
       setRating(0);
       setIsOpen(false);
       router.refresh();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed to submit review");
     }
     setSubmitting(false);
   }
@@ -59,23 +54,6 @@ export default function ReviewForm({
       className="bg-[var(--color-surface)] border border-[var(--color-primary)] rounded-lg p-4"
     >
       <h3 className="font-semibold mb-3">Write a Review</h3>
-      <div className="mb-3">
-        <label className="block text-sm text-[var(--color-text-muted)] mb-1">
-          Reviewer *
-        </label>
-        <select
-          name="memberId"
-          required
-          className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
-        >
-          <option value="">Select member</option>
-          {members.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.avatar} {m.name}
-            </option>
-          ))}
-        </select>
-      </div>
       <div className="mb-3">
         <label className="block text-sm text-[var(--color-text-muted)] mb-1">
           Rating *

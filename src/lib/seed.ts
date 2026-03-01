@@ -5,6 +5,16 @@
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
+
+function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto
+    .createHash("sha256")
+    .update(salt + password)
+    .digest("hex");
+  return `${salt}:${hash}`;
+}
 
 const DATA_DIR = path.join(process.cwd(), "data");
 if (!fs.existsSync(DATA_DIR)) {
@@ -27,6 +37,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     avatar TEXT NOT NULL DEFAULT '🎮',
+    password_hash TEXT NOT NULL DEFAULT '',
     joined_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -50,6 +61,7 @@ db.exec(`
     status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open', 'closed')),
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     closed_at TEXT,
+    closes_at TEXT,
     winner_id INTEGER REFERENCES games(id)
   );
 
@@ -87,11 +99,22 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(game_id, member_id)
   );
+
+  CREATE TABLE IF NOT EXISTS sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT NOT NULL UNIQUE,
+    member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    expires_at TEXT NOT NULL
+  );
 `);
 
 // ----- Members -----
+// Default password for all seed members: "gameclub"
+const defaultPasswordHash = hashPassword("gameclub");
+
 const insertMember = db.prepare(
-  "INSERT INTO members (name, avatar, joined_at) VALUES (?, ?, ?)"
+  "INSERT INTO members (name, avatar, password_hash, joined_at) VALUES (?, ?, ?, ?)"
 );
 const members = [
   { name: "Alex", avatar: "⚔️", joined: "2025-01-15" },
@@ -101,7 +124,7 @@ const members = [
   { name: "Riley", avatar: "🌟", joined: "2025-03-01" },
 ];
 for (const m of members) {
-  insertMember.run(m.name, m.avatar, m.joined);
+  insertMember.run(m.name, m.avatar, defaultPasswordHash, m.joined);
 }
 
 // ----- Games -----
@@ -157,34 +180,31 @@ insertBallot.run(1, 2, 2, 1); insertBallot.run(1, 2, 1, 2); insertBallot.run(1, 
 insertBallot.run(1, 3, 1, 1); insertBallot.run(1, 3, 5, 2); insertBallot.run(1, 3, 2, 3);
 // Casey: Hollow Knight > Hades > Celeste
 insertBallot.run(1, 4, 5, 1); insertBallot.run(1, 4, 1, 2); insertBallot.run(1, 4, 2, 3);
-// Riley: Hades > Celeste > Hollow Knight
-insertBallot.run(1, 5, 1, 1); insertBallot.run(1, 5, 2, 2); insertBallot.run(1, 5, 5, 3);
 
-// Rounds
 db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
-  1, 1, 5, "Round 1: Hades: 3, Celeste: 1, Hollow Knight: 1. Eliminated: Hollow Knight."
+  1, 1, 5, "Round 1: Hades: 2, Celeste: 1, Hollow Knight: 1. Eliminated: Hollow Knight."
 );
 db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
-  1, 2, null, "Hades wins with 4/5 votes (majority)."
+  1, 2, null, "Hades wins with 3/4 votes (majority)."
 );
 
 // == Election 2: March 2025 ==
-// Candidates: Celeste(2), Outer Wilds(3), Hollow Knight(5)
+// Candidates: Celeste(2), Hollow Knight(5), Outer Wilds(3)
 // Winner: Celeste
 db.prepare("INSERT INTO elections (name, status, created_at, closed_at, winner_id) VALUES (?, 'closed', ?, ?, ?)").run(
-  "Game of the Month - March 2025", "2025-02-25", "2025-02-28", 2
+  "Game of the Month - March 2025", "2025-02-28", "2025-03-02", 2
 );
 db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(2, 2);
-db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(2, 3);
 db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(2, 5);
+db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(2, 3);
 
 // Ballots for election 2
 // Alex: Celeste > Outer Wilds > Hollow Knight
 insertBallot.run(2, 1, 2, 1); insertBallot.run(2, 1, 3, 2); insertBallot.run(2, 1, 5, 3);
-// Jordan: Celeste > Hollow Knight > Outer Wilds
-insertBallot.run(2, 2, 2, 1); insertBallot.run(2, 2, 5, 2); insertBallot.run(2, 2, 3, 3);
-// Sam: Outer Wilds > Celeste > Hollow Knight
-insertBallot.run(2, 3, 3, 1); insertBallot.run(2, 3, 2, 2); insertBallot.run(2, 3, 5, 3);
+// Jordan: Outer Wilds > Celeste > Hollow Knight
+insertBallot.run(2, 2, 3, 1); insertBallot.run(2, 2, 2, 2); insertBallot.run(2, 2, 5, 3);
+// Sam: Celeste > Hollow Knight > Outer Wilds
+insertBallot.run(2, 3, 2, 1); insertBallot.run(2, 3, 5, 2); insertBallot.run(2, 3, 3, 3);
 // Casey: Hollow Knight > Celeste > Outer Wilds
 insertBallot.run(2, 4, 5, 1); insertBallot.run(2, 4, 2, 2); insertBallot.run(2, 4, 3, 3);
 
@@ -280,7 +300,7 @@ for (const gameId of [1, 2, 3]) {
 }
 
 console.log("✅ Database seeded successfully!");
-console.log("   - 5 members");
+console.log("   - 5 members (password: gameclub)");
 console.log("   - 8 games (3 completed, 1 current, 4 nominated)");
 console.log("   - 4 closed elections with ranked choice ballots");
 console.log("   - 13 reviews");

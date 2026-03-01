@@ -3,8 +3,8 @@ import {
   Election,
   GameWithNominator,
   ElectionRoundWithGame,
-  Member,
 } from "@/lib/types";
+import { requireAuth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -49,19 +49,29 @@ function getRounds(
     .all(electionId) as ElectionRoundWithGame[];
 }
 
-function getBallots(
+function getMyBallot(
   db: ReturnType<typeof getDb>,
-  electionId: number
-): { member_id: number; game_id: number; rank: number }[] {
+  electionId: number,
+  memberId: number
+): { game_id: number; rank: number }[] {
   return db
     .prepare(
-      "SELECT member_id, game_id, rank FROM ballots WHERE election_id = ? ORDER BY member_id, rank"
+      "SELECT game_id, rank FROM ballots WHERE election_id = ? AND member_id = ? ORDER BY rank"
     )
-    .all(electionId) as { member_id: number; game_id: number; rank: number }[];
+    .all(electionId, memberId) as { game_id: number; rank: number }[];
 }
 
-function getMembers(db: ReturnType<typeof getDb>): Member[] {
-  return db.prepare("SELECT * FROM members ORDER BY name").all() as Member[];
+function getVoterCount(
+  db: ReturnType<typeof getDb>,
+  electionId: number
+): number {
+  return (
+    db
+      .prepare(
+        "SELECT COUNT(DISTINCT member_id) as count FROM ballots WHERE election_id = ?"
+      )
+      .get(electionId) as { count: number }
+  ).count;
 }
 
 function getWinner(
@@ -85,27 +95,18 @@ export default async function ElectionDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const user = await requireAuth();
   const db = getDb();
   const election = getElection(db, parseInt(id));
   if (!election) notFound();
 
   const games = getElectionGames(db, election.id);
   const rounds = getRounds(db, election.id);
-  const ballots = getBallots(db, election.id);
-  const members = getMembers(db);
+  const myBallot = getMyBallot(db, election.id, user.id);
+  const voterCount = getVoterCount(db, election.id);
   const winner = getWinner(db, election.winner_id);
 
-  // Group ballots by member
-  const ballotsByMember = new Map<number, { game_id: number; rank: number }[]>();
-  for (const b of ballots) {
-    if (!ballotsByMember.has(b.member_id)) {
-      ballotsByMember.set(b.member_id, []);
-    }
-    ballotsByMember.get(b.member_id)!.push(b);
-  }
-
   const gameMap = new Map(games.map((g) => [g.id, g]));
-  const memberMap = new Map(members.map((m) => [m.id, m]));
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -132,6 +133,9 @@ export default async function ElectionDetailPage({
                 }`}
               >
                 {election.status}
+              </span>
+              <span className="text-sm text-[var(--color-text-muted)]">
+                {voterCount} voter(s)
               </span>
               <span className="text-sm text-[var(--color-text-muted)]">
                 Created {new Date(election.created_at).toLocaleDateString()}
@@ -225,53 +229,37 @@ export default async function ElectionDetailPage({
         </section>
       )}
 
-      {/* Individual Ballots */}
-      {ballotsByMember.size > 0 && (
+      {/* Your Ballot (private — only show the logged-in user's ballot) */}
+      {myBallot.length > 0 && (
         <section>
-          <h2 className="text-xl font-semibold mb-4">
-            Ballots ({ballotsByMember.size})
-          </h2>
-          <div className="grid gap-3">
-            {Array.from(ballotsByMember.entries()).map(
-              ([memberId, memberBallots]) => {
-                const member = memberMap.get(memberId);
+          <h2 className="text-xl font-semibold mb-4">Your Ballot</h2>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4">
+            <div className="flex flex-wrap gap-2">
+              {myBallot.map((b) => {
+                const game = gameMap.get(b.game_id);
                 return (
-                  <div
-                    key={memberId}
-                    className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4"
+                  <span
+                    key={b.rank}
+                    className="inline-flex items-center gap-1.5 bg-[var(--color-bg)] rounded px-2 py-1"
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg">
-                        {member?.avatar || "🎮"}
-                      </span>
-                      <span className="font-medium">
-                        {member?.name || "Unknown"}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {memberBallots
-                        .sort((a, b) => a.rank - b.rank)
-                        .map((b) => {
-                          const game = gameMap.get(b.game_id);
-                          return (
-                            <span
-                              key={b.rank}
-                              className="inline-flex items-center gap-1.5 bg-[var(--color-bg)] rounded px-2 py-1"
-                            >
-                              <span className="w-5 h-5 rounded-full bg-[var(--color-primary)] text-white text-xs flex items-center justify-center font-bold">
-                                {b.rank}
-                              </span>
-                              <span className="text-sm">
-                                {game?.title || "Unknown"}
-                              </span>
-                            </span>
-                          );
-                        })}
-                    </div>
-                  </div>
+                    <span className="w-5 h-5 rounded-full bg-[var(--color-primary)] text-white text-xs flex items-center justify-center font-bold">
+                      {b.rank}
+                    </span>
+                    <span className="text-sm">
+                      {game?.title || "Unknown"}
+                    </span>
+                  </span>
                 );
-              }
-            )}
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {myBallot.length === 0 && election.status === "closed" && (
+        <section>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4 text-center text-sm text-[var(--color-text-muted)]">
+            You did not vote in this election.
           </div>
         </section>
       )}

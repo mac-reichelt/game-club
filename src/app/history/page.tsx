@@ -1,5 +1,6 @@
 import getDb from "@/lib/db";
 import { GameWithNominator } from "@/lib/types";
+import { requireAuth } from "@/lib/auth";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +39,8 @@ function Stars({ rating }: { rating: number | null }) {
   );
 }
 
-export default function HistoryPage() {
+export default async function HistoryPage() {
+  await requireAuth();
   const db = getDb();
   const games = getCompletedGames(db);
 

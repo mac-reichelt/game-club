@@ -63,8 +63,11 @@ export default function StartElectionButton({
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 w-full max-w-md">
         <h3 className="font-semibold text-lg mb-1">Start Monthly Election</h3>
-        <p className="text-sm text-[var(--color-text-muted)] mb-4">
+        <p className="text-sm text-[var(--color-text-muted)] mb-1">
           Select which nominated games to include in the vote.
+        </p>
+        <p className="text-xs text-[var(--color-text-muted)] mb-4">
+          Voting will be open for 72 hours.
         </p>
         <div className="grid gap-2 mb-4 max-h-64 overflow-y-auto">
           {games.map((game) => (

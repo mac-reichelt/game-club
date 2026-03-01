@@ -1,5 +1,6 @@
 import getDb from "@/lib/db";
-import { GameWithNominator, ReviewWithMember, Member } from "@/lib/types";
+import { GameWithNominator, ReviewWithMember } from "@/lib/types";
+import { requireAuth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import ReviewForm from "./ReviewForm";
 
@@ -34,10 +35,6 @@ function getReviews(
     .all(gameId) as ReviewWithMember[];
 }
 
-function getMembers(db: ReturnType<typeof getDb>): Member[] {
-  return db.prepare("SELECT * FROM members ORDER BY name").all() as Member[];
-}
-
 function Stars({ rating }: { rating: number }) {
   return (
     <span className="flex gap-0.5">
@@ -63,12 +60,12 @@ export default async function GameDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await requireAuth();
   const db = getDb();
   const game = getGame(db, parseInt(id));
   if (!game) notFound();
 
   const reviews = getReviews(db, game.id);
-  const members = getMembers(db);
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -137,7 +134,7 @@ export default async function GameDetailPage({
         </h2>
 
         {game.status === "completed" && (
-          <ReviewForm gameId={game.id} members={members} />
+          <ReviewForm gameId={game.id} />
         )}
 
         {reviews.length > 0 ? (

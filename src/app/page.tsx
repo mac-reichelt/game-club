@@ -1,5 +1,7 @@
 import getDb from "@/lib/db";
 import { GameWithNominator, ElectionWithWinner } from "@/lib/types";
+import { requireAuth } from "@/lib/auth";
+import { checkAndCloseExpiredElections } from "@/lib/elections";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -96,8 +98,10 @@ function Stars({ rating }: { rating: number | null }) {
   );
 }
 
-export default function Dashboard() {
+export default async function Dashboard() {
+  await requireAuth();
   const db = getDb();
+  checkAndCloseExpiredElections(db);
   const currentGame = getCurrentGame(db);
   const nominations = getNominatedGames(db);
   const recentElections = getRecentElections(db);

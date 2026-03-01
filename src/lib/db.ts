@@ -27,6 +27,7 @@ function initSchema(db: Database.Database) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
       avatar TEXT NOT NULL DEFAULT '🎮',
+      password_hash TEXT NOT NULL DEFAULT '',
       joined_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -50,6 +51,7 @@ function initSchema(db: Database.Database) {
       status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open', 'closed')),
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       closed_at TEXT,
+      closes_at TEXT,
       winner_id INTEGER REFERENCES games(id)
     );
 
@@ -87,7 +89,32 @@ function initSchema(db: Database.Database) {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       UNIQUE(game_id, member_id)
     );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token TEXT NOT NULL UNIQUE,
+      member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      expires_at TEXT NOT NULL
+    );
   `);
+
+  // Migrations for existing databases
+  const memberCols = db
+    .prepare("PRAGMA table_info(members)")
+    .all() as { name: string }[];
+  if (!memberCols.some((c) => c.name === "password_hash")) {
+    db.exec(
+      "ALTER TABLE members ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''"
+    );
+  }
+
+  const electionCols = db
+    .prepare("PRAGMA table_info(elections)")
+    .all() as { name: string }[];
+  if (!electionCols.some((c) => c.name === "closes_at")) {
+    db.exec("ALTER TABLE elections ADD COLUMN closes_at TEXT");
+  }
 }
 
 export default getDb;

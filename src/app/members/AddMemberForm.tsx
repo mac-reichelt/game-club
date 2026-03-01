@@ -3,19 +3,49 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const AVATARS = ["🎮", "🕹️", "👾", "🎯", "🏆", "⚔️", "🛡️", "🧙", "🐉", "🚀", "🌟", "🎲"];
+const AVATARS = [
+  "🎮",
+  "🕹️",
+  "👾",
+  "🎯",
+  "🏆",
+  "⚔️",
+  "🛡️",
+  "🧙",
+  "🐉",
+  "🚀",
+  "🌟",
+  "🎲",
+];
 
 export default function AddMemberForm() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState("🎮");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
+    setError("");
     const form = e.currentTarget;
     const formData = new FormData(form);
+
+    const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      setSubmitting(false);
+      return;
+    }
+
+    if (password.length < 4) {
+      setError("Password must be at least 4 characters");
+      setSubmitting(false);
+      return;
+    }
 
     const res = await fetch("/api/members", {
       method: "POST",
@@ -23,6 +53,7 @@ export default function AddMemberForm() {
       body: JSON.stringify({
         name: formData.get("name"),
         avatar: selectedAvatar,
+        password,
       }),
     });
 
@@ -31,6 +62,9 @@ export default function AddMemberForm() {
       setSelectedAvatar("🎮");
       setIsOpen(false);
       router.refresh();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Failed to add member");
     }
     setSubmitting(false);
   }
@@ -52,6 +86,13 @@ export default function AddMemberForm() {
       className="bg-[var(--color-surface)] border border-[var(--color-primary)] rounded-xl p-5"
     >
       <h3 className="font-semibold mb-4">Add New Member</h3>
+
+      {error && (
+        <div className="bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 text-[var(--color-danger)] text-sm rounded-lg px-3 py-2 mb-4">
+          {error}
+        </div>
+      )}
+
       <div className="mb-4">
         <label className="block text-sm text-[var(--color-text-muted)] mb-1">
           Name *
@@ -63,6 +104,36 @@ export default function AddMemberForm() {
           placeholder="Enter member name"
         />
       </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="block text-sm text-[var(--color-text-muted)] mb-1">
+            Password *
+          </label>
+          <input
+            name="password"
+            type="password"
+            required
+            minLength={4}
+            className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
+            placeholder="Min 4 characters"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-[var(--color-text-muted)] mb-1">
+            Confirm Password *
+          </label>
+          <input
+            name="confirmPassword"
+            type="password"
+            required
+            minLength={4}
+            className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
+            placeholder="Re-enter password"
+          />
+        </div>
+      </div>
+
       <div className="mb-4">
         <label className="block text-sm text-[var(--color-text-muted)] mb-2">
           Avatar
@@ -84,10 +155,14 @@ export default function AddMemberForm() {
           ))}
         </div>
       </div>
+
       <div className="flex gap-2 justify-end">
         <button
           type="button"
-          onClick={() => setIsOpen(false)}
+          onClick={() => {
+            setIsOpen(false);
+            setError("");
+          }}
           className="px-4 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
         >
           Cancel

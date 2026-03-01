@@ -1,10 +1,9 @@
 "use client";
 
-import { Member } from "@/lib/types";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function NominationForm({ members }: { members: Member[] }) {
+export default function NominationForm() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -22,7 +21,6 @@ export default function NominationForm({ members }: { members: Member[] }) {
         title: formData.get("title"),
         platform: formData.get("platform"),
         description: formData.get("description"),
-        nominatedBy: Number(formData.get("nominatedBy")),
       }),
     });
 
@@ -30,6 +28,9 @@ export default function NominationForm({ members }: { members: Member[] }) {
       form.reset();
       setIsOpen(false);
       router.refresh();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed to nominate");
     }
     setSubmitting(false);
   }
@@ -84,23 +85,6 @@ export default function NominationForm({ members }: { members: Member[] }) {
           className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)] resize-none"
           placeholder="Why should we play this?"
         />
-      </div>
-      <div className="mb-4">
-        <label className="block text-sm text-[var(--color-text-muted)] mb-1">
-          Nominated By *
-        </label>
-        <select
-          name="nominatedBy"
-          required
-          className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
-        >
-          <option value="">Select a member</option>
-          {members.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.avatar} {m.name}
-            </option>
-          ))}
-        </select>
       </div>
       <div className="flex gap-2 justify-end">
         <button

@@ -25,6 +25,7 @@ export interface Election {
   status: "open" | "closed";
   created_at: string;
   closed_at: string | null;
+  closes_at: string | null;
   winner_id: number | null;
 }
 
@@ -55,10 +56,6 @@ export interface Review {
 }
 
 export type GameWithNominator = Game & { nominatorName: string };
-export type GameWithNominationCount = Game & {
-  nominatorName: string;
-  nominationCount: number;
-};
 export type ReviewWithMember = Review & {
   memberName: string;
   memberAvatar: string;

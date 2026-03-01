@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import getDb from "@/lib/db";
-import { tallyRankedChoice } from "@/lib/rcv";
+import { getUserFromToken } from "@/lib/auth";
+import { closeElectionAndTally } from "@/lib/elections";
 
 // POST /api/elections/[id]/close - close an election and tally results
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const user = getUserFromToken(
+    request.cookies.get("session_token")?.value
+  );
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const db = getDb();
   const electionId = parseInt(id);
@@ -21,43 +28,30 @@ export async function POST(
     );
   }
 
-  // Run ranked choice voting
-  const result = tallyRankedChoice(db, electionId);
+  // Check if any votes were cast
+  const voteCount = (
+    db
+      .prepare(
+        "SELECT COUNT(DISTINCT member_id) as count FROM ballots WHERE election_id = ?"
+      )
+      .get(electionId) as { count: number }
+  ).count;
 
-  // Save rounds to database
-  const insertRound = db.prepare(
-    `INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary)
-     VALUES (?, ?, ?, ?)`
-  );
-  for (const round of result.rounds) {
-    insertRound.run(
-      electionId,
-      round.roundNumber,
-      round.eliminatedGameId,
-      round.summary
+  if (voteCount === 0) {
+    // Close without a winner
+    db.prepare(
+      "UPDATE elections SET status = 'closed', closed_at = datetime('now') WHERE id = ?"
+    ).run(electionId);
+    return NextResponse.json({ winnerId: null, rounds: [] });
+  }
+
+  try {
+    const result = closeElectionAndTally(db, electionId);
+    return NextResponse.json(result);
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to close election" },
+      { status: 500 }
     );
   }
-
-  // Update election
-  db.prepare(
-    "UPDATE elections SET status = 'closed', closed_at = datetime('now'), winner_id = ? WHERE id = ?"
-  ).run(result.winnerId, electionId);
-
-  // If there's a winner, promote it to "current" game
-  if (result.winnerId) {
-    // Mark any current game as completed
-    db.prepare(
-      "UPDATE games SET status = 'completed', completed_date = datetime('now') WHERE status = 'current'"
-    ).run();
-
-    // Promote winner
-    db.prepare(
-      "UPDATE games SET status = 'current', scheduled_date = datetime('now') WHERE id = ?"
-    ).run(result.winnerId);
-  }
-
-  return NextResponse.json({
-    winnerId: result.winnerId,
-    rounds: result.rounds,
-  });
 }

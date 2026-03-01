@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 
 const links = [
   { href: "/", label: "Dashboard", icon: "🏠" },
@@ -11,8 +12,23 @@ const links = [
   { href: "/members", label: "Members", icon: "👥" },
 ];
 
-export default function Navbar() {
+interface NavbarUser {
+  id: number;
+  name: string;
+  avatar: string;
+}
+
+export default function Navbar({ user }: { user: NavbarUser }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <nav className="fixed top-0 left-0 h-screen w-56 flex flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]">
@@ -44,8 +60,18 @@ export default function Navbar() {
           );
         })}
       </div>
-      <div className="p-4 border-t border-[var(--color-border)] text-xs text-[var(--color-text-muted)]">
-        Game Club v0.1.0
+      <div className="p-4 border-t border-[var(--color-border)]">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xl">{user.avatar}</span>
+          <span className="text-sm font-medium truncate">{user.name}</span>
+        </div>
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="w-full text-xs text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors text-left"
+        >
+          {loggingOut ? "Signing out..." : "Sign out"}
+        </button>
       </div>
     </nav>
   );
