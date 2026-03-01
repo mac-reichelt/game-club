@@ -54,7 +54,7 @@ export default function MembersPage() {
               <div>
                 <h3 className="font-semibold text-lg">{member.name}</h3>
                 <p className="text-xs text-[var(--color-text-muted)]">
-                  Joined {new Date(member.joinedAt).toLocaleDateString()}
+                  Joined {new Date(member.joined_at).toLocaleDateString()}
                 </p>
               </div>
             </div>
