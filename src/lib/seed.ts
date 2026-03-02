@@ -161,7 +161,7 @@ insertGame.run("Inscryption", "PC", "Card-based odyssey blending deckbuilding wi
 // Candidates: Hades(1), Celeste(2), Hollow Knight(5)
 // Winner: Hades
 db.prepare("INSERT INTO elections (name, status, created_at, closed_at, winner_id) VALUES (?, 'closed', ?, ?, ?)").run(
-  "Game of the Month - February 2025", "2025-01-28", "2025-01-30", 1
+  "February 2025", "2025-01-28", "2025-01-30", 1
 );
 // Election games
 db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(1, 1);
@@ -192,7 +192,7 @@ db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_g
 // Candidates: Celeste(2), Hollow Knight(5), Outer Wilds(3)
 // Winner: Celeste
 db.prepare("INSERT INTO elections (name, status, created_at, closed_at, winner_id) VALUES (?, 'closed', ?, ?, ?)").run(
-  "Game of the Month - March 2025", "2025-02-28", "2025-03-02", 2
+  "March 2025", "2025-02-28", "2025-03-02", 2
 );
 db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(2, 2);
 db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(2, 5);
@@ -219,7 +219,7 @@ db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_g
 // Candidates: Outer Wilds(3), Hollow Knight(5), Obra Dinn(6)
 // Winner: Outer Wilds
 db.prepare("INSERT INTO elections (name, status, created_at, closed_at, winner_id) VALUES (?, 'closed', ?, ?, ?)").run(
-  "Game of the Month - April 2025", "2025-03-28", "2025-03-30", 3
+  "April 2025", "2025-03-28", "2025-03-30", 3
 );
 db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(3, 3);
 db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(3, 5);
@@ -245,7 +245,7 @@ db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_g
 // Candidates: Disco Elysium(4), Hollow Knight(5), Obra Dinn(6)
 // Winner: Disco Elysium
 db.prepare("INSERT INTO elections (name, status, created_at, closed_at, winner_id) VALUES (?, 'closed', ?, ?, ?)").run(
-  "Game of the Month - May 2025", "2025-04-28", "2025-04-30", 4
+  "May 2025", "2025-04-28", "2025-04-30", 4
 );
 db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(4, 4);
 db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(4, 5);

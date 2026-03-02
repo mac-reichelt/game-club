@@ -7,7 +7,7 @@ A web app for managing a game club — like a book club, but for games. Nominate
 - **Dashboard** — See what's currently being played, recent elections, nominations, and completed games
 - **Nominations** — Nominate games and start monthly elections
 - **Ranked Choice Voting** — Members rank games by preference; instant-runoff tallying determines the winner
-- **Elections** — Monthly votes auto-named "Game of the Month - \<month\> \<year\>" with full historical records
+- **Elections** — Monthly votes auto-named "\<month\> \<year\>" with full historical records
 - **History** — Browse all completed games with ratings and reviews
 - **Members** — Manage club members and see their activity stats
 

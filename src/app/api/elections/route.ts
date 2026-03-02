@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
   }
 
   const now = new Date();
-  const name = `Game of the Month - ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
+  const name = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
 
   const result = db
     .prepare(
