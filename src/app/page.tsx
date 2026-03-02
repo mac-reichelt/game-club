@@ -113,7 +113,7 @@ export default async function Dashboard() {
       <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
         {[
           { label: "Members", value: stats.memberCount, icon: "👥" },
           { label: "Games Completed", value: stats.completedCount, icon: "✅" },
@@ -122,13 +122,13 @@ export default async function Dashboard() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5"
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 md:p-5"
           >
-            <div className="flex items-center gap-3 mb-1">
-              <span className="text-2xl">{stat.icon}</span>
-              <span className="text-sm text-[var(--color-text-muted)]">{stat.label}</span>
+            <div className="flex items-center gap-2 md:gap-3 mb-1">
+              <span className="text-xl md:text-2xl">{stat.icon}</span>
+              <span className="text-xs md:text-sm text-[var(--color-text-muted)]">{stat.label}</span>
             </div>
-            <div className="text-3xl font-bold">{stat.value}</div>
+            <div className="text-2xl md:text-3xl font-bold">{stat.value}</div>
           </div>
         ))}
       </div>
@@ -139,8 +139,8 @@ export default async function Dashboard() {
           <span>🕹️</span> Currently Playing
         </h2>
         {currentGame ? (
-          <div className="bg-[var(--color-surface)] border border-[var(--color-primary)] rounded-xl p-6 flex gap-6">
-            <div className="w-32 h-44 rounded-lg bg-[var(--color-surface-hover)] flex items-center justify-center text-5xl shrink-0">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-primary)] rounded-xl p-4 md:p-6 flex flex-col sm:flex-row gap-4 md:gap-6">
+            <div className="w-full sm:w-32 h-32 sm:h-44 rounded-lg bg-[var(--color-surface-hover)] flex items-center justify-center text-5xl shrink-0">
               {currentGame.image_url || "🎮"}
             </div>
             <div className="flex-1">
@@ -193,7 +193,7 @@ export default async function Dashboard() {
               <Link
                 key={election.id}
                 href={`/elections/${election.id}`}
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4 flex items-center justify-between hover:border-[var(--color-primary)] transition-colors"
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-3 hover:border-[var(--color-primary)] transition-colors"
               >
                 <div>
                   <span className="font-medium">{election.name}</span>
@@ -266,7 +266,7 @@ export default async function Dashboard() {
           </Link>
         </div>
         {recent.length > 0 ? (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {recent.map((game) => (
               <Link
                 key={game.id}

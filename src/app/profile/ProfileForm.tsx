@@ -28,6 +28,9 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState("");
 
+  // Logout
+  const [loggingOut, setLoggingOut] = useState(false);
+
   async function handleProfileSave(e: React.FormEvent) {
     e.preventDefault();
     setProfileMsg("");
@@ -86,6 +89,13 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   const isError = (msg: string) =>
     msg && !msg.includes("updated") && !msg.includes("changed");
 
+  async function handleLogout() {
+    setLoggingOut(true);
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  }
+
   return (
     <div className="grid gap-6">
       {/* Edit Profile */}
@@ -104,7 +114,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="w-full max-w-xs bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
+            className="w-full sm:max-w-xs bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
           />
         </div>
 
@@ -159,7 +169,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       >
         <h2 className="text-lg font-semibold mb-4">Change Password</h2>
 
-        <div className="grid gap-4 max-w-xs mb-4">
+        <div className="grid gap-4 sm:max-w-xs mb-4">
           <div>
             <label className="block text-sm text-[var(--color-text-muted)] mb-1">
               Current Password
@@ -219,6 +229,15 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           )}
         </div>
       </form>
+
+      {/* Sign Out */}
+      <button
+        onClick={handleLogout}
+        disabled={loggingOut}
+        className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:border-[var(--color-danger)] transition-colors"
+      >
+        {loggingOut ? "Signing out..." : "Sign out"}
+      </button>
     </div>
   );
 }

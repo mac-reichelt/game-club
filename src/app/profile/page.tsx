@@ -37,8 +37,8 @@ export default async function ProfilePage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-8">
-        <div className="flex items-center gap-4">
-          <span className="text-5xl">{user.avatar}</span>
+        <div className="flex items-center gap-3 md:gap-4">
+          <span className="text-4xl md:text-5xl">{user.avatar}</span>
           <div>
             <h1 className="text-3xl font-bold">{user.name}</h1>
             <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
@@ -49,7 +49,7 @@ export default async function ProfilePage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 text-center">
           <div className="text-2xl font-bold">{stats.nominations}</div>
           <div className="text-xs text-[var(--color-text-muted)] mt-1">

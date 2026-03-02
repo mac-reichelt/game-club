@@ -69,9 +69,9 @@ export default async function GameDetailPage({
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 mb-6">
-        <div className="flex gap-6">
-          <div className="w-36 h-48 rounded-lg bg-[var(--color-surface-hover)] flex items-center justify-center text-5xl shrink-0">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 md:p-6 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 md:gap-6">
+          <div className="w-full sm:w-36 h-36 sm:h-48 rounded-lg bg-[var(--color-surface-hover)] flex items-center justify-center text-5xl shrink-0">
             {game.image_url || "🎮"}
           </div>
           <div className="flex-1">

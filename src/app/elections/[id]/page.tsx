@@ -117,14 +117,14 @@ export default async function ElectionDetailPage({
         ← All Elections
       </Link>
 
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 mb-6">
-        <div className="flex items-start justify-between">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 md:p-6 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold mb-1 flex items-center gap-2">
               <span>{election.status === "open" ? "🗳️" : "🏆"}</span>
               {election.name}
             </h1>
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-3">
               <span
                 className={`inline-block px-2 py-0.5 text-xs rounded ${
                   election.status === "open"

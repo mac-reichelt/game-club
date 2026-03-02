@@ -76,7 +76,7 @@ export default async function ElectionsPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
         <h1 className="text-3xl font-bold">Elections</h1>
         {!openElection && nominations.length >= 2 && (
           <StartElectionButton games={nominations} />
@@ -90,7 +90,7 @@ export default async function ElectionsPage() {
       {openElection && (
         <section className="mb-8">
           <div className="bg-[var(--color-surface)] border-2 border-[var(--color-accent)] rounded-xl p-6">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
               <div>
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <span>🗳️</span> {openElection.election.name}
@@ -149,7 +149,7 @@ export default async function ElectionsPage() {
               href={`/elections/${election.id}`}
               className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 hover:border-[var(--color-primary)] transition-colors"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <span>🏆</span>

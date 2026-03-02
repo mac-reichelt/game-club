@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { getCurrentUser } from "@/lib/auth";
@@ -6,6 +6,12 @@ import { getCurrentUser } from "@/lib/auth";
 export const metadata: Metadata = {
   title: "Game Club",
   description: "Like a book club, but for games",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({
@@ -19,7 +25,7 @@ export default async function RootLayout({
     <html lang="en">
       <body>
         {user && <Navbar user={user} />}
-        <main className={user ? "ml-56 min-h-screen p-8" : ""}>
+        <main className={user ? "md:ml-56 min-h-screen px-4 py-6 pb-20 md:p-8" : ""}>
           {children}
         </main>
       </body>

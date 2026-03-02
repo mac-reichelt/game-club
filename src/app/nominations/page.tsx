@@ -107,7 +107,7 @@ export default async function NominationsPage() {
       {openElection && (
         <section className="mb-8">
           <div className="bg-[var(--color-surface)] border-2 border-[var(--color-primary)] rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div>
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <span>🗳️</span> {openElection.election.name}
