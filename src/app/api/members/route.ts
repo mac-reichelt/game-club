@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
   const db = getDb();
   const members = db
-    .prepare("SELECT id, name, avatar, joined_at FROM members ORDER BY name")
+    .prepare("SELECT id, name, avatar, joined_at FROM members WHERE disabled = 0 ORDER BY name")
     .all();
 
   return NextResponse.json(members);

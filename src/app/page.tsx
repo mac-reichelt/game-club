@@ -62,7 +62,7 @@ function getRecentlyCompleted(db: ReturnType<typeof getDb>): GameWithNominator[]
 
 function getStats(db: ReturnType<typeof getDb>) {
   const memberCount = (
-    db.prepare("SELECT COUNT(*) as count FROM members").get() as { count: number }
+    db.prepare("SELECT COUNT(*) as count FROM members WHERE disabled = 0").get() as { count: number }
   ).count;
   const completedCount = (
     db.prepare("SELECT COUNT(*) as count FROM games WHERE status = 'completed'").get() as { count: number }

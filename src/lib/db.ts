@@ -28,6 +28,7 @@ function initSchema(db: Database.Database) {
       name TEXT NOT NULL UNIQUE,
       avatar TEXT NOT NULL DEFAULT '🎮',
       password_hash TEXT NOT NULL DEFAULT '',
+      disabled INTEGER NOT NULL DEFAULT 0,
       joined_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -108,6 +109,11 @@ function initSchema(db: Database.Database) {
   if (!memberCols.some((c) => c.name === "password_hash")) {
     db.exec(
       "ALTER TABLE members ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''"
+    );
+  }
+  if (!memberCols.some((c) => c.name === "disabled")) {
+    db.exec(
+      "ALTER TABLE members ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0"
     );
   }
 

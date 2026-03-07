@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
   const db = getDb();
   const member = db
-    .prepare("SELECT * FROM members WHERE name = ?")
+    .prepare("SELECT * FROM members WHERE name = ? AND disabled = 0")
     .get(name) as (Member & { password_hash: string }) | undefined;
 
   if (!member || !member.password_hash) {
