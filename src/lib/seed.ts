@@ -258,6 +258,19 @@ insertGame.run(129, "I Am Your Beast", "nominated", null);
 insertGame.run(130, "Cyber Knights: Flashpoint", "nominated", null);
 insertGame.run(131, "Consume Me", "nominated", null);
 insertGame.run(132, "Peak", "completed", "2025-10-07");
+insertGame.run(133, "Keeper", "completed", "2025-11-04");
+insertGame.run(134, "Dispatch", "completed", "2025-12-09");
+insertGame.run(135, "Pacific Drive", "nominated", null);
+insertGame.run(136, "Tiny Book Shop", "nominated", null);
+insertGame.run(137, "Wolfenstein: The New Order", "completed", "2026-01-06");
+insertGame.run(138, "Between Horizons", "nominated", null);
+insertGame.run(139, "The Seance of Blake Manor", "nominated", null);
+insertGame.run(140, "Routine", "nominated", null);
+insertGame.run(141, "Disco Samurai", "completed", "2026-02-10");
+insertGame.run(142, "Indika", "nominated", null);
+insertGame.run(143, "Sword of the Sea", "nominated", null);
+insertGame.run(144, "Bioshock", "nominated", null);
+insertGame.run(145, "Is This Seat Taken?", "nominated", null);
 
 // ----- Elections -----
 const insertElection = db.prepare(
@@ -313,6 +326,10 @@ insertElection.run(47, "July 2025", "2025-07-06 21:10:41", "2025-07-06 21:40:56"
 insertElection.run(48, "August 2025", "2025-08-09 00:03:50", "2025-08-12 00:03:43", 126);
 insertElection.run(49, "September 2025", "2025-09-05 23:51:08", "2025-09-08 23:51:53", 127);
 insertElection.run(50, "October 2025", "2025-10-04 00:14:02", "2025-10-07 01:15:50", 132);
+insertElection.run(51, "November 2025", "2025-11-01 00:00:00", "2025-11-04 00:00:00", 133);
+insertElection.run(52, "December 2025", "2025-12-06 00:00:00", "2025-12-09 00:00:00", 134);
+insertElection.run(53, "January 2026", "2026-01-03 00:00:00", "2026-01-06 00:00:00", 137);
+insertElection.run(54, "February 2026", "2026-02-07 00:00:00", "2026-02-10 00:00:00", 141);
 
 // ----- Election Games -----
 const insertEG = db.prepare(
@@ -508,6 +525,19 @@ insertEG.run(49, 129);
 insertEG.run(50, 130);
 insertEG.run(50, 131);
 insertEG.run(50, 132);
+insertEG.run(51, 133);
+insertEG.run(52, 134);
+insertEG.run(52, 135);
+insertEG.run(52, 136);
+insertEG.run(53, 137);
+insertEG.run(53, 138);
+insertEG.run(53, 139);
+insertEG.run(53, 140);
+insertEG.run(54, 141);
+insertEG.run(54, 142);
+insertEG.run(54, 143);
+insertEG.run(54, 144);
+insertEG.run(54, 145);
 
 // ----- Ballots (fabricated to produce correct winners) -----
 const insertBallot = db.prepare(
@@ -1559,6 +1589,31 @@ insertBallot.run(50, 2, 132, 1);
 insertBallot.run(50, 2, 131, 2);
 insertBallot.run(50, 2, 130, 3);
 
+// Election 51: November 2025 - Winner: Keeper (sole nominee)
+insertBallot.run(51, 1, 133, 1);
+
+// Election 52: December 2025 - Winner: Dispatch
+insertBallot.run(52, 1, 134, 1); insertBallot.run(52, 1, 135, 2); insertBallot.run(52, 1, 136, 3);
+insertBallot.run(52, 2, 134, 1); insertBallot.run(52, 2, 135, 2); insertBallot.run(52, 2, 136, 3);
+insertBallot.run(52, 3, 134, 1); insertBallot.run(52, 3, 135, 2); insertBallot.run(52, 3, 136, 3);
+insertBallot.run(52, 4, 134, 1); insertBallot.run(52, 4, 136, 2);
+insertBallot.run(52, 5, 136, 1); insertBallot.run(52, 5, 134, 2);
+
+// Election 53: January 2026 - Winner: Wolfenstein: The New Order
+insertBallot.run(53, 1, 137, 1); insertBallot.run(53, 1, 138, 2); insertBallot.run(53, 1, 139, 3); insertBallot.run(53, 1, 140, 4);
+insertBallot.run(53, 2, 137, 1); insertBallot.run(53, 2, 139, 2); insertBallot.run(53, 2, 138, 3);
+insertBallot.run(53, 3, 138, 1); insertBallot.run(53, 3, 137, 2); insertBallot.run(53, 3, 139, 3); insertBallot.run(53, 3, 140, 4);
+insertBallot.run(53, 4, 139, 1); insertBallot.run(53, 4, 140, 2); insertBallot.run(53, 4, 138, 3); insertBallot.run(53, 4, 137, 4);
+insertBallot.run(53, 5, 139, 1); insertBallot.run(53, 5, 138, 2); insertBallot.run(53, 5, 140, 3); insertBallot.run(53, 5, 137, 4);
+
+// Election 54: February 2026 - Winner: Disco Samurai
+insertBallot.run(54, 1, 141, 1); insertBallot.run(54, 1, 142, 2); insertBallot.run(54, 1, 143, 3); insertBallot.run(54, 1, 144, 4);
+insertBallot.run(54, 2, 142, 1); insertBallot.run(54, 2, 143, 2); insertBallot.run(54, 2, 141, 3); insertBallot.run(54, 2, 144, 4); insertBallot.run(54, 2, 145, 5);
+insertBallot.run(54, 3, 142, 1); insertBallot.run(54, 3, 143, 2); insertBallot.run(54, 3, 145, 3); insertBallot.run(54, 3, 141, 4); insertBallot.run(54, 3, 144, 5);
+insertBallot.run(54, 4, 142, 1); insertBallot.run(54, 4, 145, 2); insertBallot.run(54, 4, 141, 3); insertBallot.run(54, 4, 144, 4); insertBallot.run(54, 4, 143, 5);
+insertBallot.run(54, 5, 143, 1); insertBallot.run(54, 5, 145, 2); insertBallot.run(54, 5, 144, 3); insertBallot.run(54, 5, 141, 4); insertBallot.run(54, 5, 142, 5);
+insertBallot.run(54, 6, 145, 1); insertBallot.run(54, 6, 141, 2); insertBallot.run(54, 6, 143, 3); insertBallot.run(54, 6, 142, 4);
+
 // ----- Election Rounds -----
 const insertRound = db.prepare(
   "INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)"
@@ -1614,10 +1669,20 @@ insertRound.run(47, 1, null, "The Stanley Parable (any edition) wins with 4/6 fi
 insertRound.run(48, 1, null, "NetHack wins with 4/6 first-place votes.");
 insertRound.run(49, 1, null, "The Outer Worlds wins with 3/5 first-place votes.");
 insertRound.run(50, 1, null, "Peak wins with 2/2 first-place votes.");
+insertRound.run(51, 1, null, "Keeper wins as sole nominee.");
+insertRound.run(52, 1, null, "Dispatch wins with 4/5 first-place votes.");
+insertRound.run(53, 1, 140, "Routine eliminated with 0 first-place votes.");
+insertRound.run(53, 2, 138, "Between Horizons eliminated with 1 first-place vote.");
+insertRound.run(53, 3, null, "Wolfenstein: The New Order wins with 3/5 first-place votes.");
+insertRound.run(54, 1, 144, "Bioshock eliminated with 0 first-place votes.");
+insertRound.run(54, 2, 145, "Is This Seat Taken? eliminated by tiebreaker with 1 first-place vote.");
+insertRound.run(54, 3, 143, "Sword of the Sea eliminated with 1 first-place vote.");
+insertRound.run(54, 4, 142, "Indika eliminated by tiebreaker with 3 first-place votes.");
+insertRound.run(54, 5, null, "Disco Samurai wins with 6/6 first-place votes.");
 
 console.log("✅ Database seeded successfully!");
 console.log("   - 7 members (password: gameclub)");
-console.log("   - 133 games (49 completed, 84 nominated)");
-console.log("   - 50 closed elections with ranked choice ballots");
+console.log("   - 145 games (53 completed, 92 nominated)");
+console.log("   - 54 closed elections with ranked choice ballots");
 
 db.close();
