@@ -1,5 +1,5 @@
 /**
- * Seed the database with sample data.
+ * Seed the database with real election data from game club history.
  * Run with: npm run seed
  */
 import Database from "better-sqlite3";
@@ -47,6 +47,8 @@ db.exec(`
     platform TEXT NOT NULL DEFAULT '',
     description TEXT NOT NULL DEFAULT '',
     image_url TEXT NOT NULL DEFAULT '',
+    stores_json TEXT NOT NULL DEFAULT '',
+    trailer_url TEXT NOT NULL DEFAULT '',
     nominated_by INTEGER NOT NULL REFERENCES members(id),
     nominated_at TEXT NOT NULL DEFAULT (datetime('now')),
     status TEXT NOT NULL DEFAULT 'nominated' CHECK(status IN ('nominated', 'current', 'completed')),
@@ -109,200 +111,1512 @@ db.exec(`
   );
 `);
 
-// ----- Members -----
-// Default password for all seed members: "gameclub"
-const defaultPasswordHash = hashPassword("gameclub");
-
-const insertMember = db.prepare(
-  "INSERT INTO members (name, avatar, password_hash, joined_at) VALUES (?, ?, ?, ?)"
-);
-const members = [
-  { name: "Alex", avatar: "⚔️", joined: "2025-01-15" },
-  { name: "Jordan", avatar: "🧙", joined: "2025-01-15" },
-  { name: "Sam", avatar: "🚀", joined: "2025-02-01" },
-  { name: "Casey", avatar: "🐉", joined: "2025-02-10" },
-  { name: "Riley", avatar: "🌟", joined: "2025-03-01" },
-];
-for (const m of members) {
-  insertMember.run(m.name, m.avatar, defaultPasswordHash, m.joined);
-}
+// ----- Members (anonymous voters) -----
+const pw = hashPassword("gameclub");
+db.prepare("INSERT INTO members (name, avatar, password_hash) VALUES (?, ?, ?)").run("P1", "🎮", pw);
+db.prepare("INSERT INTO members (name, avatar, password_hash) VALUES (?, ?, ?)").run("P2", "🕹️", pw);
+db.prepare("INSERT INTO members (name, avatar, password_hash) VALUES (?, ?, ?)").run("P3", "👾", pw);
+db.prepare("INSERT INTO members (name, avatar, password_hash) VALUES (?, ?, ?)").run("P4", "🎯", pw);
+db.prepare("INSERT INTO members (name, avatar, password_hash) VALUES (?, ?, ?)").run("P5", "🏆", pw);
+db.prepare("INSERT INTO members (name, avatar, password_hash) VALUES (?, ?, ?)").run("P6", "⭐", pw);
+db.prepare("INSERT INTO members (name, avatar, password_hash) VALUES (?, ?, ?)").run("P7", "🎲", pw);
 
 // ----- Games -----
 const insertGame = db.prepare(
-  `INSERT INTO games (title, platform, description, nominated_by, nominated_at, status, scheduled_date, completed_date, avg_rating)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  "INSERT INTO games (id, title, nominated_by, status, completed_date) VALUES (?, ?, 1, ?, ?)"
 );
-
-// Games that went through past elections (completed)
-// Game 1: Hades
-insertGame.run("Hades", "PC / Switch", "Roguelike dungeon crawler from Supergiant Games.", 1, "2025-01-20", "completed", "2025-02-01", "2025-02-28", null);
-// Game 2: Celeste
-insertGame.run("Celeste", "PC / Switch", "Precision platformer about climbing a mountain.", 2, "2025-01-22", "completed", "2025-03-01", "2025-03-31", null);
-// Game 3: Outer Wilds
-insertGame.run("Outer Wilds", "PC / PS5 / Xbox", "Explore a solar system stuck in a time loop.", 3, "2025-01-25", "completed", "2025-04-01", "2025-04-30", null);
-// Game 4: Disco Elysium (current - won most recent election)
-insertGame.run("Disco Elysium", "PC / PS5", "RPG detective game with incredible writing.", 4, "2025-03-10", "current", "2025-05-01", null, null);
-
-// Games that lost in past elections (back to nominated)
-// Game 5: Hollow Knight
-insertGame.run("Hollow Knight", "PC / Switch", "Metroidvania in a vast underground kingdom of insects.", 5, "2025-01-20", "nominated", null, null, null);
-// Game 6: Return of the Obra Dinn
-insertGame.run("Return of the Obra Dinn", "PC / Switch", "Deduction puzzle: figure out what happened to a ship's crew.", 2, "2025-02-15", "nominated", null, null, null);
-
-// Fresh nominations (never in an election yet)
-// Game 7: Baldur's Gate 3
-insertGame.run("Baldur's Gate 3", "PC / PS5", "Epic D&D RPG with incredible depth.", 1, "2025-05-10", "nominated", null, null, null);
-// Game 8: Inscryption
-insertGame.run("Inscryption", "PC", "Card-based odyssey blending deckbuilding with escape-room puzzles.", 3, "2025-05-12", "nominated", null, null, null);
+insertGame.run(1, "The Ascent", "nominated", null);
+insertGame.run(2, "Darkest Dungeon", "nominated", null);
+insertGame.run(3, "Sunset Overdrive", "completed", "2021-08-02");
+insertGame.run(4, "Boyfriend Dungeon", "nominated", null);
+insertGame.run(5, "Twelve Minutes", "nominated", null);
+insertGame.run(6, "Art of Rally", "completed", "2021-09-13");
+insertGame.run(7, "Hades", "nominated", null);
+insertGame.run(8, "Spiritfarer", "nominated", null);
+insertGame.run(9, "Psychonauts 2", "completed", "2021-10-05");
+insertGame.run(10, "Forza Horizon 5", "completed", "2021-11-09");
+insertGame.run(11, "Deathloop", "nominated", null);
+insertGame.run(12, "Metroid Dread", "nominated", null);
+insertGame.run(13, "Riftbreaker", "nominated", null);
+insertGame.run(14, "Mind Scanners", "nominated", null);
+insertGame.run(15, "Whatever You Want (Open Forum)", "completed", "2021-12-04");
+insertGame.run(16, "Flight Simulator", "nominated", null);
+insertGame.run(17, "Outer Wilds: Echoes of the Eye (DLC)", "nominated", null);
+insertGame.run(18, "Hitman 2 - Miami Level", "completed", "2022-02-08");
+insertGame.run(19, "Death's Door", "completed", "2022-05-10");
+insertGame.run(20, "Dreamscaper", "nominated", null);
+insertGame.run(21, "Olija", "nominated", null);
+insertGame.run(22, "Echo Generation", "nominated", null);
+insertGame.run(23, "The Forgotten City", "completed", "2022-03-09");
+insertGame.run(24, "Myst", "nominated", null);
+insertGame.run(25, "Paradise Killer", "nominated", null);
+insertGame.run(26, "Weird West", "completed", "2022-04-05");
+insertGame.run(27, "Tunic", "completed", "2022-10-11");
+insertGame.run(28, "Open Forum (Whatever You Want)", "nominated", null);
+insertGame.run(29, "Axiom Verge", "nominated", null);
+insertGame.run(30, "Sable", "completed", "2022-07-04");
+insertGame.run(31, "F1 2021", "nominated", null);
+insertGame.run(32, "Chorus", "nominated", null);
+insertGame.run(33, "Flight Sim - F-18 Carrier Challenge", "completed", "2022-06-06");
+insertGame.run(34, "Soundfall", "nominated", null);
+insertGame.run(35, "Ghostwire: Tokyo", "nominated", null);
+insertGame.run(36, "Road 96", "completed", "2022-09-05");
+insertGame.run(37, "Shenzhen I/O", "nominated", null);
+insertGame.run(38, "TMNT: Shredder's Revenge", "completed", "2022-08-09");
+insertGame.run(39, "As Dusk Falls", "nominated", null);
+insertGame.run(40, "Lost in Random", "nominated", null);
+insertGame.run(41, "Enslaved: Odyssey to the West", "nominated", null);
+insertGame.run(42, "Grounded", "nominated", null);
+insertGame.run(43, "Beacon Pines", "nominated", null);
+insertGame.run(44, "Vampire Survivors", "nominated", null);
+insertGame.run(45, "The Wolf Among Us", "completed", "2022-11-08");
+insertGame.run(46, "A Plague Tale: Requiem", "nominated", null);
+insertGame.run(47, "Pentiment", "completed", "2022-12-06");
+insertGame.run(48, "Norco", "completed", "2023-01-10");
+insertGame.run(49, "Warhammer 40K: Darktide", "nominated", null);
+insertGame.run(50, "Return to Monkey Island", "completed", "2023-04-11");
+insertGame.run(51, "Hi-Fi Rush", "completed", "2023-02-07");
+insertGame.run(52, "Wanted: Dead", "nominated", null);
+insertGame.run(53, "Dead Space (2008 or 2023)", "completed", "2023-03-07");
+insertGame.run(54, "Coffee Talk", "nominated", null);
+insertGame.run(55, "Immortality", "nominated", null);
+insertGame.run(56, "Unpacking", "nominated", null);
+insertGame.run(57, "Inside", "completed", "2023-05-09");
+insertGame.run(58, "Citizen Sleeper", "completed", "2023-06-06");
+insertGame.run(59, "Prey (2017)", "nominated", null);
+insertGame.run(61, "Dredge", "nominated", null);
+insertGame.run(62, "NFS: Unbound", "completed", "2023-07-12");
+insertGame.run(63, "Gerda: A Flame in Winter", "nominated", null);
+insertGame.run(64, "Venba", "completed", "2023-09-05");
+insertGame.run(65, "Baldur's Gate 3", "nominated", null);
+insertGame.run(66, "Quake 2", "nominated", null);
+insertGame.run(67, "The Expanse: A Telltale Series", "completed", "2023-11-07");
+insertGame.run(68, "Scorn", "nominated", null);
+insertGame.run(69, "A Short Hike", "completed", "2023-10-06");
+insertGame.run(70, "Cocoon", "nominated", null);
+insertGame.run(71, "En Garde!", "nominated", null);
+insertGame.run(72, "Chants of Sennaar", "nominated", null);
+insertGame.run(73, "Thirsty Suitors", "completed", "2023-12-05");
+insertGame.run(74, "Jusant", "completed", "2024-01-09");
+insertGame.run(75, "Sifu", "completed", "2024-02-06");
+insertGame.run(76, "Against the Storm", "nominated", null);
+insertGame.run(77, "Palworld", "nominated", null);
+insertGame.run(78, "Lies of P", "nominated", null);
+insertGame.run(79, "Bloodstained: Ritual of the Night", "completed", "2024-03-12");
+insertGame.run(80, "Warhammer 40K: Boltgun", "nominated", null);
+insertGame.run(81, "Rollerdrome", "nominated", null);
+insertGame.run(82, "Dune: Spice Wars", "nominated", null);
+insertGame.run(83, "Lil Gator Game", "nominated", null);
+insertGame.run(84, "Open Roads", "completed", "2024-04-09");
+insertGame.run(85, "Star Wars Jedi: Survivor", "nominated", null);
+insertGame.run(86, "Ori and the Will of the Wisps", "nominated", null);
+insertGame.run(87, "Firewatch", "nominated", null);
+insertGame.run(88, "Fallout", "completed", "2024-05-07");
+insertGame.run(89, "Lake", "nominated", null);
+insertGame.run(90, "Another Crab's Treasure", "completed", "2024-06-11");
+insertGame.run(91, "Little Kitty Big City", "completed", "2024-07-16");
+insertGame.run(92, "Hellblade 2", "completed", "2024-12-10");
+insertGame.run(93, "The Case of the Golden Idol", "nominated", null);
+insertGame.run(94, "Beyond Good & Evil", "completed", "2024-08-06");
+insertGame.run(95, "Coral Island", "completed", "2024-09-10");
+insertGame.run(96, "Dungeons of Hinterberg", "completed", "2025-01-07");
+insertGame.run(97, "Thank Goodness You're Here!", "nominated", null);
+insertGame.run(98, "Night in the Woods", "completed", "2024-10-08");
+insertGame.run(99, "Strange Horticulture", "nominated", null);
+insertGame.run(100, "We Love Katamari", "nominated", null);
+insertGame.run(101, "Tactical Breach Wizards", "completed", "2024-11-05");
+insertGame.run(102, "Arco", "nominated", null);
+insertGame.run(103, "Shadows of Doubt", "nominated", null);
+insertGame.run(104, "Nine Sols", "nominated", null);
+insertGame.run(105, "Broken Age", "nominated", null);
+insertGame.run(106, "1000xRESIST", "completed", "2025-02-11");
+insertGame.run(107, "Unavowed", "nominated", null);
+insertGame.run(108, "Citizen Sleeper 2", "completed", "2025-04-08");
+insertGame.run(109, "Indiana Jones and the Great Circle", "completed", "2025-03-11");
+insertGame.run(110, "Balatro", "nominated", null);
+insertGame.run(111, "Eternal Strands", "nominated", null);
+insertGame.run(112, "Clem", "nominated", null);
+insertGame.run(113, "Knights in Tight Spaces", "nominated", null);
+insertGame.run(114, "What the Car?", "nominated", null);
+insertGame.run(115, "Jotun", "nominated", null);
+insertGame.run(116, "Blue Prince", "nominated", null);
+insertGame.run(117, "South of Midnight", "completed", "2025-05-06");
+insertGame.run(118, "Nova Drift", "nominated", null);
+insertGame.run(119, "Skin Deep", "nominated", null);
+insertGame.run(120, "Crypt Custodian", "nominated", null);
+insertGame.run(121, "Old Skies", "completed", "2025-06-10");
+insertGame.run(122, "The Stanley Parable (any edition)", "completed", "2025-07-06");
+insertGame.run(123, "OneShot", "nominated", null);
+insertGame.run(124, "To a T", "nominated", null);
+insertGame.run(125, "Tales of Kenzera: ZAU", "nominated", null);
+insertGame.run(126, "Wheel World", "nominated", null);
+insertGame.run(127, "NetHack", "completed", "2025-08-12");
+insertGame.run(128, "The Outer Worlds", "completed", "2025-09-08");
+insertGame.run(129, "Indiana Jones: The Order of Giants", "nominated", null);
+insertGame.run(130, "I Am Your Beast", "nominated", null);
+insertGame.run(131, "Cyber Knights: Flashpoint", "nominated", null);
+insertGame.run(132, "Consume Me", "nominated", null);
+insertGame.run(133, "Peak", "completed", "2025-10-07");
 
 // ----- Elections -----
-
-// == Election 1: February 2025 ==
-// Candidates: Hades(1), Celeste(2), Hollow Knight(5)
-// Winner: Hades
-db.prepare("INSERT INTO elections (name, status, created_at, closed_at, winner_id) VALUES (?, 'closed', ?, ?, ?)").run(
-  "February 2025", "2025-01-28", "2025-01-30", 1
+const insertElection = db.prepare(
+  "INSERT INTO elections (id, name, status, created_at, closed_at, winner_id) VALUES (?, ?, 'closed', ?, ?, ?)"
 );
-// Election games
-db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(1, 1);
-db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(1, 2);
-db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(1, 5);
+insertElection.run(1, "July 2021", "2021-07-31 00:01:17", "2021-08-02 16:52:28", 3);
+insertElection.run(2, "September 2021", "2021-09-13 16:20:32", "2021-09-13 19:58:56", 6);
+insertElection.run(3, "October 2021", "2021-10-01 23:51:17", "2021-10-05 01:43:39", 9);
+insertElection.run(4, "November 2021", "2021-11-05 23:38:41", "2021-11-09 16:18:31", 10);
+insertElection.run(5, "December 2021", "2021-12-04 00:53:05", "2021-12-04 00:55:51", 15);
+insertElection.run(6, "January 2022", "2022-01-08 01:38:38", "2022-01-10 17:50:31", 15);
+insertElection.run(7, "February 2022", "2022-02-05 01:03:13", "2022-02-08 01:22:58", 18);
+insertElection.run(8, "March 2022", "2022-03-05 01:08:40", "2022-03-09 17:39:10", 23);
+insertElection.run(9, "April 2022", "2022-04-02 01:03:13", "2022-04-05 01:09:26", 26);
+insertElection.run(10, "May 2022", "2022-05-06 23:38:25", "2022-05-10 00:36:49", 19);
+insertElection.run(11, "June 2022", "2022-06-03 23:53:31", "2022-06-06 23:54:25", 33);
+insertElection.run(12, "June 2022", "2022-06-30 23:44:57", "2022-07-04 15:12:27", 30);
+insertElection.run(13, "August 2022", "2022-08-05 23:57:34", "2022-08-09 02:22:33", 38);
+insertElection.run(14, "September 2022", "2022-09-02 23:39:56", "2022-09-05 23:46:38", 36);
+insertElection.run(15, "October 2022", "2022-10-07 23:54:58", "2022-10-11 04:28:09", 27);
+insertElection.run(16, "November 2022", "2022-11-05 00:09:03", "2022-11-08 01:21:04", 45);
+insertElection.run(17, "December 2022", "2022-12-03 01:03:35", "2022-12-06 01:04:22", 47);
+insertElection.run(18, "January 2023", "2023-01-07 01:50:02", "2023-01-10 04:42:20", 48);
+insertElection.run(19, "February 2023", "2023-02-04 00:56:17", "2023-02-07 02:23:23", 51);
+insertElection.run(20, "March 2023", "2023-03-04 01:05:05", "2023-03-07 03:31:50", 53);
+insertElection.run(21, "April 2023", "2023-04-07 23:52:00", "2023-04-11 00:11:16", 50);
+insertElection.run(22, "May 2023", "2023-05-06 00:02:15", "2023-05-09 04:19:37", 57);
+insertElection.run(23, "June 2023", "2023-06-03 00:00:05", "2023-06-06 03:48:03", 58);
+insertElection.run(24, "July 2023", "2023-07-08 00:16:40", "2023-07-12 00:21:06", 62);
+insertElection.run(25, "September 2023", "2023-09-01 23:50:51", "2023-09-05 13:13:26", 64);
+insertElection.run(26, "October 2023", "2023-10-06 23:44:25", "2023-10-06 23:46:30", 69);
+insertElection.run(27, "November 2023", "2023-11-03 23:57:19", "2023-11-07 01:09:30", 67);
+insertElection.run(28, "December 2023", "2023-12-02 01:42:35", "2023-12-05 02:00:03", 73);
+insertElection.run(29, "January 2024", "2024-01-06 01:51:56", "2024-01-09 03:56:06", 74);
+insertElection.run(30, "February 2024", "2024-02-03 00:59:27", "2024-02-06 04:09:49", 75);
+insertElection.run(31, "March 2024", "2024-03-09 01:08:44", "2024-03-12 01:19:26", 79);
+insertElection.run(32, "April 2024", "2024-04-05 23:46:02", "2024-04-09 00:58:57", 84);
+insertElection.run(33, "May 2024", "2024-05-03 23:54:22", "2024-05-07 01:38:52", 88);
+insertElection.run(34, "June 2024", "2024-06-07 23:32:24", "2024-06-11 01:09:34", 90);
+insertElection.run(35, "July 2024", "2024-07-12 23:34:32", "2024-07-16 01:43:49", 91);
+insertElection.run(36, "August 2024", "2024-08-03 00:01:52", "2024-08-06 00:04:37", 94);
+insertElection.run(37, "September 2024", "2024-09-07 00:12:40", "2024-09-10 01:23:20", 95);
+insertElection.run(38, "October 2024", "2024-10-04 23:53:40", "2024-10-08 00:49:02", 98);
+insertElection.run(39, "November 2024", "2024-11-02 00:03:02", "2024-11-05 01:21:46", 101);
+insertElection.run(40, "December 2024", "2024-12-07 01:07:01", "2024-12-10 01:18:55", 92);
+insertElection.run(41, "January 2025", "2025-01-04 01:11:08", "2025-01-07 01:22:50", 96);
+insertElection.run(42, "February 2025", "2025-02-08 01:33:29", "2025-02-11 03:16:22", 106);
+insertElection.run(43, "March 2025", "2025-03-08 01:23:28", "2025-03-11 01:39:01", 109);
+insertElection.run(44, "April 2025", "2025-04-05 00:06:26", "2025-04-08 01:10:47", 108);
+insertElection.run(45, "May 2025", "2025-05-02 23:47:46", "2025-05-06 00:31:43", 117);
+insertElection.run(46, "June 2025", "2025-06-07 00:12:08", "2025-06-10 00:47:39", 121);
+insertElection.run(47, "July 2025", "2025-07-06 21:10:41", "2025-07-06 21:40:56", 122);
+insertElection.run(48, "August 2025", "2025-08-09 00:03:50", "2025-08-12 00:03:43", 127);
+insertElection.run(49, "September 2025", "2025-09-05 23:51:08", "2025-09-08 23:51:53", 128);
+insertElection.run(50, "October 2025", "2025-10-04 00:14:02", "2025-10-07 01:15:50", 133);
 
-// Ballots for election 1
+// ----- Election Games -----
+const insertEG = db.prepare(
+  "INSERT INTO election_games (election_id, game_id) VALUES (?, ?)"
+);
+insertEG.run(1, 1);
+insertEG.run(1, 2);
+insertEG.run(1, 3);
+insertEG.run(2, 4);
+insertEG.run(2, 5);
+insertEG.run(2, 6);
+insertEG.run(2, 7);
+insertEG.run(2, 8);
+insertEG.run(3, 9);
+insertEG.run(3, 4);
+insertEG.run(3, 7);
+insertEG.run(4, 10);
+insertEG.run(4, 11);
+insertEG.run(4, 12);
+insertEG.run(4, 13);
+insertEG.run(5, 11);
+insertEG.run(5, 12);
+insertEG.run(5, 7);
+insertEG.run(5, 14);
+insertEG.run(5, 15);
+insertEG.run(6, 16);
+insertEG.run(6, 11);
+insertEG.run(6, 17);
+insertEG.run(6, 12);
+insertEG.run(6, 15);
+insertEG.run(7, 18);
+insertEG.run(7, 19);
+insertEG.run(7, 20);
+insertEG.run(7, 15);
+insertEG.run(8, 21);
+insertEG.run(8, 22);
+insertEG.run(8, 15);
+insertEG.run(8, 23);
+insertEG.run(8, 24);
+insertEG.run(9, 25);
+insertEG.run(9, 26);
+insertEG.run(9, 27);
+insertEG.run(9, 28);
+insertEG.run(10, 29);
+insertEG.run(10, 30);
+insertEG.run(10, 28);
+insertEG.run(10, 31);
+insertEG.run(10, 19);
+insertEG.run(10, 27);
+insertEG.run(11, 32);
+insertEG.run(11, 30);
+insertEG.run(11, 33);
+insertEG.run(11, 4);
+insertEG.run(12, 30);
+insertEG.run(12, 34);
+insertEG.run(12, 32);
+insertEG.run(12, 35);
+insertEG.run(13, 36);
+insertEG.run(13, 37);
+insertEG.run(13, 38);
+insertEG.run(14, 32);
+insertEG.run(14, 39);
+insertEG.run(14, 36);
+insertEG.run(14, 40);
+insertEG.run(14, 41);
+insertEG.run(15, 27);
+insertEG.run(15, 39);
+insertEG.run(15, 42);
+insertEG.run(16, 43);
+insertEG.run(16, 44);
+insertEG.run(16, 45);
+insertEG.run(16, 28);
+insertEG.run(17, 46);
+insertEG.run(17, 47);
+insertEG.run(17, 28);
+insertEG.run(17, 11);
+insertEG.run(18, 28);
+insertEG.run(18, 48);
+insertEG.run(18, 49);
+insertEG.run(18, 50);
+insertEG.run(19, 51);
+insertEG.run(19, 28);
+insertEG.run(19, 44);
+insertEG.run(19, 50);
+insertEG.run(20, 52);
+insertEG.run(20, 46);
+insertEG.run(20, 44);
+insertEG.run(20, 53);
+insertEG.run(21, 50);
+insertEG.run(21, 54);
+insertEG.run(21, 55);
+insertEG.run(21, 28);
+insertEG.run(22, 56);
+insertEG.run(22, 54);
+insertEG.run(22, 57);
+insertEG.run(23, 58);
+insertEG.run(23, 59);
+insertEG.run(23, 44);
+insertEG.run(23, 28);
+insertEG.run(24, 61);
+insertEG.run(24, 62);
+insertEG.run(24, 63);
+insertEG.run(24, 28);
+insertEG.run(25, 64);
+insertEG.run(25, 65);
+insertEG.run(25, 66);
+insertEG.run(26, 67);
+insertEG.run(26, 44);
+insertEG.run(26, 68);
+insertEG.run(26, 69);
+insertEG.run(27, 70);
+insertEG.run(27, 71);
+insertEG.run(27, 72);
+insertEG.run(27, 67);
+insertEG.run(28, 72);
+insertEG.run(28, 73);
+insertEG.run(28, 74);
+insertEG.run(29, 75);
+insertEG.run(29, 76);
+insertEG.run(29, 74);
+insertEG.run(30, 77);
+insertEG.run(30, 78);
+insertEG.run(30, 70);
+insertEG.run(30, 75);
+insertEG.run(31, 79);
+insertEG.run(31, 80);
+insertEG.run(31, 77);
+insertEG.run(31, 81);
+insertEG.run(32, 82);
+insertEG.run(32, 83);
+insertEG.run(32, 84);
+insertEG.run(33, 85);
+insertEG.run(33, 86);
+insertEG.run(33, 87);
+insertEG.run(33, 88);
+insertEG.run(34, 89);
+insertEG.run(34, 90);
+insertEG.run(34, 91);
+insertEG.run(35, 92);
+insertEG.run(35, 91);
+insertEG.run(35, 93);
+insertEG.run(36, 94);
+insertEG.run(36, 92);
+insertEG.run(36, 46);
+insertEG.run(36, 43);
+insertEG.run(36, 70);
+insertEG.run(37, 95);
+insertEG.run(37, 96);
+insertEG.run(37, 97);
+insertEG.run(38, 76);
+insertEG.run(38, 96);
+insertEG.run(38, 92);
+insertEG.run(38, 98);
+insertEG.run(39, 99);
+insertEG.run(39, 100);
+insertEG.run(39, 101);
+insertEG.run(40, 102);
+insertEG.run(40, 103);
+insertEG.run(40, 92);
+insertEG.run(41, 96);
+insertEG.run(41, 104);
+insertEG.run(41, 105);
+insertEG.run(42, 106);
+insertEG.run(42, 107);
+insertEG.run(42, 93);
+insertEG.run(43, 108);
+insertEG.run(43, 109);
+insertEG.run(43, 110);
+insertEG.run(43, 111);
+insertEG.run(44, 108);
+insertEG.run(44, 112);
+insertEG.run(44, 113);
+insertEG.run(44, 114);
+insertEG.run(45, 115);
+insertEG.run(45, 116);
+insertEG.run(45, 117);
+insertEG.run(45, 118);
+insertEG.run(46, 119);
+insertEG.run(46, 61);
+insertEG.run(46, 120);
+insertEG.run(46, 121);
+insertEG.run(47, 122);
+insertEG.run(47, 123);
+insertEG.run(47, 124);
+insertEG.run(47, 89);
+insertEG.run(48, 125);
+insertEG.run(48, 126);
+insertEG.run(48, 127);
+insertEG.run(48, 128);
+insertEG.run(49, 129);
+insertEG.run(49, 128);
+insertEG.run(49, 130);
+insertEG.run(50, 131);
+insertEG.run(50, 132);
+insertEG.run(50, 133);
+
+// ----- Ballots (fabricated to produce correct winners) -----
 const insertBallot = db.prepare(
   "INSERT INTO ballots (election_id, member_id, game_id, rank) VALUES (?, ?, ?, ?)"
 );
-// Alex: Hades > Celeste > Hollow Knight
-insertBallot.run(1, 1, 1, 1); insertBallot.run(1, 1, 2, 2); insertBallot.run(1, 1, 5, 3);
-// Jordan: Celeste > Hades > Hollow Knight
-insertBallot.run(1, 2, 2, 1); insertBallot.run(1, 2, 1, 2); insertBallot.run(1, 2, 5, 3);
-// Sam: Hades > Hollow Knight > Celeste
-insertBallot.run(1, 3, 1, 1); insertBallot.run(1, 3, 5, 2); insertBallot.run(1, 3, 2, 3);
-// Casey: Hollow Knight > Hades > Celeste
-insertBallot.run(1, 4, 5, 1); insertBallot.run(1, 4, 1, 2); insertBallot.run(1, 4, 2, 3);
 
-db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
-  1, 1, 5, "Round 1: Hades: 2, Celeste: 1, Hollow Knight: 1. Eliminated: Hollow Knight."
+// Election 1: July 2021 - Winner: Sunset Overdrive
+insertBallot.run(1, 1, 3, 1);
+insertBallot.run(1, 1, 1, 2);
+insertBallot.run(1, 1, 2, 3);
+insertBallot.run(1, 2, 3, 1);
+insertBallot.run(1, 2, 1, 2);
+insertBallot.run(1, 2, 2, 3);
+insertBallot.run(1, 3, 3, 1);
+insertBallot.run(1, 3, 1, 2);
+insertBallot.run(1, 3, 2, 3);
+insertBallot.run(1, 4, 3, 1);
+insertBallot.run(1, 4, 1, 2);
+insertBallot.run(1, 4, 2, 3);
+insertBallot.run(1, 5, 2, 1);
+insertBallot.run(1, 5, 3, 2);
+insertBallot.run(1, 5, 1, 3);
+insertBallot.run(1, 6, 1, 1);
+insertBallot.run(1, 6, 3, 2);
+insertBallot.run(1, 6, 2, 3);
+insertBallot.run(1, 7, 2, 1);
+insertBallot.run(1, 7, 3, 2);
+insertBallot.run(1, 7, 1, 3);
+
+// Election 2: September 2021 - Winner: Art of Rally
+insertBallot.run(2, 1, 6, 1);
+insertBallot.run(2, 1, 4, 2);
+insertBallot.run(2, 1, 7, 3);
+insertBallot.run(2, 1, 5, 4);
+insertBallot.run(2, 1, 8, 5);
+insertBallot.run(2, 2, 6, 1);
+insertBallot.run(2, 2, 4, 2);
+insertBallot.run(2, 2, 7, 3);
+insertBallot.run(2, 2, 5, 4);
+insertBallot.run(2, 2, 8, 5);
+insertBallot.run(2, 3, 6, 1);
+insertBallot.run(2, 3, 4, 2);
+insertBallot.run(2, 3, 7, 3);
+insertBallot.run(2, 3, 5, 4);
+insertBallot.run(2, 3, 8, 5);
+insertBallot.run(2, 4, 6, 1);
+insertBallot.run(2, 4, 4, 2);
+insertBallot.run(2, 4, 7, 3);
+insertBallot.run(2, 4, 5, 4);
+insertBallot.run(2, 4, 8, 5);
+insertBallot.run(2, 5, 7, 1);
+insertBallot.run(2, 5, 6, 2);
+insertBallot.run(2, 5, 4, 3);
+insertBallot.run(2, 5, 5, 4);
+insertBallot.run(2, 5, 8, 5);
+insertBallot.run(2, 6, 5, 1);
+insertBallot.run(2, 6, 6, 2);
+insertBallot.run(2, 6, 4, 3);
+insertBallot.run(2, 6, 7, 4);
+insertBallot.run(2, 6, 8, 5);
+insertBallot.run(2, 7, 8, 1);
+insertBallot.run(2, 7, 6, 2);
+insertBallot.run(2, 7, 4, 3);
+insertBallot.run(2, 7, 7, 4);
+insertBallot.run(2, 7, 5, 5);
+
+// Election 3: October 2021 - Winner: Psychonauts 2
+insertBallot.run(3, 1, 9, 1);
+insertBallot.run(3, 1, 4, 2);
+insertBallot.run(3, 1, 7, 3);
+insertBallot.run(3, 2, 9, 1);
+insertBallot.run(3, 2, 4, 2);
+insertBallot.run(3, 2, 7, 3);
+insertBallot.run(3, 3, 9, 1);
+insertBallot.run(3, 3, 4, 2);
+insertBallot.run(3, 3, 7, 3);
+insertBallot.run(3, 4, 9, 1);
+insertBallot.run(3, 4, 4, 2);
+insertBallot.run(3, 4, 7, 3);
+insertBallot.run(3, 5, 7, 1);
+insertBallot.run(3, 5, 9, 2);
+insertBallot.run(3, 5, 4, 3);
+insertBallot.run(3, 6, 4, 1);
+insertBallot.run(3, 6, 9, 2);
+insertBallot.run(3, 6, 7, 3);
+
+// Election 4: November 2021 - Winner: Horizon 5
+insertBallot.run(4, 1, 10, 1);
+insertBallot.run(4, 1, 11, 2);
+insertBallot.run(4, 1, 13, 3);
+insertBallot.run(4, 1, 12, 4);
+insertBallot.run(4, 2, 10, 1);
+insertBallot.run(4, 2, 11, 2);
+insertBallot.run(4, 2, 13, 3);
+insertBallot.run(4, 2, 12, 4);
+insertBallot.run(4, 3, 10, 1);
+insertBallot.run(4, 3, 11, 2);
+insertBallot.run(4, 3, 13, 3);
+insertBallot.run(4, 3, 12, 4);
+insertBallot.run(4, 4, 13, 1);
+insertBallot.run(4, 4, 10, 2);
+insertBallot.run(4, 4, 11, 3);
+insertBallot.run(4, 4, 12, 4);
+
+// Election 5: December 2021 - Winner: Whatever You Want (Open Forum)
+insertBallot.run(5, 1, 15, 1);
+insertBallot.run(5, 1, 11, 2);
+insertBallot.run(5, 1, 7, 3);
+insertBallot.run(5, 1, 14, 4);
+insertBallot.run(5, 1, 12, 5);
+insertBallot.run(5, 2, 15, 1);
+insertBallot.run(5, 2, 11, 2);
+insertBallot.run(5, 2, 7, 3);
+insertBallot.run(5, 2, 14, 4);
+insertBallot.run(5, 2, 12, 5);
+insertBallot.run(5, 3, 15, 1);
+insertBallot.run(5, 3, 11, 2);
+insertBallot.run(5, 3, 7, 3);
+insertBallot.run(5, 3, 14, 4);
+insertBallot.run(5, 3, 12, 5);
+insertBallot.run(5, 4, 15, 1);
+insertBallot.run(5, 4, 11, 2);
+insertBallot.run(5, 4, 7, 3);
+insertBallot.run(5, 4, 14, 4);
+insertBallot.run(5, 4, 12, 5);
+insertBallot.run(5, 5, 7, 1);
+insertBallot.run(5, 5, 15, 2);
+insertBallot.run(5, 5, 11, 3);
+insertBallot.run(5, 5, 14, 4);
+insertBallot.run(5, 5, 12, 5);
+insertBallot.run(5, 6, 14, 1);
+insertBallot.run(5, 6, 15, 2);
+insertBallot.run(5, 6, 11, 3);
+insertBallot.run(5, 6, 7, 4);
+insertBallot.run(5, 6, 12, 5);
+
+// Election 6: January 2022 - Winner: Whatever You Want (Open Forum)
+insertBallot.run(6, 1, 15, 1);
+insertBallot.run(6, 1, 12, 2);
+insertBallot.run(6, 1, 11, 3);
+insertBallot.run(6, 1, 17, 4);
+insertBallot.run(6, 1, 16, 5);
+insertBallot.run(6, 2, 15, 1);
+insertBallot.run(6, 2, 12, 2);
+insertBallot.run(6, 2, 11, 3);
+insertBallot.run(6, 2, 17, 4);
+insertBallot.run(6, 2, 16, 5);
+insertBallot.run(6, 3, 15, 1);
+insertBallot.run(6, 3, 12, 2);
+insertBallot.run(6, 3, 11, 3);
+insertBallot.run(6, 3, 17, 4);
+insertBallot.run(6, 3, 16, 5);
+insertBallot.run(6, 4, 15, 1);
+insertBallot.run(6, 4, 12, 2);
+insertBallot.run(6, 4, 11, 3);
+insertBallot.run(6, 4, 17, 4);
+insertBallot.run(6, 4, 16, 5);
+insertBallot.run(6, 5, 11, 1);
+insertBallot.run(6, 5, 15, 2);
+insertBallot.run(6, 5, 12, 3);
+insertBallot.run(6, 5, 17, 4);
+insertBallot.run(6, 5, 16, 5);
+insertBallot.run(6, 6, 17, 1);
+insertBallot.run(6, 6, 15, 2);
+insertBallot.run(6, 6, 12, 3);
+insertBallot.run(6, 6, 11, 4);
+insertBallot.run(6, 6, 16, 5);
+insertBallot.run(6, 7, 16, 1);
+insertBallot.run(6, 7, 15, 2);
+insertBallot.run(6, 7, 12, 3);
+insertBallot.run(6, 7, 11, 4);
+insertBallot.run(6, 7, 17, 5);
+
+// Election 7: February 2022 - Winner: Hitman 2 - Miami Level
+insertBallot.run(7, 1, 18, 1);
+insertBallot.run(7, 1, 19, 2);
+insertBallot.run(7, 1, 15, 3);
+insertBallot.run(7, 1, 20, 4);
+insertBallot.run(7, 2, 18, 1);
+insertBallot.run(7, 2, 19, 2);
+insertBallot.run(7, 2, 15, 3);
+insertBallot.run(7, 2, 20, 4);
+insertBallot.run(7, 3, 18, 1);
+insertBallot.run(7, 3, 19, 2);
+insertBallot.run(7, 3, 15, 3);
+insertBallot.run(7, 3, 20, 4);
+insertBallot.run(7, 4, 15, 1);
+insertBallot.run(7, 4, 18, 2);
+insertBallot.run(7, 4, 19, 3);
+insertBallot.run(7, 4, 20, 4);
+insertBallot.run(7, 5, 20, 1);
+insertBallot.run(7, 5, 18, 2);
+insertBallot.run(7, 5, 19, 3);
+insertBallot.run(7, 5, 15, 4);
+
+// Election 8: March 2022 - Winner: The Forgotten City
+insertBallot.run(8, 1, 23, 1);
+insertBallot.run(8, 1, 15, 2);
+insertBallot.run(8, 1, 24, 3);
+insertBallot.run(8, 1, 21, 4);
+insertBallot.run(8, 1, 22, 5);
+insertBallot.run(8, 2, 23, 1);
+insertBallot.run(8, 2, 15, 2);
+insertBallot.run(8, 2, 24, 3);
+insertBallot.run(8, 2, 21, 4);
+insertBallot.run(8, 2, 22, 5);
+insertBallot.run(8, 3, 23, 1);
+insertBallot.run(8, 3, 15, 2);
+insertBallot.run(8, 3, 24, 3);
+insertBallot.run(8, 3, 21, 4);
+insertBallot.run(8, 3, 22, 5);
+insertBallot.run(8, 4, 23, 1);
+insertBallot.run(8, 4, 15, 2);
+insertBallot.run(8, 4, 24, 3);
+insertBallot.run(8, 4, 21, 4);
+insertBallot.run(8, 4, 22, 5);
+insertBallot.run(8, 5, 24, 1);
+insertBallot.run(8, 5, 23, 2);
+insertBallot.run(8, 5, 15, 3);
+insertBallot.run(8, 5, 21, 4);
+insertBallot.run(8, 5, 22, 5);
+insertBallot.run(8, 6, 21, 1);
+insertBallot.run(8, 6, 23, 2);
+insertBallot.run(8, 6, 15, 3);
+insertBallot.run(8, 6, 24, 4);
+insertBallot.run(8, 6, 22, 5);
+
+// Election 9: April 2022 - Winner: Weird West
+insertBallot.run(9, 1, 26, 1);
+insertBallot.run(9, 1, 27, 2);
+insertBallot.run(9, 1, 25, 3);
+insertBallot.run(9, 1, 28, 4);
+insertBallot.run(9, 2, 26, 1);
+insertBallot.run(9, 2, 27, 2);
+insertBallot.run(9, 2, 25, 3);
+insertBallot.run(9, 2, 28, 4);
+insertBallot.run(9, 3, 26, 1);
+insertBallot.run(9, 3, 27, 2);
+insertBallot.run(9, 3, 25, 3);
+insertBallot.run(9, 3, 28, 4);
+insertBallot.run(9, 4, 25, 1);
+insertBallot.run(9, 4, 26, 2);
+insertBallot.run(9, 4, 27, 3);
+insertBallot.run(9, 4, 28, 4);
+insertBallot.run(9, 5, 28, 1);
+insertBallot.run(9, 5, 26, 2);
+insertBallot.run(9, 5, 27, 3);
+insertBallot.run(9, 5, 25, 4);
+
+// Election 10: May 2022 - Winner: Death's Door
+insertBallot.run(10, 1, 19, 1);
+insertBallot.run(10, 1, 27, 2);
+insertBallot.run(10, 1, 30, 3);
+insertBallot.run(10, 1, 28, 4);
+insertBallot.run(10, 1, 31, 5);
+insertBallot.run(10, 1, 29, 6);
+insertBallot.run(10, 2, 19, 1);
+insertBallot.run(10, 2, 27, 2);
+insertBallot.run(10, 2, 30, 3);
+insertBallot.run(10, 2, 28, 4);
+insertBallot.run(10, 2, 31, 5);
+insertBallot.run(10, 2, 29, 6);
+insertBallot.run(10, 3, 19, 1);
+insertBallot.run(10, 3, 27, 2);
+insertBallot.run(10, 3, 30, 3);
+insertBallot.run(10, 3, 28, 4);
+insertBallot.run(10, 3, 31, 5);
+insertBallot.run(10, 3, 29, 6);
+insertBallot.run(10, 4, 19, 1);
+insertBallot.run(10, 4, 27, 2);
+insertBallot.run(10, 4, 30, 3);
+insertBallot.run(10, 4, 28, 4);
+insertBallot.run(10, 4, 31, 5);
+insertBallot.run(10, 4, 29, 6);
+insertBallot.run(10, 5, 30, 1);
+insertBallot.run(10, 5, 19, 2);
+insertBallot.run(10, 5, 27, 3);
+insertBallot.run(10, 5, 28, 4);
+insertBallot.run(10, 5, 31, 5);
+insertBallot.run(10, 5, 29, 6);
+insertBallot.run(10, 6, 28, 1);
+insertBallot.run(10, 6, 19, 2);
+insertBallot.run(10, 6, 27, 3);
+insertBallot.run(10, 6, 30, 4);
+insertBallot.run(10, 6, 31, 5);
+insertBallot.run(10, 6, 29, 6);
+
+// Election 11: June 2022 - Winner: Flight Sim - F-18 Carrier Challenge
+insertBallot.run(11, 1, 33, 1);
+insertBallot.run(11, 1, 30, 2);
+insertBallot.run(11, 1, 32, 3);
+insertBallot.run(11, 1, 4, 4);
+insertBallot.run(11, 2, 33, 1);
+insertBallot.run(11, 2, 30, 2);
+insertBallot.run(11, 2, 32, 3);
+insertBallot.run(11, 2, 4, 4);
+insertBallot.run(11, 3, 33, 1);
+insertBallot.run(11, 3, 30, 2);
+insertBallot.run(11, 3, 32, 3);
+insertBallot.run(11, 3, 4, 4);
+insertBallot.run(11, 4, 32, 1);
+insertBallot.run(11, 4, 33, 2);
+insertBallot.run(11, 4, 30, 3);
+insertBallot.run(11, 4, 4, 4);
+insertBallot.run(11, 5, 4, 1);
+insertBallot.run(11, 5, 33, 2);
+insertBallot.run(11, 5, 30, 3);
+insertBallot.run(11, 5, 32, 4);
+
+// Election 12: June 2022 - Winner: Sable
+insertBallot.run(12, 1, 30, 1);
+insertBallot.run(12, 1, 32, 2);
+insertBallot.run(12, 1, 34, 3);
+insertBallot.run(12, 1, 35, 4);
+insertBallot.run(12, 2, 30, 1);
+insertBallot.run(12, 2, 32, 2);
+insertBallot.run(12, 2, 34, 3);
+insertBallot.run(12, 2, 35, 4);
+insertBallot.run(12, 3, 30, 1);
+insertBallot.run(12, 3, 32, 2);
+insertBallot.run(12, 3, 34, 3);
+insertBallot.run(12, 3, 35, 4);
+insertBallot.run(12, 4, 34, 1);
+insertBallot.run(12, 4, 30, 2);
+insertBallot.run(12, 4, 32, 3);
+insertBallot.run(12, 4, 35, 4);
+insertBallot.run(12, 5, 35, 1);
+insertBallot.run(12, 5, 30, 2);
+insertBallot.run(12, 5, 32, 3);
+insertBallot.run(12, 5, 34, 4);
+
+// Election 13: August 2022 - Winner: TMNT: Shredder's Revenge
+insertBallot.run(13, 1, 38, 1);
+insertBallot.run(13, 1, 36, 2);
+insertBallot.run(13, 1, 37, 3);
+insertBallot.run(13, 2, 38, 1);
+insertBallot.run(13, 2, 36, 2);
+insertBallot.run(13, 2, 37, 3);
+insertBallot.run(13, 3, 38, 1);
+insertBallot.run(13, 3, 36, 2);
+insertBallot.run(13, 3, 37, 3);
+insertBallot.run(13, 4, 38, 1);
+insertBallot.run(13, 4, 36, 2);
+insertBallot.run(13, 4, 37, 3);
+insertBallot.run(13, 5, 37, 1);
+insertBallot.run(13, 5, 38, 2);
+insertBallot.run(13, 5, 36, 3);
+insertBallot.run(13, 6, 36, 1);
+insertBallot.run(13, 6, 38, 2);
+insertBallot.run(13, 6, 37, 3);
+
+// Election 14: September 2022 - Winner: Road 96
+insertBallot.run(14, 1, 36, 1);
+insertBallot.run(14, 1, 39, 2);
+insertBallot.run(14, 1, 32, 3);
+insertBallot.run(14, 1, 41, 4);
+insertBallot.run(14, 1, 40, 5);
+insertBallot.run(14, 2, 36, 1);
+insertBallot.run(14, 2, 39, 2);
+insertBallot.run(14, 2, 32, 3);
+insertBallot.run(14, 2, 41, 4);
+insertBallot.run(14, 2, 40, 5);
+insertBallot.run(14, 3, 36, 1);
+insertBallot.run(14, 3, 39, 2);
+insertBallot.run(14, 3, 32, 3);
+insertBallot.run(14, 3, 41, 4);
+insertBallot.run(14, 3, 40, 5);
+insertBallot.run(14, 4, 32, 1);
+insertBallot.run(14, 4, 36, 2);
+insertBallot.run(14, 4, 39, 3);
+insertBallot.run(14, 4, 41, 4);
+insertBallot.run(14, 4, 40, 5);
+insertBallot.run(14, 5, 41, 1);
+insertBallot.run(14, 5, 36, 2);
+insertBallot.run(14, 5, 39, 3);
+insertBallot.run(14, 5, 32, 4);
+insertBallot.run(14, 5, 40, 5);
+
+// Election 15: October 2022 - Winner: Tunic
+insertBallot.run(15, 1, 27, 1);
+insertBallot.run(15, 1, 39, 2);
+insertBallot.run(15, 1, 42, 3);
+insertBallot.run(15, 2, 27, 1);
+insertBallot.run(15, 2, 39, 2);
+insertBallot.run(15, 2, 42, 3);
+insertBallot.run(15, 3, 27, 1);
+insertBallot.run(15, 3, 39, 2);
+insertBallot.run(15, 3, 42, 3);
+insertBallot.run(15, 4, 42, 1);
+insertBallot.run(15, 4, 27, 2);
+insertBallot.run(15, 4, 39, 3);
+
+// Election 16: November 2022 - Winner: The Wolf Among Us
+insertBallot.run(16, 1, 45, 1);
+insertBallot.run(16, 1, 43, 2);
+insertBallot.run(16, 1, 44, 3);
+insertBallot.run(16, 1, 28, 4);
+insertBallot.run(16, 2, 45, 1);
+insertBallot.run(16, 2, 43, 2);
+insertBallot.run(16, 2, 44, 3);
+insertBallot.run(16, 2, 28, 4);
+insertBallot.run(16, 3, 45, 1);
+insertBallot.run(16, 3, 43, 2);
+insertBallot.run(16, 3, 44, 3);
+insertBallot.run(16, 3, 28, 4);
+insertBallot.run(16, 4, 44, 1);
+insertBallot.run(16, 4, 45, 2);
+insertBallot.run(16, 4, 43, 3);
+insertBallot.run(16, 4, 28, 4);
+
+// Election 17: December 2022 - Winner: Pentiment
+insertBallot.run(17, 1, 47, 1);
+insertBallot.run(17, 1, 46, 2);
+insertBallot.run(17, 1, 11, 3);
+insertBallot.run(17, 1, 28, 4);
+insertBallot.run(17, 2, 47, 1);
+insertBallot.run(17, 2, 46, 2);
+insertBallot.run(17, 2, 11, 3);
+insertBallot.run(17, 2, 28, 4);
+insertBallot.run(17, 3, 47, 1);
+insertBallot.run(17, 3, 46, 2);
+insertBallot.run(17, 3, 11, 3);
+insertBallot.run(17, 3, 28, 4);
+insertBallot.run(17, 4, 11, 1);
+insertBallot.run(17, 4, 47, 2);
+insertBallot.run(17, 4, 46, 3);
+insertBallot.run(17, 4, 28, 4);
+
+// Election 18: January 2023 - Winner: Norco
+insertBallot.run(18, 1, 48, 1);
+insertBallot.run(18, 1, 50, 2);
+insertBallot.run(18, 1, 49, 3);
+insertBallot.run(18, 1, 28, 4);
+insertBallot.run(18, 2, 48, 1);
+insertBallot.run(18, 2, 50, 2);
+insertBallot.run(18, 2, 49, 3);
+insertBallot.run(18, 2, 28, 4);
+insertBallot.run(18, 3, 48, 1);
+insertBallot.run(18, 3, 50, 2);
+insertBallot.run(18, 3, 49, 3);
+insertBallot.run(18, 3, 28, 4);
+insertBallot.run(18, 4, 49, 1);
+insertBallot.run(18, 4, 48, 2);
+insertBallot.run(18, 4, 50, 3);
+insertBallot.run(18, 4, 28, 4);
+insertBallot.run(18, 5, 28, 1);
+insertBallot.run(18, 5, 48, 2);
+insertBallot.run(18, 5, 50, 3);
+insertBallot.run(18, 5, 49, 4);
+
+// Election 19: February 2023 - Winner: Hi-Fi Rush
+insertBallot.run(19, 1, 51, 1);
+insertBallot.run(19, 1, 44, 2);
+insertBallot.run(19, 1, 50, 3);
+insertBallot.run(19, 1, 28, 4);
+insertBallot.run(19, 2, 51, 1);
+insertBallot.run(19, 2, 44, 2);
+insertBallot.run(19, 2, 50, 3);
+insertBallot.run(19, 2, 28, 4);
+insertBallot.run(19, 3, 51, 1);
+insertBallot.run(19, 3, 44, 2);
+insertBallot.run(19, 3, 50, 3);
+insertBallot.run(19, 3, 28, 4);
+insertBallot.run(19, 4, 50, 1);
+insertBallot.run(19, 4, 51, 2);
+insertBallot.run(19, 4, 44, 3);
+insertBallot.run(19, 4, 28, 4);
+insertBallot.run(19, 5, 28, 1);
+insertBallot.run(19, 5, 51, 2);
+insertBallot.run(19, 5, 44, 3);
+insertBallot.run(19, 5, 50, 4);
+
+// Election 20: March 2023 - Winner: Dead Space (2008 or 2023)
+insertBallot.run(20, 1, 53, 1);
+insertBallot.run(20, 1, 44, 2);
+insertBallot.run(20, 1, 52, 3);
+insertBallot.run(20, 1, 46, 4);
+insertBallot.run(20, 2, 53, 1);
+insertBallot.run(20, 2, 44, 2);
+insertBallot.run(20, 2, 52, 3);
+insertBallot.run(20, 2, 46, 4);
+insertBallot.run(20, 3, 53, 1);
+insertBallot.run(20, 3, 44, 2);
+insertBallot.run(20, 3, 52, 3);
+insertBallot.run(20, 3, 46, 4);
+insertBallot.run(20, 4, 52, 1);
+insertBallot.run(20, 4, 53, 2);
+insertBallot.run(20, 4, 44, 3);
+insertBallot.run(20, 4, 46, 4);
+
+// Election 21: April 2023 - Winner: Return to Monkey Island
+insertBallot.run(21, 1, 50, 1);
+insertBallot.run(21, 1, 55, 2);
+insertBallot.run(21, 1, 54, 3);
+insertBallot.run(21, 1, 28, 4);
+insertBallot.run(21, 2, 50, 1);
+insertBallot.run(21, 2, 55, 2);
+insertBallot.run(21, 2, 54, 3);
+insertBallot.run(21, 2, 28, 4);
+insertBallot.run(21, 3, 50, 1);
+insertBallot.run(21, 3, 55, 2);
+insertBallot.run(21, 3, 54, 3);
+insertBallot.run(21, 3, 28, 4);
+insertBallot.run(21, 4, 54, 1);
+insertBallot.run(21, 4, 50, 2);
+insertBallot.run(21, 4, 55, 3);
+insertBallot.run(21, 4, 28, 4);
+
+// Election 22: May 2023 - Winner: Inside
+insertBallot.run(22, 1, 57, 1);
+insertBallot.run(22, 1, 54, 2);
+insertBallot.run(22, 1, 56, 3);
+insertBallot.run(22, 2, 57, 1);
+insertBallot.run(22, 2, 54, 2);
+insertBallot.run(22, 2, 56, 3);
+insertBallot.run(22, 3, 57, 1);
+insertBallot.run(22, 3, 54, 2);
+insertBallot.run(22, 3, 56, 3);
+insertBallot.run(22, 4, 57, 1);
+insertBallot.run(22, 4, 54, 2);
+insertBallot.run(22, 4, 56, 3);
+insertBallot.run(22, 5, 56, 1);
+insertBallot.run(22, 5, 57, 2);
+insertBallot.run(22, 5, 54, 3);
+insertBallot.run(22, 6, 54, 1);
+insertBallot.run(22, 6, 57, 2);
+insertBallot.run(22, 6, 56, 3);
+insertBallot.run(22, 7, 56, 1);
+insertBallot.run(22, 7, 57, 2);
+insertBallot.run(22, 7, 54, 3);
+
+// Election 23: June 2023 - Winner: Citizen Sleeper
+insertBallot.run(23, 1, 58, 1);
+insertBallot.run(23, 1, 59, 2);
+insertBallot.run(23, 1, 44, 3);
+insertBallot.run(23, 1, 28, 4);
+insertBallot.run(23, 2, 58, 1);
+insertBallot.run(23, 2, 59, 2);
+insertBallot.run(23, 2, 44, 3);
+insertBallot.run(23, 2, 28, 4);
+insertBallot.run(23, 3, 58, 1);
+insertBallot.run(23, 3, 59, 2);
+insertBallot.run(23, 3, 44, 3);
+insertBallot.run(23, 3, 28, 4);
+insertBallot.run(23, 4, 44, 1);
+insertBallot.run(23, 4, 58, 2);
+insertBallot.run(23, 4, 59, 3);
+insertBallot.run(23, 4, 28, 4);
+
+// Election 24: July 2023 - Winner: NFS: Unbound
+insertBallot.run(24, 1, 62, 1);
+insertBallot.run(24, 1, 63, 2);
+insertBallot.run(24, 1, 28, 3);
+insertBallot.run(24, 1, 61, 4);
+insertBallot.run(24, 2, 62, 1);
+insertBallot.run(24, 2, 63, 2);
+insertBallot.run(24, 2, 28, 3);
+insertBallot.run(24, 2, 61, 4);
+insertBallot.run(24, 3, 62, 1);
+insertBallot.run(24, 3, 63, 2);
+insertBallot.run(24, 3, 28, 3);
+insertBallot.run(24, 3, 61, 4);
+insertBallot.run(24, 4, 28, 1);
+insertBallot.run(24, 4, 62, 2);
+insertBallot.run(24, 4, 63, 3);
+insertBallot.run(24, 4, 61, 4);
+
+// Election 25: September 2023 - Winner: Venba
+insertBallot.run(25, 1, 64, 1);
+insertBallot.run(25, 1, 65, 2);
+insertBallot.run(25, 1, 66, 3);
+insertBallot.run(25, 2, 64, 1);
+insertBallot.run(25, 2, 65, 2);
+insertBallot.run(25, 2, 66, 3);
+insertBallot.run(25, 3, 64, 1);
+insertBallot.run(25, 3, 65, 2);
+insertBallot.run(25, 3, 66, 3);
+insertBallot.run(25, 4, 66, 1);
+insertBallot.run(25, 4, 64, 2);
+insertBallot.run(25, 4, 65, 3);
+
+// Election 26: October 2023 - Winner: A Short Hike
+insertBallot.run(26, 1, 69, 1);
+insertBallot.run(26, 1, 44, 2);
+insertBallot.run(26, 1, 67, 3);
+insertBallot.run(26, 1, 68, 4);
+insertBallot.run(26, 2, 69, 1);
+insertBallot.run(26, 2, 44, 2);
+insertBallot.run(26, 2, 67, 3);
+insertBallot.run(26, 2, 68, 4);
+insertBallot.run(26, 3, 69, 1);
+insertBallot.run(26, 3, 44, 2);
+insertBallot.run(26, 3, 67, 3);
+insertBallot.run(26, 3, 68, 4);
+insertBallot.run(26, 4, 67, 1);
+insertBallot.run(26, 4, 69, 2);
+insertBallot.run(26, 4, 44, 3);
+insertBallot.run(26, 4, 68, 4);
+insertBallot.run(26, 5, 68, 1);
+insertBallot.run(26, 5, 69, 2);
+insertBallot.run(26, 5, 44, 3);
+insertBallot.run(26, 5, 67, 4);
+
+// Election 27: November 2023 - Winner: The Expanse: A Telltale Series
+insertBallot.run(27, 1, 67, 1);
+insertBallot.run(27, 1, 70, 2);
+insertBallot.run(27, 1, 72, 3);
+insertBallot.run(27, 1, 71, 4);
+insertBallot.run(27, 2, 67, 1);
+insertBallot.run(27, 2, 70, 2);
+insertBallot.run(27, 2, 72, 3);
+insertBallot.run(27, 2, 71, 4);
+insertBallot.run(27, 3, 72, 1);
+insertBallot.run(27, 3, 67, 2);
+insertBallot.run(27, 3, 70, 3);
+insertBallot.run(27, 3, 71, 4);
+
+// Election 28: December 2023 - Winner: Thirsty Suitors
+insertBallot.run(28, 1, 73, 1);
+insertBallot.run(28, 1, 74, 2);
+insertBallot.run(28, 1, 72, 3);
+insertBallot.run(28, 2, 73, 1);
+insertBallot.run(28, 2, 74, 2);
+insertBallot.run(28, 2, 72, 3);
+insertBallot.run(28, 3, 72, 1);
+insertBallot.run(28, 3, 73, 2);
+insertBallot.run(28, 3, 74, 3);
+
+// Election 29: January 2024 - Winner: Jusant
+insertBallot.run(29, 1, 74, 1);
+insertBallot.run(29, 1, 75, 2);
+insertBallot.run(29, 1, 76, 3);
+insertBallot.run(29, 2, 74, 1);
+insertBallot.run(29, 2, 75, 2);
+insertBallot.run(29, 2, 76, 3);
+insertBallot.run(29, 3, 74, 1);
+insertBallot.run(29, 3, 75, 2);
+insertBallot.run(29, 3, 76, 3);
+insertBallot.run(29, 4, 76, 1);
+insertBallot.run(29, 4, 74, 2);
+insertBallot.run(29, 4, 75, 3);
+
+// Election 30: February 2024 - Winner: Sifu
+insertBallot.run(30, 1, 75, 1);
+insertBallot.run(30, 1, 78, 2);
+insertBallot.run(30, 1, 77, 3);
+insertBallot.run(30, 1, 70, 4);
+insertBallot.run(30, 2, 75, 1);
+insertBallot.run(30, 2, 78, 2);
+insertBallot.run(30, 2, 77, 3);
+insertBallot.run(30, 2, 70, 4);
+insertBallot.run(30, 3, 75, 1);
+insertBallot.run(30, 3, 78, 2);
+insertBallot.run(30, 3, 77, 3);
+insertBallot.run(30, 3, 70, 4);
+insertBallot.run(30, 4, 77, 1);
+insertBallot.run(30, 4, 75, 2);
+insertBallot.run(30, 4, 78, 3);
+insertBallot.run(30, 4, 70, 4);
+
+// Election 31: March 2024 - Winner: Bloodstained: Ritual of the Night
+insertBallot.run(31, 1, 79, 1);
+insertBallot.run(31, 1, 81, 2);
+insertBallot.run(31, 1, 80, 3);
+insertBallot.run(31, 1, 77, 4);
+insertBallot.run(31, 2, 79, 1);
+insertBallot.run(31, 2, 81, 2);
+insertBallot.run(31, 2, 80, 3);
+insertBallot.run(31, 2, 77, 4);
+insertBallot.run(31, 3, 79, 1);
+insertBallot.run(31, 3, 81, 2);
+insertBallot.run(31, 3, 80, 3);
+insertBallot.run(31, 3, 77, 4);
+insertBallot.run(31, 4, 80, 1);
+insertBallot.run(31, 4, 79, 2);
+insertBallot.run(31, 4, 81, 3);
+insertBallot.run(31, 4, 77, 4);
+
+// Election 32: April 2024 - Winner: Open Roads
+insertBallot.run(32, 1, 84, 1);
+insertBallot.run(32, 1, 83, 2);
+insertBallot.run(32, 1, 82, 3);
+insertBallot.run(32, 2, 84, 1);
+insertBallot.run(32, 2, 83, 2);
+insertBallot.run(32, 2, 82, 3);
+insertBallot.run(32, 3, 84, 1);
+insertBallot.run(32, 3, 83, 2);
+insertBallot.run(32, 3, 82, 3);
+insertBallot.run(32, 4, 84, 1);
+insertBallot.run(32, 4, 83, 2);
+insertBallot.run(32, 4, 82, 3);
+insertBallot.run(32, 5, 82, 1);
+insertBallot.run(32, 5, 84, 2);
+insertBallot.run(32, 5, 83, 3);
+insertBallot.run(32, 6, 83, 1);
+insertBallot.run(32, 6, 84, 2);
+insertBallot.run(32, 6, 82, 3);
+
+// Election 33: May 2024 - Winner: Fallout
+insertBallot.run(33, 1, 88, 1);
+insertBallot.run(33, 1, 87, 2);
+insertBallot.run(33, 1, 85, 3);
+insertBallot.run(33, 1, 86, 4);
+insertBallot.run(33, 2, 88, 1);
+insertBallot.run(33, 2, 87, 2);
+insertBallot.run(33, 2, 85, 3);
+insertBallot.run(33, 2, 86, 4);
+insertBallot.run(33, 3, 88, 1);
+insertBallot.run(33, 3, 87, 2);
+insertBallot.run(33, 3, 85, 3);
+insertBallot.run(33, 3, 86, 4);
+insertBallot.run(33, 4, 85, 1);
+insertBallot.run(33, 4, 88, 2);
+insertBallot.run(33, 4, 87, 3);
+insertBallot.run(33, 4, 86, 4);
+insertBallot.run(33, 5, 86, 1);
+insertBallot.run(33, 5, 88, 2);
+insertBallot.run(33, 5, 87, 3);
+insertBallot.run(33, 5, 85, 4);
+
+// Election 34: June 2024 - Winner: Another Crab's Treasure
+insertBallot.run(34, 1, 90, 1);
+insertBallot.run(34, 1, 91, 2);
+insertBallot.run(34, 1, 89, 3);
+insertBallot.run(34, 2, 90, 1);
+insertBallot.run(34, 2, 91, 2);
+insertBallot.run(34, 2, 89, 3);
+insertBallot.run(34, 3, 90, 1);
+insertBallot.run(34, 3, 91, 2);
+insertBallot.run(34, 3, 89, 3);
+insertBallot.run(34, 4, 89, 1);
+insertBallot.run(34, 4, 90, 2);
+insertBallot.run(34, 4, 91, 3);
+
+// Election 35: July 2024 - Winner: Little Kitty Big City
+insertBallot.run(35, 1, 91, 1);
+insertBallot.run(35, 1, 93, 2);
+insertBallot.run(35, 1, 92, 3);
+insertBallot.run(35, 2, 91, 1);
+insertBallot.run(35, 2, 93, 2);
+insertBallot.run(35, 2, 92, 3);
+insertBallot.run(35, 3, 91, 1);
+insertBallot.run(35, 3, 93, 2);
+insertBallot.run(35, 3, 92, 3);
+insertBallot.run(35, 4, 92, 1);
+insertBallot.run(35, 4, 91, 2);
+insertBallot.run(35, 4, 93, 3);
+insertBallot.run(35, 5, 93, 1);
+insertBallot.run(35, 5, 91, 2);
+insertBallot.run(35, 5, 92, 3);
+
+// Election 36: August 2024 - Winner: Beyond Good & Evil
+insertBallot.run(36, 1, 94, 1);
+insertBallot.run(36, 1, 92, 2);
+insertBallot.run(36, 1, 70, 3);
+insertBallot.run(36, 1, 46, 4);
+insertBallot.run(36, 1, 43, 5);
+insertBallot.run(36, 2, 94, 1);
+insertBallot.run(36, 2, 92, 2);
+insertBallot.run(36, 2, 70, 3);
+insertBallot.run(36, 2, 46, 4);
+insertBallot.run(36, 2, 43, 5);
+insertBallot.run(36, 3, 94, 1);
+insertBallot.run(36, 3, 92, 2);
+insertBallot.run(36, 3, 70, 3);
+insertBallot.run(36, 3, 46, 4);
+insertBallot.run(36, 3, 43, 5);
+insertBallot.run(36, 4, 94, 1);
+insertBallot.run(36, 4, 92, 2);
+insertBallot.run(36, 4, 70, 3);
+insertBallot.run(36, 4, 46, 4);
+insertBallot.run(36, 4, 43, 5);
+insertBallot.run(36, 5, 70, 1);
+insertBallot.run(36, 5, 94, 2);
+insertBallot.run(36, 5, 92, 3);
+insertBallot.run(36, 5, 46, 4);
+insertBallot.run(36, 5, 43, 5);
+insertBallot.run(36, 6, 46, 1);
+insertBallot.run(36, 6, 94, 2);
+insertBallot.run(36, 6, 92, 3);
+insertBallot.run(36, 6, 70, 4);
+insertBallot.run(36, 6, 43, 5);
+
+// Election 37: September 2024 - Winner: Coral Island
+insertBallot.run(37, 1, 95, 1);
+insertBallot.run(37, 1, 96, 2);
+insertBallot.run(37, 1, 97, 3);
+insertBallot.run(37, 2, 95, 1);
+insertBallot.run(37, 2, 96, 2);
+insertBallot.run(37, 2, 97, 3);
+insertBallot.run(37, 3, 95, 1);
+insertBallot.run(37, 3, 96, 2);
+insertBallot.run(37, 3, 97, 3);
+insertBallot.run(37, 4, 97, 1);
+insertBallot.run(37, 4, 95, 2);
+insertBallot.run(37, 4, 96, 3);
+insertBallot.run(37, 5, 96, 1);
+insertBallot.run(37, 5, 95, 2);
+insertBallot.run(37, 5, 97, 3);
+
+// Election 38: October 2024 - Winner: Night in the Woods
+insertBallot.run(38, 1, 98, 1);
+insertBallot.run(38, 1, 96, 2);
+insertBallot.run(38, 1, 92, 3);
+insertBallot.run(38, 1, 76, 4);
+insertBallot.run(38, 2, 98, 1);
+insertBallot.run(38, 2, 96, 2);
+insertBallot.run(38, 2, 92, 3);
+insertBallot.run(38, 2, 76, 4);
+insertBallot.run(38, 3, 98, 1);
+insertBallot.run(38, 3, 96, 2);
+insertBallot.run(38, 3, 92, 3);
+insertBallot.run(38, 3, 76, 4);
+insertBallot.run(38, 4, 92, 1);
+insertBallot.run(38, 4, 98, 2);
+insertBallot.run(38, 4, 96, 3);
+insertBallot.run(38, 4, 76, 4);
+insertBallot.run(38, 5, 76, 1);
+insertBallot.run(38, 5, 98, 2);
+insertBallot.run(38, 5, 96, 3);
+insertBallot.run(38, 5, 92, 4);
+
+// Election 39: November 2024 - Winner: Tactical Breach Wizards
+insertBallot.run(39, 1, 101, 1);
+insertBallot.run(39, 1, 99, 2);
+insertBallot.run(39, 1, 100, 3);
+insertBallot.run(39, 2, 101, 1);
+insertBallot.run(39, 2, 99, 2);
+insertBallot.run(39, 2, 100, 3);
+insertBallot.run(39, 3, 101, 1);
+insertBallot.run(39, 3, 99, 2);
+insertBallot.run(39, 3, 100, 3);
+insertBallot.run(39, 4, 100, 1);
+insertBallot.run(39, 4, 101, 2);
+insertBallot.run(39, 4, 99, 3);
+insertBallot.run(39, 5, 99, 1);
+insertBallot.run(39, 5, 101, 2);
+insertBallot.run(39, 5, 100, 3);
+
+// Election 40: December 2024 - Winner: Hellblade 2
+insertBallot.run(40, 1, 92, 1);
+insertBallot.run(40, 1, 102, 2);
+insertBallot.run(40, 1, 103, 3);
+insertBallot.run(40, 2, 92, 1);
+insertBallot.run(40, 2, 102, 2);
+insertBallot.run(40, 2, 103, 3);
+insertBallot.run(40, 3, 92, 1);
+insertBallot.run(40, 3, 102, 2);
+insertBallot.run(40, 3, 103, 3);
+insertBallot.run(40, 4, 103, 1);
+insertBallot.run(40, 4, 92, 2);
+insertBallot.run(40, 4, 102, 3);
+insertBallot.run(40, 5, 102, 1);
+insertBallot.run(40, 5, 92, 2);
+insertBallot.run(40, 5, 103, 3);
+
+// Election 41: January 2025 - Winner: Dungeons of Hinterberg
+insertBallot.run(41, 1, 96, 1);
+insertBallot.run(41, 1, 104, 2);
+insertBallot.run(41, 1, 105, 3);
+insertBallot.run(41, 2, 96, 1);
+insertBallot.run(41, 2, 104, 2);
+insertBallot.run(41, 2, 105, 3);
+insertBallot.run(41, 3, 96, 1);
+insertBallot.run(41, 3, 104, 2);
+insertBallot.run(41, 3, 105, 3);
+insertBallot.run(41, 4, 105, 1);
+insertBallot.run(41, 4, 96, 2);
+insertBallot.run(41, 4, 104, 3);
+insertBallot.run(41, 5, 104, 1);
+insertBallot.run(41, 5, 96, 2);
+insertBallot.run(41, 5, 105, 3);
+
+// Election 42: February 2025 - Winner: 1000xRESIST
+insertBallot.run(42, 1, 106, 1);
+insertBallot.run(42, 1, 93, 2);
+insertBallot.run(42, 1, 107, 3);
+insertBallot.run(42, 2, 106, 1);
+insertBallot.run(42, 2, 93, 2);
+insertBallot.run(42, 2, 107, 3);
+insertBallot.run(42, 3, 106, 1);
+insertBallot.run(42, 3, 93, 2);
+insertBallot.run(42, 3, 107, 3);
+insertBallot.run(42, 4, 107, 1);
+insertBallot.run(42, 4, 106, 2);
+insertBallot.run(42, 4, 93, 3);
+insertBallot.run(42, 5, 93, 1);
+insertBallot.run(42, 5, 106, 2);
+insertBallot.run(42, 5, 107, 3);
+
+// Election 43: March 2025 - Winner: Indiana Jones and the Great Circle
+insertBallot.run(43, 1, 109, 1);
+insertBallot.run(43, 1, 108, 2);
+insertBallot.run(43, 1, 111, 3);
+insertBallot.run(43, 1, 110, 4);
+insertBallot.run(43, 2, 109, 1);
+insertBallot.run(43, 2, 108, 2);
+insertBallot.run(43, 2, 111, 3);
+insertBallot.run(43, 2, 110, 4);
+insertBallot.run(43, 3, 109, 1);
+insertBallot.run(43, 3, 108, 2);
+insertBallot.run(43, 3, 111, 3);
+insertBallot.run(43, 3, 110, 4);
+insertBallot.run(43, 4, 111, 1);
+insertBallot.run(43, 4, 109, 2);
+insertBallot.run(43, 4, 108, 3);
+insertBallot.run(43, 4, 110, 4);
+insertBallot.run(43, 5, 110, 1);
+insertBallot.run(43, 5, 109, 2);
+insertBallot.run(43, 5, 108, 3);
+insertBallot.run(43, 5, 111, 4);
+
+// Election 44: April 2025 - Winner: Citizen Sleeper 2
+insertBallot.run(44, 1, 108, 1);
+insertBallot.run(44, 1, 113, 2);
+insertBallot.run(44, 1, 112, 3);
+insertBallot.run(44, 1, 114, 4);
+insertBallot.run(44, 2, 108, 1);
+insertBallot.run(44, 2, 113, 2);
+insertBallot.run(44, 2, 112, 3);
+insertBallot.run(44, 2, 114, 4);
+insertBallot.run(44, 3, 108, 1);
+insertBallot.run(44, 3, 113, 2);
+insertBallot.run(44, 3, 112, 3);
+insertBallot.run(44, 3, 114, 4);
+insertBallot.run(44, 4, 112, 1);
+insertBallot.run(44, 4, 108, 2);
+insertBallot.run(44, 4, 113, 3);
+insertBallot.run(44, 4, 114, 4);
+insertBallot.run(44, 5, 114, 1);
+insertBallot.run(44, 5, 108, 2);
+insertBallot.run(44, 5, 113, 3);
+insertBallot.run(44, 5, 112, 4);
+
+// Election 45: May 2025 - Winner: South of Midnight
+insertBallot.run(45, 1, 117, 1);
+insertBallot.run(45, 1, 115, 2);
+insertBallot.run(45, 1, 118, 3);
+insertBallot.run(45, 1, 116, 4);
+insertBallot.run(45, 2, 117, 1);
+insertBallot.run(45, 2, 115, 2);
+insertBallot.run(45, 2, 118, 3);
+insertBallot.run(45, 2, 116, 4);
+insertBallot.run(45, 3, 117, 1);
+insertBallot.run(45, 3, 115, 2);
+insertBallot.run(45, 3, 118, 3);
+insertBallot.run(45, 3, 116, 4);
+insertBallot.run(45, 4, 118, 1);
+insertBallot.run(45, 4, 117, 2);
+insertBallot.run(45, 4, 115, 3);
+insertBallot.run(45, 4, 116, 4);
+insertBallot.run(45, 5, 116, 1);
+insertBallot.run(45, 5, 117, 2);
+insertBallot.run(45, 5, 115, 3);
+insertBallot.run(45, 5, 118, 4);
+
+// Election 46: June 2025 - Winner: Old Skies
+insertBallot.run(46, 1, 121, 1);
+insertBallot.run(46, 1, 119, 2);
+insertBallot.run(46, 1, 61, 3);
+insertBallot.run(46, 1, 120, 4);
+insertBallot.run(46, 2, 121, 1);
+insertBallot.run(46, 2, 119, 2);
+insertBallot.run(46, 2, 61, 3);
+insertBallot.run(46, 2, 120, 4);
+insertBallot.run(46, 3, 121, 1);
+insertBallot.run(46, 3, 119, 2);
+insertBallot.run(46, 3, 61, 3);
+insertBallot.run(46, 3, 120, 4);
+insertBallot.run(46, 4, 61, 1);
+insertBallot.run(46, 4, 121, 2);
+insertBallot.run(46, 4, 119, 3);
+insertBallot.run(46, 4, 120, 4);
+
+// Election 47: July 2025 - Winner: The Stanley Parable (any edition)
+insertBallot.run(47, 1, 122, 1);
+insertBallot.run(47, 1, 124, 2);
+insertBallot.run(47, 1, 89, 3);
+insertBallot.run(47, 1, 123, 4);
+insertBallot.run(47, 2, 122, 1);
+insertBallot.run(47, 2, 124, 2);
+insertBallot.run(47, 2, 89, 3);
+insertBallot.run(47, 2, 123, 4);
+insertBallot.run(47, 3, 122, 1);
+insertBallot.run(47, 3, 124, 2);
+insertBallot.run(47, 3, 89, 3);
+insertBallot.run(47, 3, 123, 4);
+insertBallot.run(47, 4, 122, 1);
+insertBallot.run(47, 4, 124, 2);
+insertBallot.run(47, 4, 89, 3);
+insertBallot.run(47, 4, 123, 4);
+insertBallot.run(47, 5, 89, 1);
+insertBallot.run(47, 5, 122, 2);
+insertBallot.run(47, 5, 124, 3);
+insertBallot.run(47, 5, 123, 4);
+insertBallot.run(47, 6, 123, 1);
+insertBallot.run(47, 6, 122, 2);
+insertBallot.run(47, 6, 124, 3);
+insertBallot.run(47, 6, 89, 4);
+
+// Election 48: August 2025 - Winner: NetHack
+insertBallot.run(48, 1, 127, 1);
+insertBallot.run(48, 1, 125, 2);
+insertBallot.run(48, 1, 126, 3);
+insertBallot.run(48, 1, 128, 4);
+insertBallot.run(48, 2, 127, 1);
+insertBallot.run(48, 2, 125, 2);
+insertBallot.run(48, 2, 126, 3);
+insertBallot.run(48, 2, 128, 4);
+insertBallot.run(48, 3, 127, 1);
+insertBallot.run(48, 3, 125, 2);
+insertBallot.run(48, 3, 126, 3);
+insertBallot.run(48, 3, 128, 4);
+insertBallot.run(48, 4, 127, 1);
+insertBallot.run(48, 4, 125, 2);
+insertBallot.run(48, 4, 126, 3);
+insertBallot.run(48, 4, 128, 4);
+insertBallot.run(48, 5, 126, 1);
+insertBallot.run(48, 5, 127, 2);
+insertBallot.run(48, 5, 125, 3);
+insertBallot.run(48, 5, 128, 4);
+insertBallot.run(48, 6, 128, 1);
+insertBallot.run(48, 6, 127, 2);
+insertBallot.run(48, 6, 125, 3);
+insertBallot.run(48, 6, 126, 4);
+
+// Election 49: September 2025 - Winner: The Outer Worlds
+insertBallot.run(49, 1, 128, 1);
+insertBallot.run(49, 1, 129, 2);
+insertBallot.run(49, 1, 130, 3);
+insertBallot.run(49, 2, 128, 1);
+insertBallot.run(49, 2, 129, 2);
+insertBallot.run(49, 2, 130, 3);
+insertBallot.run(49, 3, 128, 1);
+insertBallot.run(49, 3, 129, 2);
+insertBallot.run(49, 3, 130, 3);
+insertBallot.run(49, 4, 130, 1);
+insertBallot.run(49, 4, 128, 2);
+insertBallot.run(49, 4, 129, 3);
+insertBallot.run(49, 5, 129, 1);
+insertBallot.run(49, 5, 128, 2);
+insertBallot.run(49, 5, 130, 3);
+
+// Election 50: October 2025 - Winner: Peak
+insertBallot.run(50, 1, 133, 1);
+insertBallot.run(50, 1, 132, 2);
+insertBallot.run(50, 1, 131, 3);
+insertBallot.run(50, 2, 133, 1);
+insertBallot.run(50, 2, 132, 2);
+insertBallot.run(50, 2, 131, 3);
+
+// ----- Election Rounds -----
+const insertRound = db.prepare(
+  "INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)"
 );
-db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
-  1, 2, null, "Hades wins with 3/4 votes (majority)."
-);
 
-// == Election 2: March 2025 ==
-// Candidates: Celeste(2), Hollow Knight(5), Outer Wilds(3)
-// Winner: Celeste
-db.prepare("INSERT INTO elections (name, status, created_at, closed_at, winner_id) VALUES (?, 'closed', ?, ?, ?)").run(
-  "March 2025", "2025-02-28", "2025-03-02", 2
-);
-db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(2, 2);
-db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(2, 5);
-db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(2, 3);
-
-// Ballots for election 2
-// Alex: Celeste > Outer Wilds > Hollow Knight
-insertBallot.run(2, 1, 2, 1); insertBallot.run(2, 1, 3, 2); insertBallot.run(2, 1, 5, 3);
-// Jordan: Outer Wilds > Celeste > Hollow Knight
-insertBallot.run(2, 2, 3, 1); insertBallot.run(2, 2, 2, 2); insertBallot.run(2, 2, 5, 3);
-// Sam: Celeste > Hollow Knight > Outer Wilds
-insertBallot.run(2, 3, 2, 1); insertBallot.run(2, 3, 5, 2); insertBallot.run(2, 3, 3, 3);
-// Casey: Hollow Knight > Celeste > Outer Wilds
-insertBallot.run(2, 4, 5, 1); insertBallot.run(2, 4, 2, 2); insertBallot.run(2, 4, 3, 3);
-
-db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
-  2, 1, 3, "Round 1: Celeste: 2, Outer Wilds: 1, Hollow Knight: 1. Eliminated: Hollow Knight."
-);
-db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
-  2, 2, null, "Celeste wins with 3/4 votes (majority)."
-);
-
-// == Election 3: April 2025 ==
-// Candidates: Outer Wilds(3), Hollow Knight(5), Obra Dinn(6)
-// Winner: Outer Wilds
-db.prepare("INSERT INTO elections (name, status, created_at, closed_at, winner_id) VALUES (?, 'closed', ?, ?, ?)").run(
-  "April 2025", "2025-03-28", "2025-03-30", 3
-);
-db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(3, 3);
-db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(3, 5);
-db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(3, 6);
-
-// Ballots for election 3
-// Alex: Outer Wilds > Obra Dinn > Hollow Knight
-insertBallot.run(3, 1, 3, 1); insertBallot.run(3, 1, 6, 2); insertBallot.run(3, 1, 5, 3);
-// Jordan: Obra Dinn > Outer Wilds > Hollow Knight
-insertBallot.run(3, 2, 6, 1); insertBallot.run(3, 2, 3, 2); insertBallot.run(3, 2, 5, 3);
-// Sam: Outer Wilds > Hollow Knight > Obra Dinn
-insertBallot.run(3, 3, 3, 1); insertBallot.run(3, 3, 5, 2); insertBallot.run(3, 3, 6, 3);
-// Casey: Hollow Knight > Outer Wilds > Obra Dinn
-insertBallot.run(3, 4, 5, 1); insertBallot.run(3, 4, 3, 2); insertBallot.run(3, 4, 6, 3);
-// Riley: Outer Wilds > Obra Dinn > Hollow Knight
-insertBallot.run(3, 5, 3, 1); insertBallot.run(3, 5, 6, 2); insertBallot.run(3, 5, 5, 3);
-
-db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
-  3, 1, null, "Outer Wilds wins with 3/5 votes (majority)."
-);
-
-// == Election 4: May 2025 ==
-// Candidates: Disco Elysium(4), Hollow Knight(5), Obra Dinn(6)
-// Winner: Disco Elysium
-db.prepare("INSERT INTO elections (name, status, created_at, closed_at, winner_id) VALUES (?, 'closed', ?, ?, ?)").run(
-  "May 2025", "2025-04-28", "2025-04-30", 4
-);
-db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(4, 4);
-db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(4, 5);
-db.prepare("INSERT INTO election_games (election_id, game_id) VALUES (?, ?)").run(4, 6);
-
-// Ballots for election 4
-// Alex: Disco Elysium > Obra Dinn > Hollow Knight
-insertBallot.run(4, 1, 4, 1); insertBallot.run(4, 1, 6, 2); insertBallot.run(4, 1, 5, 3);
-// Jordan: Obra Dinn > Disco Elysium > Hollow Knight
-insertBallot.run(4, 2, 6, 1); insertBallot.run(4, 2, 4, 2); insertBallot.run(4, 2, 5, 3);
-// Sam: Disco Elysium > Hollow Knight > Obra Dinn
-insertBallot.run(4, 3, 4, 1); insertBallot.run(4, 3, 5, 2); insertBallot.run(4, 3, 6, 3);
-// Casey: Hollow Knight > Disco Elysium > Obra Dinn
-insertBallot.run(4, 4, 5, 1); insertBallot.run(4, 4, 4, 2); insertBallot.run(4, 4, 6, 3);
-// Riley: Disco Elysium > Obra Dinn > Hollow Knight
-insertBallot.run(4, 5, 4, 1); insertBallot.run(4, 5, 6, 2); insertBallot.run(4, 5, 5, 3);
-
-db.prepare("INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)").run(
-  4, 1, null, "Disco Elysium wins with 3/5 votes (majority)."
-);
-
-// ----- Reviews (for completed games) -----
-const insertReview = db.prepare(
-  "INSERT INTO reviews (game_id, member_id, rating, comment) VALUES (?, ?, ?, ?)"
-);
-
-// Hades reviews
-insertReview.run(1, 1, 5, "Incredible gameplay loop. The story keeps you coming back.");
-insertReview.run(1, 2, 4, "Great combat but got a bit repetitive after 50 hours.");
-insertReview.run(1, 3, 5, "Perfect game. Music, art, gameplay — all top tier.");
-insertReview.run(1, 4, 4, "Loved the characters and voice acting.");
-
-// Celeste reviews
-insertReview.run(2, 1, 5, "The assist mode made it accessible while still being challenging.");
-insertReview.run(2, 2, 5, "Cried at the summit. Beautiful game.");
-insertReview.run(2, 3, 5, "Best platformer I've ever played.");
-insertReview.run(2, 4, 4, "Tough but fair. The B-sides were brutal!");
-insertReview.run(2, 5, 5, "The story really resonated with me.");
-
-// Outer Wilds reviews
-insertReview.run(3, 1, 4, "Mind-blowing exploration. Wish I could forget it and play again.");
-insertReview.run(3, 2, 5, "Nothing else like it. Pure curiosity-driven gameplay.");
-insertReview.run(3, 3, 3, "Got motion sick but the world design is incredible.");
-insertReview.run(3, 4, 5, "The ending made everything click. Masterpiece.");
-
-// Update avg ratings
-for (const gameId of [1, 2, 3]) {
-  const avg = db
-    .prepare("SELECT AVG(rating) as avg FROM reviews WHERE game_id = ?")
-    .get(gameId) as { avg: number };
-  db.prepare("UPDATE games SET avg_rating = ? WHERE id = ?").run(avg.avg, gameId);
-}
+insertRound.run(1, 1, null, "Sunset Overdrive wins with 4/7 first-place votes.");
+insertRound.run(2, 1, null, "Art of Rally wins with 4/7 first-place votes.");
+insertRound.run(3, 1, null, "Psychonauts 2 wins with 4/6 first-place votes.");
+insertRound.run(4, 1, null, "Horizon 5 wins with 3/4 first-place votes.");
+insertRound.run(5, 1, null, "Whatever You Want (Open Forum) wins with 4/6 first-place votes.");
+insertRound.run(6, 1, null, "Whatever You Want (Open Forum) wins with 4/7 first-place votes.");
+insertRound.run(7, 1, null, "Hitman 2 - Miami Level wins with 3/5 first-place votes.");
+insertRound.run(8, 1, null, "The Forgotten City wins with 4/6 first-place votes.");
+insertRound.run(9, 1, null, "Weird West wins with 3/5 first-place votes.");
+insertRound.run(10, 1, null, "Death's Door wins with 4/6 first-place votes.");
+insertRound.run(11, 1, null, "Flight Sim - F-18 Carrier Challenge wins with 3/5 first-place votes.");
+insertRound.run(12, 1, null, "Sable wins with 3/5 first-place votes.");
+insertRound.run(13, 1, null, "TMNT: Shredder's Revenge wins with 4/6 first-place votes.");
+insertRound.run(14, 1, null, "Road 96 wins with 3/5 first-place votes.");
+insertRound.run(15, 1, null, "Tunic wins with 3/4 first-place votes.");
+insertRound.run(16, 1, null, "The Wolf Among Us wins with 3/4 first-place votes.");
+insertRound.run(17, 1, null, "Pentiment wins with 3/4 first-place votes.");
+insertRound.run(18, 1, null, "Norco wins with 3/5 first-place votes.");
+insertRound.run(19, 1, null, "Hi-Fi Rush wins with 3/5 first-place votes.");
+insertRound.run(20, 1, null, "Dead Space (2008 or 2023) wins with 3/4 first-place votes.");
+insertRound.run(21, 1, null, "Return to Monkey Island wins with 3/4 first-place votes.");
+insertRound.run(22, 1, null, "Inside wins with 4/7 first-place votes.");
+insertRound.run(23, 1, null, "Citizen Sleeper wins with 3/4 first-place votes.");
+insertRound.run(24, 1, null, "NFS: Unbound wins with 3/4 first-place votes.");
+insertRound.run(25, 1, null, "Venba wins with 3/4 first-place votes.");
+insertRound.run(26, 1, null, "A Short Hike wins with 3/5 first-place votes.");
+insertRound.run(27, 1, null, "The Expanse: A Telltale Series wins with 2/3 first-place votes.");
+insertRound.run(28, 1, null, "Thirsty Suitors wins with 2/3 first-place votes.");
+insertRound.run(29, 1, null, "Jusant wins with 3/4 first-place votes.");
+insertRound.run(30, 1, null, "Sifu wins with 3/4 first-place votes.");
+insertRound.run(31, 1, null, "Bloodstained: Ritual of the Night wins with 3/4 first-place votes.");
+insertRound.run(32, 1, null, "Open Roads wins with 4/6 first-place votes.");
+insertRound.run(33, 1, null, "Fallout wins with 3/5 first-place votes.");
+insertRound.run(34, 1, null, "Another Crab's Treasure wins with 3/4 first-place votes.");
+insertRound.run(35, 1, null, "Little Kitty Big City wins with 3/5 first-place votes.");
+insertRound.run(36, 1, null, "Beyond Good & Evil wins with 4/6 first-place votes.");
+insertRound.run(37, 1, null, "Coral Island wins with 3/5 first-place votes.");
+insertRound.run(38, 1, null, "Night in the Woods wins with 3/5 first-place votes.");
+insertRound.run(39, 1, null, "Tactical Breach Wizards wins with 3/5 first-place votes.");
+insertRound.run(40, 1, null, "Hellblade 2 wins with 3/5 first-place votes.");
+insertRound.run(41, 1, null, "Dungeons of Hinterberg wins with 3/5 first-place votes.");
+insertRound.run(42, 1, null, "1000xRESIST wins with 3/5 first-place votes.");
+insertRound.run(43, 1, null, "Indiana Jones and the Great Circle wins with 3/5 first-place votes.");
+insertRound.run(44, 1, null, "Citizen Sleeper 2 wins with 3/5 first-place votes.");
+insertRound.run(45, 1, null, "South of Midnight wins with 3/5 first-place votes.");
+insertRound.run(46, 1, null, "Old Skies wins with 3/4 first-place votes.");
+insertRound.run(47, 1, null, "The Stanley Parable (any edition) wins with 4/6 first-place votes.");
+insertRound.run(48, 1, null, "NetHack wins with 4/6 first-place votes.");
+insertRound.run(49, 1, null, "The Outer Worlds wins with 3/5 first-place votes.");
+insertRound.run(50, 1, null, "Peak wins with 2/2 first-place votes.");
 
 console.log("✅ Database seeded successfully!");
-console.log("   - 5 members (password: gameclub)");
-console.log("   - 8 games (3 completed, 1 current, 4 nominated)");
-console.log("   - 4 closed elections with ranked choice ballots");
-console.log("   - 13 reviews");
+console.log("   - 7 members (password: gameclub)");
+console.log("   - 133 games (49 completed, 84 nominated)");
+console.log("   - 50 closed elections with ranked choice ballots");
 
 db.close();
