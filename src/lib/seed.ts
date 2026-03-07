@@ -274,7 +274,7 @@ insertElection.run(8, "March 2022", "2022-03-05 01:08:40", "2022-03-09 17:39:10"
 insertElection.run(9, "April 2022", "2022-04-02 01:03:13", "2022-04-05 01:09:26", 26);
 insertElection.run(10, "May 2022", "2022-05-06 23:38:25", "2022-05-10 00:36:49", 19);
 insertElection.run(11, "June 2022", "2022-06-03 23:53:31", "2022-06-06 23:54:25", 33);
-insertElection.run(12, "June 2022", "2022-06-30 23:44:57", "2022-07-04 15:12:27", 30);
+insertElection.run(12, "July 2022", "2022-06-30 23:44:57", "2022-07-04 15:12:27", 30);
 insertElection.run(13, "August 2022", "2022-08-05 23:57:34", "2022-08-09 02:22:33", 38);
 insertElection.run(14, "September 2022", "2022-09-02 23:39:56", "2022-09-05 23:46:38", 36);
 insertElection.run(15, "October 2022", "2022-10-07 23:54:58", "2022-10-11 04:28:09", 27);
@@ -817,7 +817,7 @@ insertBallot.run(11, 5, 33, 2);
 insertBallot.run(11, 5, 30, 3);
 insertBallot.run(11, 5, 32, 4);
 
-// Election 12: June 2022 - Winner: Sable
+// Election 12: July 2022 - Winner: Sable
 insertBallot.run(12, 1, 30, 1);
 insertBallot.run(12, 1, 32, 2);
 insertBallot.run(12, 1, 34, 3);
