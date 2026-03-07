@@ -263,7 +263,7 @@ insertGame.run(132, "Peak", "completed", "2025-10-07");
 const insertElection = db.prepare(
   "INSERT INTO elections (id, name, status, created_at, closed_at, winner_id) VALUES (?, ?, 'closed', ?, ?, ?)"
 );
-insertElection.run(1, "July 2021", "2021-07-31 00:01:17", "2021-08-02 16:52:28", 3);
+insertElection.run(1, "August 2021", "2021-07-31 00:01:17", "2021-08-02 16:52:28", 3);
 insertElection.run(2, "September 2021", "2021-09-13 16:20:32", "2021-09-13 19:58:56", 6);
 insertElection.run(3, "October 2021", "2021-10-01 23:51:17", "2021-10-05 01:43:39", 9);
 insertElection.run(4, "November 2021", "2021-11-05 23:38:41", "2021-11-09 16:18:31", 10);
@@ -514,7 +514,7 @@ const insertBallot = db.prepare(
   "INSERT INTO ballots (election_id, member_id, game_id, rank) VALUES (?, ?, ?, ?)"
 );
 
-// Election 1: July 2021 - Winner: Sunset Overdrive
+// Election 1: August 2021 - Winner: Sunset Overdrive
 insertBallot.run(1, 1, 3, 1);
 insertBallot.run(1, 1, 1, 2);
 insertBallot.run(1, 1, 2, 3);
