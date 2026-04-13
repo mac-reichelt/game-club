@@ -1,5 +1,7 @@
 # 🎮 Game Club
 
+[![Build & Publish](https://github.com/mac-reichelt/game-club/actions/workflows/main.yml/badge.svg)](https://github.com/mac-reichelt/game-club/actions/workflows/main.yml)
+
 A web app for managing a game club — like a book club, but for games. Nominate games, vote with ranked choice voting, track your history, and leave reviews.
 
 ## Features
@@ -41,6 +43,12 @@ npm run seed    # Load sample data
 npm run dev     # Start dev server at http://localhost:3000
 ```
 
+## Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `RAWG_API_KEY` | No | API key for [RAWG](https://rawg.io/apidocs) game search. Without it, game search is disabled. |
+
 ## Docker Deployment
 
 ```bash
@@ -54,10 +62,19 @@ docker run -p 3000:3000 -v gameclub-data:/app/data gameclub
 
 The SQLite database is stored in a Docker volume (`gameclub-data`) for persistence.
 
+## Testing
+
+```bash
+npm test           # Run tests once
+npx vitest         # Run tests in watch mode
+```
+
 ## Project Structure
 
 ```
 src/
+├── __tests__/
+│   └── rcv.test.ts        # Ranked choice voting tests
 ├── app/
 │   ├── api/
 │   │   ├── elections/     # Create elections, submit ballots, close & tally
