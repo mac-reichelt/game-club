@@ -272,7 +272,7 @@ insertGame.run(143, "Sword of the Sea", "nominated", null);
 insertGame.run(144, "Bioshock", "nominated", null);
 insertGame.run(145, "Is This Seat Taken?", "nominated", null);
 insertGame.run(146, "Commandos: Origins", "nominated", null);
-insertGame.run(147, "Into the Breach", "current", null);
+insertGame.run(147, "Into the Breach", "completed", "2026-04-13");
 
 // ----- Elections -----
 const insertElection = db.prepare(
