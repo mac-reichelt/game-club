@@ -67,14 +67,16 @@ function getElectionHistory(db: ReturnType<typeof getDb>): Record<number, { id: 
 }
 
 function getNominationStats(db: ReturnType<typeof getDb>): Record<number, NominationStats> {
-  // Aggregate from election_games joined with elections, plus the game's own
-  // nominated_at (the current/active nomination).
+  // Election ballot appearances are the source of truth for "first/last/times
+  // nominated". The games.nominated_at column is only a fallback for games
+  // that have never been on a ballot (because legacy seed data set it to a
+  // bulk import date that doesn't reflect real nomination history).
   const rows = db
     .prepare(
       `SELECT g.id as game_id,
               g.nominated_at as current_nominated_at,
-              MIN(COALESCE(e.created_at, g.nominated_at)) as first_at,
-              MAX(COALESCE(e.created_at, g.nominated_at)) as last_at,
+              MIN(e.created_at) as first_election_at,
+              MAX(e.created_at) as last_election_at,
               COUNT(DISTINCT e.id) as election_count
        FROM games g
        LEFT JOIN election_games eg ON eg.game_id = g.id
@@ -85,20 +87,19 @@ function getNominationStats(db: ReturnType<typeof getDb>): Record<number, Nomina
     .all() as {
       game_id: number;
       current_nominated_at: string;
-      first_at: string;
-      last_at: string;
+      first_election_at: string | null;
+      last_election_at: string | null;
       election_count: number;
     }[];
 
   const out: Record<number, NominationStats> = {};
   for (const r of rows) {
-    const first = r.first_at < r.current_nominated_at ? r.first_at : r.current_nominated_at;
-    const last = r.last_at > r.current_nominated_at ? r.last_at : r.current_nominated_at;
+    const hasElections = r.election_count > 0 && r.first_election_at && r.last_election_at;
     out[r.game_id] = {
       gameId: r.game_id,
-      timesNominated: r.election_count + 1,
-      firstNominatedAt: first,
-      lastNominatedAt: last,
+      timesNominated: hasElections ? r.election_count : 1,
+      firstNominatedAt: hasElections ? r.first_election_at! : r.current_nominated_at,
+      lastNominatedAt: hasElections ? r.last_election_at! : r.current_nominated_at,
     };
   }
   return out;
