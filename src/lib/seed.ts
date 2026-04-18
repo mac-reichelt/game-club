@@ -267,10 +267,12 @@ insertGame.run(138, "Between Horizons", "nominated", null);
 insertGame.run(139, "The Seance of Blake Manor", "nominated", null);
 insertGame.run(140, "Routine", "nominated", null);
 insertGame.run(141, "Disco Samurai", "completed", "2026-02-10");
-insertGame.run(142, "Indika", "nominated", null);
+insertGame.run(142, "Indika", "completed", "2026-03-09");
 insertGame.run(143, "Sword of the Sea", "nominated", null);
 insertGame.run(144, "Bioshock", "nominated", null);
 insertGame.run(145, "Is This Seat Taken?", "nominated", null);
+insertGame.run(146, "Commandos: Origins", "nominated", null);
+insertGame.run(147, "Into the Breach", "completed", "2026-04-13");
 
 // ----- Elections -----
 const insertElection = db.prepare(
@@ -330,6 +332,8 @@ insertElection.run(51, "November 2025", "2025-11-01 00:00:00", "2025-11-04 00:00
 insertElection.run(52, "December 2025", "2025-12-06 00:00:00", "2025-12-09 00:00:00", 134);
 insertElection.run(53, "January 2026", "2026-01-03 00:00:00", "2026-01-06 00:00:00", 137);
 insertElection.run(54, "February 2026", "2026-02-07 00:00:00", "2026-02-10 00:00:00", 141);
+insertElection.run(55, "March 2026", "2026-03-06 00:00:00", "2026-03-09 00:00:00", 142);
+insertElection.run(56, "April 2026", "2026-04-10 00:00:00", "2026-04-13 00:00:00", 147);
 
 // ----- Election Games -----
 const insertEG = db.prepare(
@@ -538,6 +542,8 @@ insertEG.run(54, 142);
 insertEG.run(54, 143);
 insertEG.run(54, 144);
 insertEG.run(54, 145);
+insertEG.run(55, 142);
+insertEG.run(56, 106); insertEG.run(56, 146); insertEG.run(56, 147);
 
 // ----- Ballots (fabricated to produce correct winners) -----
 const insertBallot = db.prepare(
@@ -1614,6 +1620,23 @@ insertBallot.run(54, 4, 142, 1); insertBallot.run(54, 4, 145, 2); insertBallot.r
 insertBallot.run(54, 5, 143, 1); insertBallot.run(54, 5, 145, 2); insertBallot.run(54, 5, 144, 3); insertBallot.run(54, 5, 141, 4); insertBallot.run(54, 5, 142, 5);
 insertBallot.run(54, 6, 145, 1); insertBallot.run(54, 6, 141, 2); insertBallot.run(54, 6, 143, 3); insertBallot.run(54, 6, 142, 4);
 
+// Election 55: March 2026 - Winner: Indika (sole nominee, unanimous)
+insertBallot.run(55, 1, 142, 1);
+insertBallot.run(55, 2, 142, 1);
+insertBallot.run(55, 3, 142, 1);
+insertBallot.run(55, 4, 142, 1);
+insertBallot.run(55, 5, 142, 1);
+insertBallot.run(55, 6, 142, 1);
+
+// Election 56: April 2026 - Winner: Into the Breach (147)
+// Candidates: Unavowed (106), Commandos: Origins (146), Into the Breach (147)
+insertBallot.run(56, 1, 106, 1); insertBallot.run(56, 1, 147, 2); insertBallot.run(56, 1, 146, 3);
+insertBallot.run(56, 2, 146, 1); insertBallot.run(56, 2, 106, 2); insertBallot.run(56, 2, 147, 3);
+insertBallot.run(56, 3, 146, 1); insertBallot.run(56, 3, 147, 2); insertBallot.run(56, 3, 106, 3);
+insertBallot.run(56, 4, 147, 1); insertBallot.run(56, 4, 106, 2); insertBallot.run(56, 4, 146, 3);
+insertBallot.run(56, 5, 147, 1); insertBallot.run(56, 5, 106, 2); insertBallot.run(56, 5, 146, 3);
+insertBallot.run(56, 6, 147, 1); insertBallot.run(56, 6, 146, 2); insertBallot.run(56, 6, 106, 3);
+
 // ----- Election Rounds -----
 const insertRound = db.prepare(
   "INSERT INTO election_rounds (election_id, round_number, eliminated_game_id, summary) VALUES (?, ?, ?, ?)"
@@ -1679,10 +1702,13 @@ insertRound.run(54, 2, 145, "Is This Seat Taken? eliminated by tiebreaker with 1
 insertRound.run(54, 3, 143, "Sword of the Sea eliminated with 1 first-place vote.");
 insertRound.run(54, 4, 142, "Indika eliminated by tiebreaker with 3 first-place votes.");
 insertRound.run(54, 5, null, "Disco Samurai wins with 6/6 first-place votes.");
+insertRound.run(55, 1, null, "Indika wins as sole nominee with 6/6 first-place votes.");
+insertRound.run(56, 1, 106, "Unavowed eliminated with 1 first-place vote.");
+insertRound.run(56, 2, null, "Into the Breach wins with 4/6 first-place votes.");
 
 console.log("✅ Database seeded successfully!");
 console.log("   - 7 members (password: gameclub)");
-console.log("   - 145 games (53 completed, 92 nominated)");
-console.log("   - 54 closed elections with ranked choice ballots");
+console.log("   - 147 games (55 completed, 92 nominated)");
+console.log("   - 56 closed elections with ranked choice ballots");
 
 db.close();
