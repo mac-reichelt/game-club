@@ -112,9 +112,10 @@ export default async function ElectionsPage() {
             </div>
             <div className="grid gap-2">
               {openElection.games.map((game) => (
-                <div
+                <Link
                   key={game.id}
-                  className="bg-[var(--color-bg)] rounded-lg p-3 flex items-center gap-3"
+                  href={`/games/${game.id}`}
+                  className="bg-[var(--color-bg)] rounded-lg p-3 flex items-center gap-3 hover:bg-[var(--color-surface-hover)] transition-colors"
                 >
                   <span className="font-medium text-sm">{game.title}</span>
                   {game.platform && (
@@ -122,9 +123,17 @@ export default async function ElectionsPage() {
                       ({game.platform})
                     </span>
                   )}
-                </div>
+                </Link>
               ))}
             </div>
+            {openElection.election.auto_close_at_votes && (
+              <p className="text-xs text-[var(--color-text-muted)] mt-2">
+                Will auto-close after{" "}
+                {openElection.election.auto_close_at_votes} ballot
+                {openElection.election.auto_close_at_votes === 1 ? "" : "s"}{" "}
+                cast.
+              </p>
+            )}
             <p className="text-xs text-[var(--color-text-muted)] mt-3">
               Cast your ballot on the{" "}
               <Link

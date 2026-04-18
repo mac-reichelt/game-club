@@ -41,6 +41,38 @@ export function closeElectionAndTally(
 }
 
 /**
+ * Check if an election has hit its auto-close vote threshold and close it
+ * if so. Safe to call after every ballot insert.
+ */
+export function checkAndCloseOnVoteThreshold(
+  db: Database.Database,
+  electionId: number
+) {
+  const election = db
+    .prepare(
+      "SELECT id, auto_close_at_votes FROM elections WHERE id = ? AND status = 'open'"
+    )
+    .get(electionId) as
+    | { id: number; auto_close_at_votes: number | null }
+    | undefined;
+  if (!election || !election.auto_close_at_votes) return false;
+
+  const voteCount = (
+    db
+      .prepare(
+        "SELECT COUNT(DISTINCT member_id) as count FROM ballots WHERE election_id = ?"
+      )
+      .get(electionId) as { count: number }
+  ).count;
+
+  if (voteCount >= election.auto_close_at_votes) {
+    closeElectionAndTally(db, electionId);
+    return true;
+  }
+  return false;
+}
+
+/**
  * Auto-close any elections that have passed their 72-hour deadline.
  */
 export function checkAndCloseExpiredElections(db: Database.Database) {

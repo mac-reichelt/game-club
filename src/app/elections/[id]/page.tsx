@@ -168,12 +168,13 @@ export default async function ElectionDetailPage({
         </h3>
         <div className="grid gap-2">
           {games.map((game) => (
-            <div
+            <Link
               key={game.id}
-              className={`rounded-lg px-3 py-2 flex items-center gap-2 ${
+              href={`/games/${game.id}`}
+              className={`rounded-lg px-3 py-2 flex items-center gap-2 transition-colors ${
                 winner && game.id === winner.id
-                  ? "bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30"
-                  : "bg-[var(--color-bg)]"
+                  ? "bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 hover:bg-[var(--color-accent)]/20"
+                  : "bg-[var(--color-bg)] hover:bg-[var(--color-surface-hover)]"
               }`}
             >
               {winner && game.id === winner.id && (
@@ -188,7 +189,7 @@ export default async function ElectionDetailPage({
               <span className="text-xs text-[var(--color-text-muted)]">
                 — {game.nominatorName}
               </span>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

@@ -51,13 +51,45 @@ export async function POST(request: NextRequest) {
 
   const db = getDb();
   const body = await request.json();
-  const { gameIds } = body as { gameIds?: number[] };
+  const { gameIds, closesAt, autoCloseAtVotes } = body as {
+    gameIds?: number[];
+    closesAt?: string;
+    autoCloseAtVotes?: number | null;
+  };
 
   if (!gameIds || gameIds.length < 2) {
     return NextResponse.json(
       { error: "At least 2 games are required for an election" },
       { status: 400 }
     );
+  }
+
+  let closesAtSql: string | null = null;
+  if (closesAt) {
+    const d = new Date(closesAt);
+    if (isNaN(d.getTime())) {
+      return NextResponse.json({ error: "Invalid closesAt" }, { status: 400 });
+    }
+    if (d.getTime() <= Date.now()) {
+      return NextResponse.json(
+        { error: "closesAt must be in the future" },
+        { status: 400 }
+      );
+    }
+    // SQLite datetime() format: YYYY-MM-DD HH:MM:SS in UTC
+    closesAtSql = d.toISOString().replace("T", " ").replace(/\.\d+Z$/, "");
+  }
+
+  let threshold: number | null = null;
+  if (autoCloseAtVotes !== undefined && autoCloseAtVotes !== null) {
+    const n = Number(autoCloseAtVotes);
+    if (!Number.isInteger(n) || n < 1) {
+      return NextResponse.json(
+        { error: "autoCloseAtVotes must be a positive integer" },
+        { status: 400 }
+      );
+    }
+    threshold = n;
   }
 
   const openElection = db
@@ -76,11 +108,17 @@ export async function POST(request: NextRequest) {
   const now = new Date();
   const name = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
 
-  const result = db
-    .prepare(
-      "INSERT INTO elections (name, closes_at) VALUES (?, datetime('now', '+72 hours'))"
-    )
-    .run(name);
+  const result = closesAtSql
+    ? db
+        .prepare(
+          "INSERT INTO elections (name, closes_at, auto_close_at_votes) VALUES (?, ?, ?)"
+        )
+        .run(name, closesAtSql, threshold)
+    : db
+        .prepare(
+          "INSERT INTO elections (name, closes_at, auto_close_at_votes) VALUES (?, datetime('now', '+72 hours'), ?)"
+        )
+        .run(name, threshold);
   const electionId = result.lastInsertRowid;
 
   const insertGame = db.prepare(

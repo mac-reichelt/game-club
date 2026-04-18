@@ -36,6 +36,7 @@ export interface Election {
   closed_at: string | null;
   closes_at: string | null;
   winner_id: number | null;
+  auto_close_at_votes: number | null;
 }
 
 export interface Ballot {

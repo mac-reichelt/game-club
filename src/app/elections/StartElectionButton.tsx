@@ -4,6 +4,17 @@ import { GameWithNominator } from "@/lib/types";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+// Returns a value formatted for <input type="datetime-local"> set to ~72h
+// from now in the user's local timezone.
+function defaultClosesAt(): string {
+  const d = new Date(Date.now() + 72 * 60 * 60 * 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  );
+}
+
 export default function StartElectionButton({
   games,
 }: {
@@ -14,6 +25,9 @@ export default function StartElectionButton({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [closesAt, setClosesAt] = useState(() => defaultClosesAt());
+  const [autoCloseEnabled, setAutoCloseEnabled] = useState(false);
+  const [autoCloseAtVotes, setAutoCloseAtVotes] = useState(5);
 
   const filteredGames = games.filter((g) => {
     const q = search.trim().toLowerCase();
@@ -44,7 +58,11 @@ export default function StartElectionButton({
     const res = await fetch("/api/elections", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gameIds: Array.from(selected) }),
+      body: JSON.stringify({
+        gameIds: Array.from(selected),
+        closesAt: new Date(closesAt).toISOString(),
+        autoCloseAtVotes: autoCloseEnabled ? autoCloseAtVotes : null,
+      }),
     });
 
     if (res.ok) {
@@ -76,7 +94,7 @@ export default function StartElectionButton({
           Select which nominated games to include in the vote.
         </p>
         <p className="text-xs text-[var(--color-text-muted)] mb-4">
-          Voting will be open for 72 hours.
+          Defaults to 72 hours; adjust below or end early manually.
         </p>
         <input
           type="text"
@@ -112,6 +130,41 @@ export default function StartElectionButton({
               </div>
             </label>
           ))}
+        </div>
+        <div className="grid gap-3 mb-4 border-t border-[var(--color-border)] pt-4">
+          <label className="block">
+            <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+              Voting closes
+            </span>
+            <input
+              type="datetime-local"
+              value={closesAt}
+              onChange={(e) => setClosesAt(e.target.value)}
+              className="mt-1 w-full px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg text-sm focus:outline-none focus:border-[var(--color-primary)]"
+            />
+          </label>
+          <div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={autoCloseEnabled}
+                onChange={(e) => setAutoCloseEnabled(e.target.checked)}
+                className="accent-[var(--color-primary)]"
+              />
+              <span>Auto-close after N ballots cast</span>
+            </label>
+            {autoCloseEnabled && (
+              <input
+                type="number"
+                min={1}
+                value={autoCloseAtVotes}
+                onChange={(e) =>
+                  setAutoCloseAtVotes(Math.max(1, parseInt(e.target.value) || 1))
+                }
+                className="mt-2 w-32 px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg text-sm focus:outline-none focus:border-[var(--color-primary)]"
+              />
+            )}
+          </div>
         </div>
         <div className="flex gap-2 justify-end">
           <button

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import getDb from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 import { Election } from "@/lib/types";
+import { checkAndCloseOnVoteThreshold } from "@/lib/elections";
 
 // POST /api/elections/[id]/ballot - submit a ranked choice ballot
 // Body: { rankings: number[] } (memberId comes from session)
@@ -91,7 +92,8 @@ export async function POST(
 
   try {
     insertMany(rankings);
-    return NextResponse.json({ success: true }, { status: 201 });
+    const closed = checkAndCloseOnVoteThreshold(db, electionId);
+    return NextResponse.json({ success: true, closed }, { status: 201 });
   } catch {
     return NextResponse.json(
       { error: "Failed to submit ballot" },

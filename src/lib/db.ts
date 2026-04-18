@@ -140,6 +140,10 @@ function initSchema(db: Database.Database) {
   if (!gameCols.some((c) => c.name === "gamedb_id")) {
     db.exec("ALTER TABLE games ADD COLUMN gamedb_id INTEGER");
   }
+
+  if (!electionCols.some((c) => c.name === "auto_close_at_votes")) {
+    db.exec("ALTER TABLE elections ADD COLUMN auto_close_at_votes INTEGER");
+  }
 }
 
 export default getDb;
