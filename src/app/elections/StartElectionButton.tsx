@@ -11,10 +11,19 @@ export default function StartElectionButton({
 }) {
   const router = useRouter();
   const [showSelect, setShowSelect] = useState(false);
-  const [selected, setSelected] = useState<Set<number>>(
-    new Set(games.map((g) => g.id))
-  );
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const filteredGames = games.filter((g) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      g.title.toLowerCase().includes(q) ||
+      (g.platform?.toLowerCase().includes(q) ?? false) ||
+      (g.nominatorName?.toLowerCase().includes(q) ?? false)
+    );
+  });
 
   function toggle(id: number) {
     setSelected((prev) => {
@@ -69,8 +78,20 @@ export default function StartElectionButton({
         <p className="text-xs text-[var(--color-text-muted)] mb-4">
           Voting will be open for 72 hours.
         </p>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search games..."
+          className="w-full mb-3 px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg text-sm focus:outline-none focus:border-[var(--color-primary)]"
+        />
         <div className="grid gap-2 mb-4 max-h-64 overflow-y-auto">
-          {games.map((game) => (
+          {filteredGames.length === 0 && (
+            <p className="text-sm text-[var(--color-text-muted)] text-center py-4">
+              No games match your search.
+            </p>
+          )}
+          {filteredGames.map((game) => (
             <label
               key={game.id}
               className="flex items-center gap-3 bg-[var(--color-bg)] rounded-lg px-3 py-2 cursor-pointer hover:bg-[var(--color-surface-hover)]"

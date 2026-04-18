@@ -1,10 +1,11 @@
 import getDb from "@/lib/db";
-import { GameWithNominator, Election, StoreLink } from "@/lib/types";
+import { GameWithNominator, Election } from "@/lib/types";
 import { requireAuth } from "@/lib/auth";
 import { checkAndCloseExpiredElections } from "@/lib/elections";
 import NominationForm from "./NominationForm";
 import BallotForm from "./BallotForm";
 import CountdownTimer from "@/components/CountdownTimer";
+import NominationsList, { NominationStats } from "./NominationsList";
 
 export const dynamic = "force-dynamic";
 
@@ -65,19 +66,42 @@ function getElectionHistory(db: ReturnType<typeof getDb>): Record<number, { id: 
   return map;
 }
 
-function getStoreIcon(storeName: string): string {
-  const icons: Record<string, string> = {
-    "Steam": "🎮",
-    "PlayStation Store": "🎮",
-    "Xbox Store": "🎮",
-    "Nintendo Store": "🎮",
-    "Epic Games": "🎮",
-    "GOG": "🎮",
-    "App Store": "📱",
-    "Google Play": "📱",
-    "itch.io": "🕹️",
-  };
-  return icons[storeName] || "🔗";
+function getNominationStats(db: ReturnType<typeof getDb>): Record<number, NominationStats> {
+  // Aggregate from election_games joined with elections, plus the game's own
+  // nominated_at (the current/active nomination).
+  const rows = db
+    .prepare(
+      `SELECT g.id as game_id,
+              g.nominated_at as current_nominated_at,
+              MIN(COALESCE(e.created_at, g.nominated_at)) as first_at,
+              MAX(COALESCE(e.created_at, g.nominated_at)) as last_at,
+              COUNT(DISTINCT e.id) as election_count
+       FROM games g
+       LEFT JOIN election_games eg ON eg.game_id = g.id
+       LEFT JOIN elections e ON e.id = eg.election_id
+       WHERE g.status = 'nominated'
+       GROUP BY g.id`
+    )
+    .all() as {
+      game_id: number;
+      current_nominated_at: string;
+      first_at: string;
+      last_at: string;
+      election_count: number;
+    }[];
+
+  const out: Record<number, NominationStats> = {};
+  for (const r of rows) {
+    const first = r.first_at < r.current_nominated_at ? r.first_at : r.current_nominated_at;
+    const last = r.last_at > r.current_nominated_at ? r.last_at : r.current_nominated_at;
+    out[r.game_id] = {
+      gameId: r.game_id,
+      timesNominated: r.election_count + 1,
+      firstNominatedAt: first,
+      lastNominatedAt: last,
+    };
+  }
+  return out;
 }
 
 export default async function NominationsPage() {
@@ -90,6 +114,7 @@ export default async function NominationsPage() {
   const nominations = getNominations(db);
   const openElection = getOpenElection(db);
   const electionHistory = getElectionHistory(db);
+  const stats = getNominationStats(db);
   const hasVoted = openElection
     ? openElection.voterIds.includes(user.id)
     : false;
@@ -161,106 +186,20 @@ export default async function NominationsPage() {
           Nominated Games ({nominations.length})
         </h2>
 
-        <div className="grid gap-3">
-          {nominations.length > 0 ? (
-            nominations.map((game) => {
-              let stores: StoreLink[] = [];
-              try {
-                if (game.stores_json) stores = JSON.parse(game.stores_json);
-              } catch { /* ignore */ }
-              const trailerUrl = game.trailer_url || "";
-              const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(game.title + " official trailer")}`;
-              const pastElections = electionHistory[game.id] || [];
-
-              return (
-              <div
-                key={game.id}
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5"
-              >
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold">{game.title}</h3>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    {game.platform && (
-                      <span className="inline-block px-2 py-0.5 bg-[var(--color-primary)]/20 text-[var(--color-primary)] text-xs rounded">
-                        {game.platform}
-                      </span>
-                    )}
-                    <span className="text-sm text-[var(--color-text-muted)]">
-                      Nominated by {game.nominatorName}
-                    </span>
-                  </div>
-                  {game.description && (
-                    <p className="text-sm text-[var(--color-text-muted)] mt-2">
-                      {game.description}
-                    </p>
-                  )}
-
-                  {/* Past elections */}
-                  {pastElections.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                      <span className="text-xs text-[var(--color-text-muted)]">Past elections:</span>
-                      {pastElections.map((el) => (
-                        <a
-                          key={el.id}
-                          href={`/history/${el.id}`}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors"
-                        >
-                          🗳️ {el.name}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Store links + trailer */}
-                  <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[var(--color-border)]">
-                    {stores.map((store) => (
-                        <a
-                          key={store.url}
-                          href={store.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
-                          title={`View on ${store.name}`}
-                        >
-                          <span>{getStoreIcon(store.name)}</span>
-                          {store.name}
-                        </a>
-                      ))}
-                      {trailerUrl ? (
-                        <a
-                          href={trailerUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                          title="Watch trailer"
-                        >
-                          <span>▶</span> Trailer
-                        </a>
-                      ) : (
-                        <a
-                          href={youtubeSearchUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                          title="Search for trailer on YouTube"
-                        >
-                          <span>▶</span> Find Trailer
-                        </a>
-                      )}
-                    </div>
-                </div>
-              </div>
-              );
-            })
-          ) : (
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-8 text-center text-[var(--color-text-muted)]">
-              <p className="text-lg mb-1">No nominations yet</p>
-              <p className="text-sm">
-                Use the form above to nominate your first game!
-              </p>
-            </div>
-          )}
-        </div>
+        {nominations.length === 0 ? (
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-8 text-center text-[var(--color-text-muted)]">
+            <p className="text-lg mb-1">No nominations yet</p>
+            <p className="text-sm">
+              Use the form above to nominate your first game!
+            </p>
+          </div>
+        ) : (
+          <NominationsList
+            nominations={nominations}
+            stats={stats}
+            electionHistory={electionHistory}
+          />
+        )}
       </div>
     </div>
   );

@@ -8,7 +8,6 @@ const links = [
   { href: "/", label: "Dashboard", icon: "🏠" },
   { href: "/nominations", label: "Nominations", icon: "🎯" },
   { href: "/elections", label: "Elections", icon: "🗳️" },
-  { href: "/history", label: "History", icon: "📜" },
 ];
 
 interface NavbarUser {

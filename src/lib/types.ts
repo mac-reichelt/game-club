@@ -19,6 +19,7 @@ export interface Game {
   scheduled_date: string | null;
   completed_date: string | null;
   avg_rating: number | null;
+  gamedb_id: number | null;
 }
 
 export interface StoreLink {

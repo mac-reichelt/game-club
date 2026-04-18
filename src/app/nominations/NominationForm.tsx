@@ -212,6 +212,7 @@ export default function NominationForm() {
         description: description.trim() || undefined,
         storesJson: finalStores || undefined,
         trailerUrl: finalTrailer || undefined,
+        rawgId: selectedGame?.id,
       }),
     });
 

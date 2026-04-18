@@ -137,6 +137,9 @@ function initSchema(db: Database.Database) {
       "ALTER TABLE games ADD COLUMN trailer_url TEXT NOT NULL DEFAULT ''"
     );
   }
+  if (!gameCols.some((c) => c.name === "gamedb_id")) {
+    db.exec("ALTER TABLE games ADD COLUMN gamedb_id INTEGER");
+  }
 }
 
 export default getDb;

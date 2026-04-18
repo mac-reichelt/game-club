@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
   const db = getDb();
   const body = await request.json();
-  const { title, platform, description, storesJson, trailerUrl } = body;
+  const { title, platform, description, storesJson, trailerUrl, rawgId } = body;
 
   if (!title) {
     return NextResponse.json(
@@ -54,10 +54,23 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // If a RAWG id was supplied (auto-search path), import into gamedb to get
+  // the internal id we'll persist for cross-service linking.
+  let gamedbId: number | null = null;
+  if (rawgId && Number.isInteger(rawgId)) {
+    try {
+      const { importByRawgId } = await import("@/lib/gamedb");
+      const detail = await importByRawgId(rawgId);
+      gamedbId = detail.id;
+    } catch (err) {
+      console.error("gamedb import failed (non-fatal):", err);
+    }
+  }
+
   const result = db
     .prepare(
-      `INSERT INTO games (title, platform, description, stores_json, trailer_url, nominated_by, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'nominated')`
+      `INSERT INTO games (title, platform, description, stores_json, trailer_url, nominated_by, status, gamedb_id)
+       VALUES (?, ?, ?, ?, ?, ?, 'nominated', ?)`
     )
     .run(
       title,
@@ -65,11 +78,12 @@ export async function POST(request: NextRequest) {
       description || null,
       storesJson || "",
       trailerUrl || "",
-      user.id
+      user.id,
+      gamedbId
     );
 
   return NextResponse.json(
-    { id: result.lastInsertRowid, title, nominatedBy: user.id },
+    { id: result.lastInsertRowid, title, nominatedBy: user.id, gamedbId },
     { status: 201 }
   );
 }
