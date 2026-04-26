@@ -75,3 +75,36 @@ A "book club, but for games" web app. Members nominate games, vote via ranked-ch
 - `next lint` requires `eslint.config.mjs` to exist — without it, the command prompts interactively and hangs in CI
 - RAWG API key is optional — the app works without it, but game search/import is disabled
 - Telemetry disabled in Docker: `NEXT_TELEMETRY_DISABLED=1`
+
+## Agent Routing
+
+Before editing files in the paths below, consult the indicated specialist agents
+(in `.github/agents/`). Include a "Consulted:" line in your PR description listing
+which agents you consulted and why (e.g., "Consulted: security-review per routing matrix (auth changes)").
+
+| Path glob | Agent(s) to consult before editing |
+|---|---|
+| `src/lib/auth.ts`, `src/middleware.ts` | `security-review` |
+| `src/app/api/**` | `software-engineer` + `security-review` (input validation) |
+| `src/lib/db.ts` (schema changes) | `architect` |
+| `src/lib/db.ts`, `src/lib/types.ts` | `architect` (new tables/interfaces) |
+| `src/lib/rcv.ts`, `src/lib/elections.ts` | `qa-engineer` (algorithm correctness) |
+| `compose.yml`, `Dockerfile` | `devops-engineer` |
+| `.github/workflows/**` | `devops-engineer` + `security-review` |
+| `.github/agents/**`, `.github/instructions/**` | `devops-engineer` |
+| `src/__tests__/**` | `qa-engineer` |
+| `docs/**`, `README.md`, `CONTRIBUTING.md` | `tech-writer` |
+
+### How to declare consultations in PR descriptions
+
+Add a section to your PR body:
+
+```markdown
+## Consulted
+
+- `security-review` per routing matrix (changes to src/lib/auth.ts)
+- `devops-engineer` per routing matrix (changes to .github/workflows/)
+```
+
+If a path glob applies but the change is trivial (typo fix, rename only), you may
+skip consultation but must note it: "No agent consultation needed — trivial rename only."
