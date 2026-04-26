@@ -128,10 +128,10 @@ jobs:
           # Belt-and-suspenders: if the assembled request is too large for the
           # GitHub Models input budget (~32 KB safe ceiling for free tier),
           # short-circuit to APPROVE rather than 413.
-          REQ_BYTES=
-          if [ "" -gt 90000 ]; then
+          REQ_BYTES=$(wc -c < /tmp/tw-req.json)
+          if [ "$REQ_BYTES" -gt 90000 ]; then
             echo "::warning::Request body ${REQ_BYTES} bytes exceeds LLM budget; defaulting to APPROVE"
-            jq -n --argjson n "" '{verdict:"APPROVE",summary:("PR diff plus context (" + ($n|tostring) + " bytes) exceeds tech-writer LLM budget. Skipping inline review; please verify docs manually."),patches:[]}' > /tmp/tw-verdict.json
+            jq -n --argjson n "$REQ_BYTES" '{verdict:"APPROVE",summary:("PR diff plus context (" + ($n|tostring) + " bytes) exceeds tech-writer LLM budget. Skipping inline review; please verify docs manually."),patches:[]}' > /tmp/tw-verdict.json
             verdict=$(jq -r '.verdict' /tmp/tw-verdict.json)
             patch_count=$(jq -r '.patches | length' /tmp/tw-verdict.json)
             echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
