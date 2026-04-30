@@ -100,6 +100,16 @@ function initSchema(db: Database.Database) {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       expires_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS login_attempts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      identifier TEXT NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('account', 'ip')),
+      attempted_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_login_attempts_lookup
+      ON login_attempts(identifier, type, attempted_at);
   `);
 
   // Migrations for existing databases
