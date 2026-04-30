@@ -1,17 +1,19 @@
-# Game Club — Find and explore games
+# Game Club — Play, Vote, and Discover Together
 
-Game Club lets you search for games, view details, and discover where to buy or watch trailers. Powered by the RAWG API.
+Game Club lets your group nominate, vote, and track games to play together. Manage members, run elections, and keep your club's gaming history organized.
 
 ## Features
-- ✅ Search games by ID — fetch store links and trailers for a specific game
-- ✅ Input validation — only positive integer IDs are accepted for game search
+- ✅ Member management — add, disable, and authenticate users
+- ✅ Game nomination and voting — run elections to pick the next game
+- ✅ Login security — per-account lockout and per-IP throttling to prevent brute-force attacks
+- ✅ Session management — secure login with session tokens
 
 ## Quickstart
 
-Clone and run with Docker:
+Clone and run with Docker Compose:
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/<your-org>/game-club.git
 cd game-club
 docker compose up
 ```
@@ -19,32 +21,15 @@ docker compose up
 ## Documentation
 - [Getting Started](docs/getting-started.md)
 - [Configuration](docs/configuration.md)
-
-## API Reference
-
-### GET `/api/games/search/[id]`
-
-Fetches store links and trailers for a game by its ID.
-
-**Input requirements:**
-- `id` must be a positive integer (e.g., `42`).
-- Non-integer, negative, zero, decimal, or empty IDs return HTTP 400 with `{ error: "Invalid id" }`.
-
-**Example:**
-
-```bash
-curl /api/games/search/42
-```
-
-**Error responses:**
-- 400: Invalid id
-- 401: Unauthorized
-- 500: RAWG API key missing or upstream error
+- [Login Security](docs/login-security.md)
 
 ## Status
-- Game search endpoint: **stable**
-- Input validation: **stable**
-- Store/movie fetching: **stable**
+| Feature                | Status   |
+|------------------------|----------|
+| Member management      | Stable   |
+| Game nomination/voting | Stable   |
+| Login security         | Beta     |
+| Election history       | Planned  |
 
 ## Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md).
