@@ -47,7 +47,37 @@ npm run dev     # Start dev server at http://localhost:3000
 
 | Variable | Required | Description |
 |---|---|---|
+| `SIGNUP_INVITE_CODE` | **Yes** | Invite code required for new-member sign-up. Set to a strong random string (`openssl rand -hex 24`). If unset, sign-up is disabled (fail-closed). |
 | `RAWG_API_KEY` | No | API key for [RAWG](https://rawg.io/apidocs) game search. Without it, game search is disabled. |
+
+## Invite-Code Workflow
+
+Sign-up is gated behind a shared invite code stored in the `SIGNUP_INVITE_CODE`
+environment variable. This prevents anonymous users from registering once the
+app is exposed to the internet.
+
+**Setup:**
+
+```bash
+# Generate a strong random code
+openssl rand -hex 24
+# Example output: a3f8c2d1e9b0456f78a2c4d6e8f0a1b2c3d4e5f6
+```
+
+Set `SIGNUP_INVITE_CODE` in your environment (`.env.local` for dev,
+`compose.yml` for Docker) to the generated value. Share the code with the
+people you want to invite.
+
+**Behaviour:**
+
+- If `SIGNUP_INVITE_CODE` is **not set** → sign-up is disabled (returns 403).
+- If the code is **missing or wrong** in a sign-up request → 403 is returned.
+- If the code **matches** → account is created and the user is auto-logged in.
+
+**Rotating the code:**
+
+Update the env var and restart the app. Existing sessions are unaffected; only
+future sign-up attempts will require the new code.
 
 ## Docker Deployment
 
