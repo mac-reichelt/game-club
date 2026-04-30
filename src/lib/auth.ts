@@ -78,6 +78,23 @@ export async function requireAuth(): Promise<Member> {
 // Login rate-limiting & lockout
 // ---------------------------------------------------------------------------
 
+/**
+ * A dummy password hash in scrypt format (`scrypt:<salt>:<hash>`) used as a
+ * timing-safe fallback when a login attempt references a non-existent account.
+ *
+ * Passing this to `verifyPassword` should exercise the same code-path (and
+ * take roughly the same wall-clock time) as verifying against a real stored
+ * hash — preventing an attacker from enumerating valid usernames via response
+ * timing.
+ *
+ * Format mirrors the scrypt scheme introduced in PR #45:
+ *   scrypt:<32-byte-hex-salt>:<128-byte-hex-hash>
+ *
+ * Once the scrypt KDF is live, `verifyPassword(anyPassword, DUMMY_SCRYPT_HASH)`
+ * must take ≥ 50 ms (matching real scrypt derivation time).
+ */
+export const DUMMY_SCRYPT_HASH = `scrypt:${"0".repeat(32)}:${"0".repeat(128)}`;
+
 /** Max failed login attempts per account within the account window. */
 const ACCOUNT_MAX_ATTEMPTS = 10;
 /** Rolling window (minutes) for per-account attempt counting. */

@@ -9,6 +9,7 @@ import {
   recordIpAttempt,
   resetLoginAttempts,
   cleanupOldLoginAttempts,
+  DUMMY_SCRYPT_HASH,
 } from "@/lib/auth";
 import { Member } from "@/lib/types";
 
@@ -81,7 +82,9 @@ export async function POST(request: NextRequest) {
   // Always call verifyPassword to normalize response timing across the
   // 'account not found' and 'wrong password' paths, preventing user
   // enumeration via timing differences.
-  const storedHash = member?.password_hash || `:${"0".repeat(64)}`;
+  // DUMMY_SCRYPT_HASH is in scrypt format so that once PR #45 lands,
+  // this path exercises the full scrypt KDF rather than fast-failing.
+  const storedHash = member?.password_hash || DUMMY_SCRYPT_HASH;
   const passwordValid = verifyPassword(password, storedHash);
 
   if (!member || !member.password_hash || !passwordValid) {
