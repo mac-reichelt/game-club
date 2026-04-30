@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import getDb from "@/lib/db";
 import { getUserFromToken, hashPassword, verifyPassword } from "@/lib/auth";
+import { isBannedPassword } from "@/lib/bannedPasswords";
 
 // PATCH /api/auth/profile - update current user's profile
 export async function PATCH(request: NextRequest) {
@@ -46,9 +47,16 @@ export async function PATCH(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (newPassword.length < 4) {
+    if (newPassword.length < 12) {
       return NextResponse.json(
-        { error: "New password must be at least 4 characters" },
+        { error: "New password must be at least 12 characters" },
+        { status: 400 }
+      );
+    }
+
+    if (isBannedPassword(newPassword)) {
+      return NextResponse.json(
+        { error: "Password is too common. Please choose a more unique password." },
         { status: 400 }
       );
     }
