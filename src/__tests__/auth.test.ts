@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { hashPassword, verifyPassword } from "@/lib/auth";
+import { hashPassword, verifyPassword, DUMMY_SCRYPT_HASH } from "@/lib/auth";
 
 describe("hashPassword", () => {
   it("returns a salt:hash formatted string", () => {
@@ -57,4 +57,25 @@ describe("verifyPassword", () => {
     const stored = hashPassword(unicode);
     expect(verifyPassword(unicode, stored)).toBe(true);
   });
+});
+
+describe("DUMMY_SCRYPT_HASH", () => {
+  it("is in scrypt:<salt>:<hash> format (3 colon-separated parts)", () => {
+    const parts = DUMMY_SCRYPT_HASH.split(":");
+    expect(parts).toHaveLength(3);
+    expect(parts[0]).toBe("scrypt");
+    expect(parts[1]).toHaveLength(32);  // 32-char hex salt placeholder
+    expect(parts[2]).toHaveLength(128); // 128-char hex hash placeholder
+  });
+
+  it("verifyPassword returns false for any password against the dummy hash", () => {
+    // The dummy is intentionally invalid so it always rejects — what matters
+    // is that the code path reaches verifyPassword rather than skipping it.
+    expect(verifyPassword("anypassword", DUMMY_SCRYPT_HASH)).toBe(false);
+    expect(verifyPassword("", DUMMY_SCRYPT_HASH)).toBe(false);
+  });
+
+  // TODO (post-PR #45 scrypt): verify that verifyPassword('any', DUMMY_SCRYPT_HASH)
+  // takes ≥ 50 ms once the scrypt KDF is active, confirming the full derivation
+  // runs on unknown-account paths (timing-safe account-existence check).
 });
