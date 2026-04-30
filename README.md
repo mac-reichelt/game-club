@@ -1,44 +1,45 @@
-# Game Club — <one-line tagline>
+# Game Club — Play, Vote, and Track Your Favorite Games
 
-<2–3 sentence what + why. Hero screenshot/GIF if visual.>
+Game Club lets you organize game nights, vote on what to play, and track your club's favorites. Simple signup, emoji avatars, and secure profiles.
 
 ## Features
-- ✅ <feature> — <one-line>
-- ✅ <feature> — <one-line>
-- ✅ Built-in HTTP security headers — Enforces Content Security Policy, HSTS, Referrer Policy, Permissions Policy, and other headers for secure deployment
+- ✅ Game voting — everyone picks, top votes win
+- ✅ Emoji avatars — choose your vibe
+- ✅ Secure signup — minimum 12-character password, common passwords blocked
+- ✅ Profile editing — update your avatar and password
 
 ## Quickstart
 
-<5 minutes from clone to running. Exact commands.>
+Clone and run with Docker Compose:
 
 ```bash
-git clone ...
+git clone <repo-url>
 cd game-club
 docker compose up
 ```
+
+Then visit [http://localhost:3000](http://localhost:3000).
+
+### Signup Requirements
+- **Password must be at least 12 characters**
+- **Common passwords (e.g., 'password', '123456', 'qwerty') are not allowed**
+- If your password is rejected, try a longer and more unique phrase
 
 ## Documentation
 - [Getting Started](docs/getting-started.md)
 - [Configuration](docs/configuration.md)
 
-## Security Headers
-
-When running Game Club, the server automatically applies several HTTP security headers to all routes:
-
-- **Content-Security-Policy**: Restricts sources for scripts, styles, images, and other content. Note: `style-src` includes `'unsafe-inline'` to support Next.js runtime CSS injection.
-- **Strict-Transport-Security**: Enforces HTTPS for one year, including subdomains.
-- **Referrer-Policy**: Uses `strict-origin-when-cross-origin` for privacy.
-- **Permissions-Policy**: Disables geolocation, camera, microphone, and payment APIs.
-- **X-Frame-Options**: Denies all framing.
-- **X-Content-Type-Options**: Prevents MIME type sniffing.
-
-These headers are set in [`next.config.ts`](next.config.ts) and apply to all routes. If you customize deployment or add new routes, review these settings for compatibility.
-
 ## Status
-<table or paragraph: which features are stable, beta, planned>
+| Feature         | Status   |
+|-----------------|----------|
+| Game voting     | Stable   |
+| Emoji avatars   | Stable   |
+| Secure signup   | Stable   |
+| Profile editing | Stable   |
+| Password rules  | Stable   |
 
 ## Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
-<SPDX identifier> — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
