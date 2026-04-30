@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { isBannedPassword } from "@/lib/bannedPasswords";
 
 const AVATARS = [
   "🎮", "🕹️", "👾", "🎯", "🏆", "⚔️",
@@ -60,8 +61,12 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       setPasswordMsg("New passwords do not match");
       return;
     }
-    if (newPassword.length < 4) {
-      setPasswordMsg("Password must be at least 4 characters");
+    if (newPassword.length < 12) {
+      setPasswordMsg("New password must be at least 12 characters");
+      return;
+    }
+    if (isBannedPassword(newPassword)) {
+      setPasswordMsg("Password is too common. Please choose a more unique password.");
       return;
     }
 
