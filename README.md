@@ -1,16 +1,14 @@
-# Game Club — Play, Vote, and Track Your Favorite Games
+# Game Club — Find and explore games
 
-Game Club lets you organize game nights, vote on what to play, and track your club's favorites. Simple signup, emoji avatars, and secure profiles.
+Game Club lets you search for games, view details, and discover where to buy or watch trailers. Powered by the RAWG API.
 
 ## Features
-- ✅ Game voting — everyone picks, top votes win
-- ✅ Emoji avatars — choose your vibe
-- ✅ Secure signup — minimum 12-character password, common passwords blocked
-- ✅ Profile editing — update your avatar and password
+- ✅ Search games by ID — fetch store links and trailers for a specific game
+- ✅ Input validation — only positive integer IDs are accepted for game search
 
 ## Quickstart
 
-Clone and run with Docker Compose:
+Clone and run with Docker:
 
 ```bash
 git clone <repo-url>
@@ -18,25 +16,35 @@ cd game-club
 docker compose up
 ```
 
-Then visit [http://localhost:3000](http://localhost:3000).
-
-### Signup Requirements
-- **Password must be at least 12 characters**
-- **Common passwords (e.g., 'password', '123456', 'qwerty') are not allowed**
-- If your password is rejected, try a longer and more unique phrase
-
 ## Documentation
 - [Getting Started](docs/getting-started.md)
 - [Configuration](docs/configuration.md)
 
+## API Reference
+
+### GET `/api/games/search/[id]`
+
+Fetches store links and trailers for a game by its ID.
+
+**Input requirements:**
+- `id` must be a positive integer (e.g., `42`).
+- Non-integer, negative, zero, decimal, or empty IDs return HTTP 400 with `{ error: "Invalid id" }`.
+
+**Example:**
+
+```bash
+curl /api/games/search/42
+```
+
+**Error responses:**
+- 400: Invalid id
+- 401: Unauthorized
+- 500: RAWG API key missing or upstream error
+
 ## Status
-| Feature         | Status   |
-|-----------------|----------|
-| Game voting     | Stable   |
-| Emoji avatars   | Stable   |
-| Secure signup   | Stable   |
-| Profile editing | Stable   |
-| Password rules  | Stable   |
+- Game search endpoint: **stable**
+- Input validation: **stable**
+- Store/movie fetching: **stable**
 
 ## Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md).
