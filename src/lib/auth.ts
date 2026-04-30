@@ -1,30 +1,85 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import crypto from "crypto";
+import crypto, { BinaryLike, ScryptOptions } from "crypto";
+import { promisify } from "util";
 import Database from "better-sqlite3";
 import getDb from "./db";
 import { Member } from "./types";
 
 // ---------------------------------------------------------------------------
-// Password helpers
+// Password helpers (scrypt with legacy SHA-256 fallback)
 // ---------------------------------------------------------------------------
 
-export function hashPassword(password: string): string {
+// scrypt parameters — deliberately work-intensive to resist GPU cracking
+const SCRYPT_PREFIX = "scrypt";
+const SCRYPT_N = 16384; // CPU/memory cost (2^14)
+const SCRYPT_R = 8; // block size
+const SCRYPT_P = 1; // parallelisation factor
+const SCRYPT_KEYLEN = 64; // output length in bytes (512 bits)
+
+const scrypt = promisify<BinaryLike, BinaryLike, number, ScryptOptions, Buffer>(
+  crypto.scrypt
+);
+
+/**
+ * Hash a password with scrypt (async — does not block the event loop).
+ * Output format: "scrypt:<hex-salt>:<hex-hash>"
+ */
+export async function hashPassword(password: string): Promise<string> {
   const salt = crypto.randomBytes(16).toString("hex");
-  const hash = crypto
-    .createHash("sha256")
-    .update(salt + password)
-    .digest("hex");
-  return `${salt}:${hash}`;
+  const hash = await scrypt(password, salt, SCRYPT_KEYLEN, {
+    N: SCRYPT_N,
+    r: SCRYPT_R,
+    p: SCRYPT_P,
+  });
+  return `${SCRYPT_PREFIX}:${salt}:${hash.toString("hex")}`;
 }
 
-export function verifyPassword(password: string, stored: string): boolean {
-  const [salt, hash] = stored.split(":");
-  const attempt = crypto
-    .createHash("sha256")
-    .update(salt + password)
-    .digest("hex");
-  return hash === attempt;
+/**
+ * Returns true when the stored hash was produced by the legacy SHA-256
+ * scheme and should be upgraded to scrypt on the next successful login.
+ */
+export function needsRehash(stored: string): boolean {
+  return !stored.startsWith(`${SCRYPT_PREFIX}:`);
+}
+
+/**
+ * Verify a plaintext password against a stored hash (async).
+ *
+ * Supports two formats:
+ *   - scrypt  (new):    "scrypt:<salt>:<hash>"
+ *   - SHA-256 (legacy): "<salt>:<hash>"
+ *
+ * All comparisons use crypto.timingSafeEqual to prevent timing oracles.
+ */
+export async function verifyPassword(
+  password: string,
+  stored: string
+): Promise<boolean> {
+  if (stored.startsWith(`${SCRYPT_PREFIX}:`)) {
+    const parts = stored.split(":");
+    if (parts.length !== 3) return false;
+    const [, salt, hashHex] = parts;
+    const storedHash = Buffer.from(hashHex, "hex");
+    if (storedHash.length !== SCRYPT_KEYLEN) return false;
+    const attempt = await scrypt(password, salt, SCRYPT_KEYLEN, {
+      N: SCRYPT_N,
+      r: SCRYPT_R,
+      p: SCRYPT_P,
+    });
+    return crypto.timingSafeEqual(storedHash, attempt);
+  } else {
+    const parts = stored.split(":");
+    if (parts.length !== 2) return false;
+    const [salt, hashHex] = parts;
+    const storedHash = Buffer.from(hashHex, "hex");
+    if (storedHash.length !== 32) return false;
+    const attempt = crypto
+      .createHash("sha256")
+      .update(salt + password)
+      .digest();
+    return crypto.timingSafeEqual(storedHash, attempt);
+  }
 }
 
 export function createSession(memberId: number): string {
@@ -86,12 +141,6 @@ export async function requireAuth(): Promise<Member> {
  * take roughly the same wall-clock time) as verifying against a real stored
  * hash — preventing an attacker from enumerating valid usernames via response
  * timing.
- *
- * Format mirrors the scrypt scheme introduced in PR #45:
- *   scrypt:<32-byte-hex-salt>:<128-byte-hex-hash>
- *
- * Once the scrypt KDF is live, `verifyPassword(anyPassword, DUMMY_SCRYPT_HASH)`
- * must take ≥ 50 ms (matching real scrypt derivation time).
  */
 export const DUMMY_SCRYPT_HASH = `scrypt:${"0".repeat(32)}:${"0".repeat(128)}`;
 
@@ -108,11 +157,6 @@ const IP_WINDOW_MINUTES = 5;
 /** Minimum age (minutes) for login_attempts records to be eligible for cleanup. */
 const CLEANUP_AGE_MINUTES = 60;
 
-/**
- * Returns true when the account has reached the failed-attempt threshold within
- * the rolling window (i.e. the next login attempt for this account should be
- * rejected).
- */
 export function isAccountLocked(
   name: string,
   db?: Database.Database
@@ -128,10 +172,6 @@ export function isAccountLocked(
   return row.cnt >= ACCOUNT_MAX_ATTEMPTS;
 }
 
-/**
- * Returns true when the IP address has reached the throttle threshold within
- * the rolling window.
- */
 export function isIpThrottled(ip: string, db?: Database.Database): boolean {
   const database = db ?? getDb();
   const row = database
@@ -144,11 +184,6 @@ export function isIpThrottled(ip: string, db?: Database.Database): boolean {
   return row.cnt >= IP_MAX_ATTEMPTS;
 }
 
-/**
- * Records a failed login attempt for both the account name and the originating
- * IP address.  Both rows are inserted in a single transaction so that either
- * both succeed or neither does.
- */
 export function recordLoginAttempt(
   name: string,
   ip: string,
@@ -164,11 +199,6 @@ export function recordLoginAttempt(
   })();
 }
 
-/**
- * Records a login attempt for an IP address only (used when the account is
- * already locked so we do not inflate the account counter further, but we
- * still want to track the IP).
- */
 export function recordIpAttempt(ip: string, db?: Database.Database): void {
   const database = db ?? getDb();
   database
@@ -178,10 +208,6 @@ export function recordIpAttempt(ip: string, db?: Database.Database): void {
     .run(ip);
 }
 
-/**
- * Removes all account-level attempt records for the given name (called on
- * successful login to reset the per-account counter).
- */
 export function resetLoginAttempts(
   name: string,
   db?: Database.Database
@@ -194,10 +220,6 @@ export function resetLoginAttempts(
     .run(name);
 }
 
-/**
- * Deletes login_attempts records older than CLEANUP_AGE_MINUTES.  Call this
- * periodically (e.g. on each login request) to keep the table tidy.
- */
 export function cleanupOldLoginAttempts(db?: Database.Database): void {
   const database = db ?? getDb();
   database
@@ -206,4 +228,3 @@ export function cleanupOldLoginAttempts(db?: Database.Database): void {
     )
     .run(`-${CLEANUP_AGE_MINUTES} minutes`);
 }
-
