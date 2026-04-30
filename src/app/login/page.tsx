@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [avatar, setAvatar] = useState("🎮");
+  const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -38,7 +39,7 @@ export default function LoginPage() {
     const body =
       mode === "login"
         ? { name, password }
-        : { name, password, avatar };
+        : { name, password, avatar, inviteCode };
 
     const res = await fetch(endpoint, {
       method: "POST",
@@ -60,6 +61,7 @@ export default function LoginPage() {
     setMode(mode === "login" ? "signup" : "login");
     setError("");
     setConfirmPassword("");
+    setInviteCode("");
   }
 
   return (
@@ -148,6 +150,20 @@ export default function LoginPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm text-[var(--color-text-muted)] mb-1">
+                  Invite Code
+                </label>
+                <input
+                  type="text"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  required
+                  className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
+                  placeholder="Enter your invite code"
+                />
               </div>
             </>
           )}
