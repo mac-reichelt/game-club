@@ -1,14 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import getDb from "@/lib/db";
 import { hashPassword, createSession } from "@/lib/auth";
 
+function safeCompare(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  const maxLen = Math.max(bufA.length, bufB.length);
+  // Pad both buffers to equal length so timingSafeEqual can compare them
+  // without leaking length information via short-circuit.
+  const paddedA = Buffer.concat([bufA, Buffer.alloc(maxLen - bufA.length)]);
+  const paddedB = Buffer.concat([bufB, Buffer.alloc(maxLen - bufB.length)]);
+  return timingSafeEqual(paddedA, paddedB) && bufA.length === bufB.length;
+}
+
 export async function POST(request: NextRequest) {
+  const configuredCode = process.env.SIGNUP_INVITE_CODE ?? "";
+  if (!configuredCode) {
+    return NextResponse.json(
+      { error: "Signup is not available" },
+      { status: 403 }
+    );
+  }
+
   const body = await request.json();
-  const { name, password, avatar } = body as {
+  const { name, password, avatar, inviteCode } = body as {
     name?: string;
     password?: string;
     avatar?: string;
+    inviteCode?: string;
   };
+
+  if (!inviteCode || !safeCompare(inviteCode, configuredCode)) {
+    return NextResponse.json(
+      { error: "Invalid or missing invite code" },
+      { status: 403 }
+    );
+  }
 
   if (!name || !name.trim()) {
     return NextResponse.json(
