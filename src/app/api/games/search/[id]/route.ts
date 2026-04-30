@@ -27,6 +27,13 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+
+  // Validate id is a positive integer to prevent URL manipulation
+  const gid = parseInt(id, 10);
+  if (!Number.isInteger(gid) || gid <= 0 || String(gid) !== id) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
+
   const apiKey = process.env.RAWG_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -35,15 +42,17 @@ export async function GET(
     );
   }
 
+  const encodedId = encodeURIComponent(String(gid));
+
   try {
     // Fetch stores and movies in parallel
     const [storesRes, moviesRes] = await Promise.all([
       fetch(
-        `https://api.rawg.io/api/games/${id}/stores?key=${apiKey}`,
+        `https://api.rawg.io/api/games/${encodedId}/stores?key=${apiKey}`,
         { next: { revalidate: 86400 } } // cache 24h
       ),
       fetch(
-        `https://api.rawg.io/api/games/${id}/movies?key=${apiKey}`,
+        `https://api.rawg.io/api/games/${encodedId}/movies?key=${apiKey}`,
         { next: { revalidate: 86400 } }
       ),
     ]);
