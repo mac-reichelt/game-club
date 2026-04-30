@@ -1,8 +1,13 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import crypto from "crypto";
+import Database from "better-sqlite3";
 import getDb from "./db";
 import { Member } from "./types";
+
+// ---------------------------------------------------------------------------
+// Password helpers
+// ---------------------------------------------------------------------------
 
 export function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString("hex");
@@ -68,3 +73,120 @@ export async function requireAuth(): Promise<Member> {
   if (!user) redirect("/login");
   return user;
 }
+
+// ---------------------------------------------------------------------------
+// Login rate-limiting & lockout
+// ---------------------------------------------------------------------------
+
+/** Max failed login attempts per account within the account window. */
+const ACCOUNT_MAX_ATTEMPTS = 10;
+/** Rolling window (minutes) for per-account attempt counting. */
+const ACCOUNT_WINDOW_MINUTES = 10;
+
+/** Max login attempts (all outcomes) from a single IP within the IP window. */
+const IP_MAX_ATTEMPTS = 30;
+/** Rolling window (minutes) for per-IP attempt counting. */
+const IP_WINDOW_MINUTES = 5;
+
+/** Minimum age (minutes) for login_attempts records to be eligible for cleanup. */
+const CLEANUP_AGE_MINUTES = 60;
+
+/**
+ * Returns true when the account has reached the failed-attempt threshold within
+ * the rolling window (i.e. the next login attempt for this account should be
+ * rejected).
+ */
+export function isAccountLocked(
+  name: string,
+  db?: Database.Database
+): boolean {
+  const database = db ?? getDb();
+  const row = database
+    .prepare(
+      `SELECT COUNT(*) as cnt FROM login_attempts
+       WHERE identifier = ? AND type = 'account'
+       AND attempted_at > datetime('now', ?)`
+    )
+    .get(name, `-${ACCOUNT_WINDOW_MINUTES} minutes`) as { cnt: number };
+  return row.cnt >= ACCOUNT_MAX_ATTEMPTS;
+}
+
+/**
+ * Returns true when the IP address has reached the throttle threshold within
+ * the rolling window.
+ */
+export function isIpThrottled(ip: string, db?: Database.Database): boolean {
+  const database = db ?? getDb();
+  const row = database
+    .prepare(
+      `SELECT COUNT(*) as cnt FROM login_attempts
+       WHERE identifier = ? AND type = 'ip'
+       AND attempted_at > datetime('now', ?)`
+    )
+    .get(ip, `-${IP_WINDOW_MINUTES} minutes`) as { cnt: number };
+  return row.cnt >= IP_MAX_ATTEMPTS;
+}
+
+/**
+ * Records a failed login attempt for both the account name and the originating
+ * IP address.  Both rows are inserted in a single transaction so that either
+ * both succeed or neither does.
+ */
+export function recordLoginAttempt(
+  name: string,
+  ip: string,
+  db?: Database.Database
+): void {
+  const database = db ?? getDb();
+  const stmt = database.prepare(
+    "INSERT INTO login_attempts (identifier, type) VALUES (?, ?)"
+  );
+  database.transaction(() => {
+    stmt.run(name, "account");
+    stmt.run(ip, "ip");
+  })();
+}
+
+/**
+ * Records a login attempt for an IP address only (used when the account is
+ * already locked so we do not inflate the account counter further, but we
+ * still want to track the IP).
+ */
+export function recordIpAttempt(ip: string, db?: Database.Database): void {
+  const database = db ?? getDb();
+  database
+    .prepare(
+      "INSERT INTO login_attempts (identifier, type) VALUES (?, 'ip')"
+    )
+    .run(ip);
+}
+
+/**
+ * Removes all account-level attempt records for the given name (called on
+ * successful login to reset the per-account counter).
+ */
+export function resetLoginAttempts(
+  name: string,
+  db?: Database.Database
+): void {
+  const database = db ?? getDb();
+  database
+    .prepare(
+      "DELETE FROM login_attempts WHERE identifier = ? AND type = 'account'"
+    )
+    .run(name);
+}
+
+/**
+ * Deletes login_attempts records older than CLEANUP_AGE_MINUTES.  Call this
+ * periodically (e.g. on each login request) to keep the table tidy.
+ */
+export function cleanupOldLoginAttempts(db?: Database.Database): void {
+  const database = db ?? getDb();
+  database
+    .prepare(
+      `DELETE FROM login_attempts WHERE attempted_at < datetime('now', ?)`
+    )
+    .run(`-${CLEANUP_AGE_MINUTES} minutes`);
+}
+
