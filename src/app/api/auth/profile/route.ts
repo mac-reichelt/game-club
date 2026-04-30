@@ -65,7 +65,7 @@ export async function PATCH(request: NextRequest) {
       .prepare("SELECT password_hash FROM members WHERE id = ?")
       .get(user.id) as { password_hash: string } | undefined;
 
-    if (!member || !verifyPassword(currentPassword, member.password_hash)) {
+    if (!member || !await verifyPassword(currentPassword, member.password_hash)) {
       return NextResponse.json(
         { error: "Current password is incorrect" },
         { status: 401 }
@@ -87,7 +87,7 @@ export async function PATCH(request: NextRequest) {
     );
   }
   if (newPassword) {
-    const newHash = hashPassword(newPassword);
+    const newHash = await hashPassword(newPassword);
     db.prepare("UPDATE members SET password_hash = ? WHERE id = ?").run(
       newHash,
       user.id

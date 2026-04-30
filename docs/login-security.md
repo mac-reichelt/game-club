@@ -1,60 +1,59 @@
 # Login Security
 
-Game Club implements multiple safeguards to protect user accounts from brute-force and enumeration attacks.
+This page documents the authentication and login security mechanisms for Game Club.
 
-## Account Lockout
+## Password Hashing
 
-- **Threshold:** After 10 failed login attempts for a single account within a 10-minute window, further attempts are locked out for that account.
-- **Reset:** Successful login resets the failed-attempt counter for that account.
+**Minimum version:** vNEXT (PR #45)
 
-## IP Throttling
+Game Club uses the [scrypt](https://en.wikipedia.org/wiki/Scrypt) key derivation function to securely hash user passwords. This protects against brute-force and GPU-based attacks.
 
-- **Threshold:** After 30 login attempts (regardless of outcome) from a single IP address within a 5-minute window, further attempts from that IP are rejected.
-- **Purpose:** Limits mass brute-force attempts from a single source.
+- **Format:** `scrypt:<hex-salt>:<hex-hash>`
+- **Salt:** 16 bytes (32 hex chars), randomly generated per password
+- **Hash:** 64 bytes (128 hex chars), scrypt output
+- **Parameters:**
+  - N = 16384
+  - r = 8
+  - p = 1
+  - Key length = 64 bytes
 
-## Attempt Tracking
+All password hashing and verification is **asynchronous** and does not block the event loop.
 
-- All failed login attempts are recorded in the `login_attempts` table.
-- Both account and IP attempts are tracked separately.
-- Old records (older than 1 hour) are periodically cleaned up to keep the table small.
+### Legacy Hash Migration
 
-## Timing-Safe Username Checks
+If a user account's password is still stored in the legacy SHA-256 format (`<salt>:<hash>`), the system will:
 
-- When a login references a non-existent account, password verification is still performed against a dummy hash to ensure response timing is consistent.
-- This prevents attackers from enumerating valid usernames via timing differences.
+1. Accept the password if it matches the legacy hash.
+2. **Immediately upgrade** the stored hash to scrypt on the next successful login.
 
-## Deployment Note: Trusted Proxy Required
+This migration is transparent to users. No action is required.
 
-- **IP throttling relies on the `X-Forwarded-For` header.**
-- Deploy Game Club behind a trusted reverse proxy (e.g., Traefik, Nginx, or a cloud load-balancer) that sets `X-Forwarded-For`.
-- If deployed without a proxy, clients can spoof their IP and bypass throttling.
+### Timing Attack Mitigation
 
-## Configuration
+- All login attempts (including for non-existent accounts) run the full scrypt verification path using a dummy hash. This prevents attackers from distinguishing valid usernames by timing differences.
 
-The thresholds and windows are currently hardcoded:
+- The dummy hash is in scrypt format and is guaranteed to fail, but takes the same time to verify as a real hash.
 
-| Setting                | Value         |
-|------------------------|--------------|
-| Account lock threshold | 10 attempts   |
-| Account window         | 10 minutes    |
-| IP throttle threshold  | 30 attempts   |
-| IP window              | 5 minutes     |
-| Cleanup age            | 60 minutes    |
+## Login Throttling and Lockout
 
-## Schema
+- **Per-IP throttle:** Limits the number of login attempts from a single IP in a rolling window.
+- **Per-account lockout:** Temporarily locks accounts after too many failed attempts.
+- **Housekeeping:** Old login attempt records are cleaned up periodically (on ~5% of login requests).
 
-The `login_attempts` table:
+See [API Reference](reference/api.md#auth) for endpoint details.
 
-```sql
-CREATE TABLE login_attempts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  identifier TEXT NOT NULL,
-  type TEXT NOT NULL CHECK(type IN ('account', 'ip')),
-  attempted_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
-CREATE INDEX idx_login_attempts_lookup ON login_attempts(identifier, type, attempted_at);
-```
+## Changing Your Password
 
-## Minimum Version
+- Password changes always use the latest scrypt hashing scheme.
+- The current password is verified before allowing a change.
 
-Login security features require Game Club v0.1.0 or later.
+## Version Compatibility
+
+- scrypt-based hashes require Node.js 10+ (for `crypto.scrypt`).
+- Legacy SHA-256 hashes are supported for migration only.
+
+---
+
+**See also:**
+- [Getting Started](getting-started.md)
+- [API Reference](reference/api.md)

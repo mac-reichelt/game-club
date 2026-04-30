@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import getDb from "@/lib/db";
 import {
   verifyPassword,
+  hashPassword,
+  needsRehash,
   createSession,
   isAccountLocked,
   isIpThrottled,
@@ -46,16 +48,12 @@ export async function POST(request: NextRequest) {
   const db = getDb();
   const ip = getClientIp(request);
 
-  // Periodic housekeeping: run on ~5% of requests to keep the table small
-  // without creating noticeable overhead on every login call.
+  // Periodic housekeeping
   if (Math.random() < 0.05) {
     cleanupOldLoginAttempts(db);
   }
 
   // --- Per-IP throttle ---
-  // Count all login attempts from this IP within the rolling window.
-  // If the threshold is reached, reject immediately without recording another
-  // attempt (the records are already counted).
   if (isIpThrottled(ip, db)) {
     return NextResponse.json(
       { error: INVALID_CREDENTIALS },
@@ -64,9 +62,6 @@ export async function POST(request: NextRequest) {
   }
 
   // --- Per-account lockout ---
-  // If the account has too many recent failed attempts, record only the IP
-  // contribution (so IP throttle still fires) and reject with a generic error
-  // to avoid leaking lockout state to the caller.
   if (isAccountLocked(name, db)) {
     recordIpAttempt(ip, db);
     return NextResponse.json(
@@ -79,20 +74,25 @@ export async function POST(request: NextRequest) {
     .prepare("SELECT * FROM members WHERE name = ? AND disabled = 0")
     .get(name) as (Member & { password_hash: string }) | undefined;
 
-  // Always call verifyPassword to normalize response timing across the
-  // 'account not found' and 'wrong password' paths, preventing user
-  // enumeration via timing differences.
-  // DUMMY_SCRYPT_HASH is in scrypt format so that once PR #45 lands,
-  // this path exercises the full scrypt KDF rather than fast-failing.
+  // Always run verifyPassword (with a dummy scrypt hash for missing accounts)
+  // to normalize response timing and prevent user enumeration.
   const storedHash = member?.password_hash || DUMMY_SCRYPT_HASH;
-  const passwordValid = verifyPassword(password, storedHash);
+  const passwordValid = await verifyPassword(password, storedHash);
 
   if (!member || !member.password_hash || !passwordValid) {
-    // Record the failed attempt for both account and IP before responding.
     recordLoginAttempt(name, ip, db);
     return NextResponse.json(
       { error: INVALID_CREDENTIALS },
       { status: 401 }
+    );
+  }
+
+  // Transparently upgrade legacy SHA-256 hashes to scrypt
+  if (needsRehash(member.password_hash)) {
+    const newHash = await hashPassword(password);
+    db.prepare("UPDATE members SET password_hash = ? WHERE id = ?").run(
+      newHash,
+      member.id
     );
   }
 
@@ -107,9 +107,8 @@ export async function POST(request: NextRequest) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   });
 
   return response;
 }
-
