@@ -37,7 +37,7 @@ describe("POST /api/auth/signup — invite code gate", () => {
   it("returns 403 when invite code is missing", async () => {
     // Lazy import so env stub is applied first
     const { POST } = await import("@/app/api/auth/signup/route");
-    const req = makeRequest({ name: "Alice", password: "password123" });
+    const req = makeRequest({ name: "Alice", password: "Sup3rUniqueT3st!" });
     const res = await POST(req);
     expect(res.status).toBe(403);
     const data = await res.json();
@@ -48,7 +48,7 @@ describe("POST /api/auth/signup — invite code gate", () => {
     const { POST } = await import("@/app/api/auth/signup/route");
     const req = makeRequest({
       name: "Alice",
-      password: "password123",
+      password: "Sup3rUniqueT3st!",
       inviteCode: "wrong-code",
     });
     const res = await POST(req);
@@ -61,7 +61,7 @@ describe("POST /api/auth/signup — invite code gate", () => {
     const { POST } = await import("@/app/api/auth/signup/route");
     const req = makeRequest({
       name: "Alice",
-      password: "password123",
+      password: "Sup3rUniqueT3st!",
       inviteCode: VALID_CODE,
     });
     const res = await POST(req);
@@ -76,7 +76,7 @@ describe("POST /api/auth/signup — invite code gate", () => {
     const { POST } = await import("@/app/api/auth/signup/route");
     const req = makeRequest({
       name: "Alice",
-      password: "password123",
+      password: "Sup3rUniqueT3st!",
       inviteCode: VALID_CODE,
     });
     const res = await POST(req);
