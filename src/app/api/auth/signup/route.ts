@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const passwordHash = hashPassword(password);
+  const passwordHash = await hashPassword(password);
   const result = db
     .prepare(
       "INSERT INTO members (name, avatar, password_hash) VALUES (?, ?, ?)"
