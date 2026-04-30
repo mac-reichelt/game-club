@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import getDb from "@/lib/db";
 import { hashPassword, createSession } from "@/lib/auth";
+import { isBannedPassword } from "@/lib/bannedPasswords";
 
 function safeCompare(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
@@ -45,9 +46,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!password || password.length < 4) {
+  if (!password || password.length < 12) {
     return NextResponse.json(
-      { error: "Password must be at least 4 characters" },
+      { error: "Password must be at least 12 characters" },
+      { status: 400 }
+    );
+  }
+
+  if (isBannedPassword(password)) {
+    return NextResponse.json(
+      { error: "Password is too common. Please choose a more unique password." },
       { status: 400 }
     );
   }
