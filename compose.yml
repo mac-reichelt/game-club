@@ -8,6 +8,12 @@ services:
       - gameclub-data:/app/data
     environment:
       - NODE_ENV=production
+      # Invite code required for new member sign-up.
+      # Generate a strong value: openssl rand -hex 24
+      # If unset, sign-up is disabled.
+      - SIGNUP_INVITE_CODE=change-me-before-deploying
+      # RAWG API key for game search (optional)
+      # - RAWG_API_KEY=
 
 volumes:
   gameclub-data:
