@@ -1,59 +1,41 @@
 # Login Security
 
-This page documents the authentication and login security mechanisms for Game Club.
+## Client IP Extraction (v0.1.0+)
 
-## Password Hashing
+When a user logs in, the app extracts the client IP address for rate-limiting and security checks. The extraction logic depends on trusted proxy headers:
 
-**Minimum version:** vNEXT (PR #45)
+- **Traefik** (our reverse proxy) sets `X-Real-Ip` to the actual connecting peer.
+- Traefik **appends** the connecting peer to `X-Forwarded-For` (rightmost entry), rather than replacing it.
 
-Game Club uses the [scrypt](https://en.wikipedia.org/wiki/Scrypt) key derivation function to securely hash user passwords. This protects against brute-force and GPU-based attacks.
+### Extraction Logic
 
-- **Format:** `scrypt:<hex-salt>:<hex-hash>`
-- **Salt:** 16 bytes (32 hex chars), randomly generated per password
-- **Hash:** 64 bytes (128 hex chars), scrypt output
-- **Parameters:**
-  - N = 16384
-  - r = 8
-  - p = 1
-  - Key length = 64 bytes
+1. **If `X-Real-Ip` is present:**
+   - The app trusts this value as the real client IP.
+2. **If `X-Real-Ip` is absent but `X-Forwarded-For` is present:**
+   - The app uses the **rightmost** entry in `X-Forwarded-For` (the one Traefik appended).
+3. **If neither header is present:**
+   - The app falls back to `unknown`.
 
-All password hashing and verification is **asynchronous** and does not block the event loop.
+> **Note:** Earlier entries in `X-Forwarded-For` may be attacker-supplied and are **not trusted**.
 
-### Legacy Hash Migration
+### Security Implications
 
-If a user account's password is still stored in the legacy SHA-256 format (`<salt>:<hash>`), the system will:
+- **Trusted Proxy Required:**
+  - The app must be deployed behind a trusted reverse proxy (e.g., Traefik, Nginx, or a cloud load-balancer) that sets these headers.
+  - Without a trusted proxy, an attacker can spoof headers and bypass per-IP throttling.
+- **Do not trust leftmost `X-Forwarded-For`:**
+  - Picking the leftmost entry (common in client-trusted scenarios) would let attackers rotate spoofed values per request and defeat throttling.
 
-1. Accept the password if it matches the legacy hash.
-2. **Immediately upgrade** the stored hash to scrypt on the next successful login.
+### Example
 
-This migration is transparent to users. No action is required.
+```
+X-Forwarded-For: 203.0.113.1, 198.51.100.2
+X-Real-Ip: 198.51.100.2
+```
 
-### Timing Attack Mitigation
-
-- All login attempts (including for non-existent accounts) run the full scrypt verification path using a dummy hash. This prevents attackers from distinguishing valid usernames by timing differences.
-
-- The dummy hash is in scrypt format and is guaranteed to fail, but takes the same time to verify as a real hash.
-
-## Login Throttling and Lockout
-
-- **Per-IP throttle:** Limits the number of login attempts from a single IP in a rolling window.
-- **Per-account lockout:** Temporarily locks accounts after too many failed attempts.
-- **Housekeeping:** Old login attempt records are cleaned up periodically (on ~5% of login requests).
-
-See [API Reference](reference/api.md#auth) for endpoint details.
-
-## Changing Your Password
-
-- Password changes always use the latest scrypt hashing scheme.
-- The current password is verified before allowing a change.
-
-## Version Compatibility
-
-- scrypt-based hashes require Node.js 10+ (for `crypto.scrypt`).
-- Legacy SHA-256 hashes are supported for migration only.
+- `X-Real-Ip` is trusted: `198.51.100.2`
+- If `X-Real-Ip` is missing, use rightmost `X-Forwarded-For`: `198.51.100.2`
 
 ---
 
-**See also:**
-- [Getting Started](getting-started.md)
-- [API Reference](reference/api.md)
+**Minimum compatible version:** v0.1.0
