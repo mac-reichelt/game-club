@@ -16,20 +16,29 @@ import {
 import { Member } from "@/lib/types";
 
 /**
- * Extract the real client IP, preferring the first entry in X-Forwarded-For.
+ * Extract the real client IP.
  *
- * IMPORTANT: This header can be spoofed by clients that connect directly.
- * The application must be deployed behind a trusted reverse-proxy (e.g.
- * Traefik, Nginx, or a cloud load-balancer) that sets X-Forwarded-For before
- * requests reach Next.js.  Without a trusted proxy, an attacker can bypass
- * per-IP throttling by injecting an arbitrary header value.
+ * Traefik (our reverse proxy) sets `X-Real-Ip` to the actual connecting peer
+ * and APPENDS the connecting peer to `X-Forwarded-For` rather than replacing
+ * it.  Therefore:
+ *
+ *   - `X-Real-Ip` is always trustworthy when set by Traefik.
+ *   - The RIGHTMOST entry of `X-Forwarded-For` is the one our trusted proxy
+ *     added; earlier entries may be attacker-supplied and MUST NOT be trusted.
+ *
+ * Picking the leftmost entry (as is common for client-trusted scenarios)
+ * would let an attacker rotate spoofed values per-request and defeat the
+ * per-IP throttle entirely, since this app sits behind a single trusted hop.
  */
 function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
+  const real = request.headers.get("x-real-ip")?.trim();
+  if (real) return real;
+  const xff = request.headers.get("x-forwarded-for");
+  if (xff) {
+    const parts = xff.split(",").map((s) => s.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
+  return "unknown";
 }
 
 const INVALID_CREDENTIALS = "Invalid credentials";
