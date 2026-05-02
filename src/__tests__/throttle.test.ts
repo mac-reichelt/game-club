@@ -7,6 +7,7 @@ import {
   recordIpAttempt,
   resetLoginAttempts,
   cleanupOldLoginAttempts,
+  checkAndRecordAttempt,
 } from "@/lib/auth";
 
 // ---------------------------------------------------------------------------
@@ -283,5 +284,73 @@ describe("cleanupOldLoginAttempts", () => {
       }
     ).cnt;
     expect(count).toBe(10);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// checkAndRecordAttempt
+// ---------------------------------------------------------------------------
+
+describe("checkAndRecordAttempt", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = setupDb();
+  });
+
+  it("records both account and ip rows when below the threshold", () => {
+    insertAccountAttempts(db, "alice", 9);
+
+    const recorded = checkAndRecordAttempt("alice", "1.2.3.4", db);
+
+    expect(recorded).toBe(true);
+    const rows = db
+      .prepare("SELECT identifier, type FROM login_attempts")
+      .all() as { identifier: string; type: string }[];
+    expect(rows).toContainEqual({ identifier: "alice", type: "account" });
+    expect(rows).toContainEqual({ identifier: "1.2.3.4", type: "ip" });
+  });
+
+  it("does not insert when the account is already at the threshold (simulated TOCTOU)", () => {
+    // Simulate: account is exactly at the limit as the exclusive check runs.
+    insertAccountAttempts(db, "alice", 10);
+
+    const recorded = checkAndRecordAttempt("alice", "1.2.3.4", db);
+
+    expect(recorded).toBe(false);
+    // The count must not exceed 10.
+    const accountCount = (
+      db
+        .prepare(
+          `SELECT COUNT(*) as cnt FROM login_attempts
+           WHERE identifier = 'alice' AND type = 'account'`
+        )
+        .get() as { cnt: number }
+    ).cnt;
+    expect(accountCount).toBe(10);
+  });
+
+  it("caps recorded attempts at exactly ACCOUNT_MAX_ATTEMPTS under concurrent-style calls", () => {
+    // Pre-load 9 attempts, then call checkAndRecordAttempt twice in sequence
+    // (simulating two concurrent requests that both passed the early check).
+    insertAccountAttempts(db, "alice", 9);
+
+    const first = checkAndRecordAttempt("alice", "1.2.3.4", db);
+    const second = checkAndRecordAttempt("alice", "1.2.3.4", db);
+
+    // First call should insert (9 → 10), second should not (already at 10).
+    expect(first).toBe(true);
+    expect(second).toBe(false);
+
+    const accountCount = (
+      db
+        .prepare(
+          `SELECT COUNT(*) as cnt FROM login_attempts
+           WHERE identifier = 'alice' AND type = 'account'`
+        )
+        .get() as { cnt: number }
+    ).cnt;
+    // Exactly 10 (9 pre-loaded + 1 from the first call), not 11.
+    expect(accountCount).toBe(10);
   });
 });
