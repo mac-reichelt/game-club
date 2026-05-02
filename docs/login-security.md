@@ -1,41 +1,47 @@
-# Login and Signup Security
+# Login & Security
 
-This app implements per-IP rate limiting and lockout for both login and signup endpoints to prevent brute-force attacks, bulk account creation, and username enumeration.
+This document describes the security headers and login-related protections in Game Club.
 
-## Per-IP Throttling
+## Content Security Policy (CSP)
 
-Both `/api/auth/login` and `/api/auth/signup` endpoints share a common IP-based throttle. Abuse on either endpoint contributes to the same IP counter. If an IP exceeds the configured threshold, further requests are rejected with HTTP 429:
+Game Club sets a strict [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) header on all responses to mitigate XSS and related attacks.
 
-```json
-{
-  "error": "Too many requests. Please try again later."
-}
+### Directives
+
+The CSP includes the following directives:
+
+- `default-src 'self'`
+- `img-src 'self' https://media.rawg.io data:`
+- `script-src 'self'`
+- `style-src 'self' 'unsafe-inline'` — Next.js injects critical CSS at runtime; a nonce-based approach is tracked as a follow-up improvement.
+- `connect-src 'self'`
+- `frame-ancestors 'none'`
+- `form-action 'self'`
+- `base-uri 'self'`
+- `upgrade-insecure-requests` — **only in production**
+
+### Environment Differences
+
+- In **production** (`NODE_ENV=production`), the `upgrade-insecure-requests` directive is included. This ensures all requests are upgraded to HTTPS.
+- In **development**, `upgrade-insecure-requests` is omitted to allow local development over HTTP (e.g., `http://localhost`).
+
+### Example Header
+
+In production, the CSP header looks like:
+
+```
+Content-Security-Policy: default-src 'self'; img-src 'self' https://media.rawg.io data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; upgrade-insecure-requests
 ```
 
-### IP Extraction
+In development, it omits `upgrade-insecure-requests`:
 
-The app extracts the real client IP using trusted headers set by the Traefik reverse proxy:
+```
+Content-Security-Policy: default-src 'self'; img-src 'self' https://media.rawg.io data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'
+```
 
-- `X-Real-Ip` is always trustworthy when set by Traefik.
-- The rightmost entry of `X-Forwarded-For` is the one Traefik added; earlier entries may be attacker-supplied and are ignored.
+## Other Security Headers
 
-### When Throttling Applies
-
-- **Login:** Every failed login attempt increments the IP counter. If the IP is throttled, login is blocked.
-- **Signup:** Every failed signup attempt (e.g., username already taken) increments the IP counter. If the IP is throttled, signup is blocked.
-- **Invite Code:** Throttling is not checked until after the invite code is validated. Invalid invite codes do not increment the IP counter.
-
-### Housekeeping
-
-Both endpoints periodically clean up old login attempts from the database.
-
-## Username Enumeration Protection
-
-When a signup attempt fails due to a username collision, the IP attempt is recorded. This prevents attackers from enumerating valid usernames without triggering the throttle.
-
-## Minimum Version
-
-This behavior is present in v0.1.0 and later.
+- `Strict-Transport-Security` is also set in production to enforce HTTPS.
 
 ## Username Availability
 
@@ -48,7 +54,15 @@ The response does **not** indicate that the name is taken. This prevents attacke
 
 > **Note:** Previous versions returned `409 Conflict` and the error message `That name is already taken`. This has changed as of vNEXT.
 
+### Rationale
+
+By returning a generic error and status code, the app avoids leaking information about which usernames are registered. This is a common security practice to reduce the risk of enumeration attacks.
+
 ### Related Endpoints
 
 - [`POST /api/auth/signup`](reference/api.md#post-apiauthsignup)
 - [`PATCH /api/auth/profile`](reference/api.md#patch-apiauthprofile)
+
+---
+
+_Last updated for vNEXT. If you change security headers, update this page._
