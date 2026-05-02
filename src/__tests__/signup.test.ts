@@ -167,7 +167,7 @@ describe("POST /api/auth/signup — IP throttle", () => {
       inviteCode: VALID_CODE,
     });
     const res = await POST(req);
-    expect(res.status).toBe(409);
+    expect(res.status).toBe(400);
     expect(auth.recordIpAttempt).toHaveBeenCalled();
   });
 
