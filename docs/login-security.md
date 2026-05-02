@@ -1,44 +1,47 @@
 # Login & Security
 
-## Session Management
+This document describes the security headers and login-related protections in Game Club.
 
-Game Club uses session tokens to authenticate users. Each login creates a new session, which is stored in the database and associated with the user's account.
+## Content Security Policy (CSP)
 
-### Session Invalidation on Password Change
+Game Club sets a strict [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) header on all responses to mitigate XSS and related attacks.
 
-**Version:** vNEXT (after PR #70)
+### Directives
 
-When you change your password, Game Club:
+The CSP includes the following directives:
 
-- **Invalidates all existing sessions** for your account, including those on other devices.
-- **Issues a fresh session token** for your current device, so you stay logged in.
-- **Removes all session tokens** that were created before the password change. This prevents attackers from using old sessions if your password was compromised.
+- `default-src 'self'`
+- `img-src 'self' https://media.rawg.io data:`
+- `script-src 'self'`
+- `style-src 'self' 'unsafe-inline'` — Next.js injects critical CSS at runtime; a nonce-based approach is tracked as a follow-up improvement.
+- `connect-src 'self'`
+- `frame-ancestors 'none'`
+- `form-action 'self'`
+- `base-uri 'self'`
+- `upgrade-insecure-requests` — **only in production**
 
-#### Technical Details
+### Environment Differences
 
-- The `members` table now includes a `password_changed_at` timestamp.
-- Session validation checks that the session's `created_at` is **after** `password_changed_at`. Sessions created before a password change are rejected.
-- When you update your password, the backend:
-  - Updates `password_hash` and sets `password_changed_at` to the current time.
-  - Deletes all sessions for your user ID.
-  - Creates a new session token for your current device.
+- In **production** (`NODE_ENV=production`), the `upgrade-insecure-requests` directive is included. This ensures all requests are upgraded to HTTPS.
+- In **development**, `upgrade-insecure-requests` is omitted to allow local development over HTTP (e.g., `http://localhost`).
 
-#### Example
+### Example Header
 
-If you change your password at 12:00pm:
+In production, the CSP header looks like:
 
-- Any session created before 12:00pm is invalidated.
-- Only sessions created at or after 12:00pm are valid.
+```
+Content-Security-Policy: default-src 'self'; img-src 'self' https://media.rawg.io data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; upgrade-insecure-requests
+```
 
-## Security Implications
+In development, it omits `upgrade-insecure-requests`:
 
-- **Immediate session revocation:** If an attacker has a session token, changing your password will log them out everywhere.
-- **Current device stays logged in:** You won't be logged out on the device where you changed your password.
+```
+Content-Security-Policy: default-src 'self'; img-src 'self' https://media.rawg.io data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'
+```
 
-## Related Topics
+## Other Security Headers
 
-- [Password Requirements](./passwords.md)
-- [Session Tokens](./sessions.md)
+- `Strict-Transport-Security` is also set in production to enforce HTTPS.
 
 ## Username Availability
 
@@ -51,7 +54,15 @@ The response does **not** indicate that the name is taken. This prevents attacke
 
 > **Note:** Previous versions returned `409 Conflict` and the error message `That name is already taken`. This has changed as of vNEXT.
 
+### Rationale
+
+By returning a generic error and status code, the app avoids leaking information about which usernames are registered. This is a common security practice to reduce the risk of enumeration attacks.
+
 ### Related Endpoints
 
 - [`POST /api/auth/signup`](reference/api.md#post-apiauthsignup)
 - [`PATCH /api/auth/profile`](reference/api.md#patch-apiauthprofile)
+
+---
+
+_Last updated for vNEXT. If you change security headers, update this page._
