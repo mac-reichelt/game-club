@@ -1,68 +1,19 @@
-# Login & Security
+# Login Security
 
-This document describes the security headers and login-related protections in Game Club.
+## Session Management
 
-## Content Security Policy (CSP)
+When you log in, the app issues a session token stored in a secure, HTTP-only cookie. Sessions expire after 30 days.
 
-Game Club sets a strict [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) header on all responses to mitigate XSS and related attacks.
+## Password Change and Session Invalidation
 
-### Directives
+When you change your password:
 
-The CSP includes the following directives:
+- **All existing sessions for your account are immediately invalidated.** This includes sessions on other devices and browsers.
+- **A new session is issued for your current device.** You stay logged in after changing your password, but all other devices are logged out.
+- **Sessions created before your password change cannot be used.** If an attacker had a session token, it becomes invalid as soon as you change your password.
 
-- `default-src 'self'`
-- `img-src 'self' https://media.rawg.io data:`
-- `script-src 'self'`
-- `style-src 'self' 'unsafe-inline'` — Next.js injects critical CSS at runtime; a nonce-based approach is tracked as a follow-up improvement.
-- `connect-src 'self'`
-- `frame-ancestors 'none'`
-- `form-action 'self'`
-- `base-uri 'self'`
-- `upgrade-insecure-requests` — **only in production**
+This protects your account if your session token is ever leaked or stolen.
 
-### Environment Differences
+## Minimum Version
 
-- In **production** (`NODE_ENV=production`), the `upgrade-insecure-requests` directive is included. This ensures all requests are upgraded to HTTPS.
-- In **development**, `upgrade-insecure-requests` is omitted to allow local development over HTTP (e.g., `http://localhost`).
-
-### Example Header
-
-In production, the CSP header looks like:
-
-```
-Content-Security-Policy: default-src 'self'; img-src 'self' https://media.rawg.io data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; upgrade-insecure-requests
-```
-
-In development, it omits `upgrade-insecure-requests`:
-
-```
-Content-Security-Policy: default-src 'self'; img-src 'self' https://media.rawg.io data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'
-```
-
-## Other Security Headers
-
-- `Strict-Transport-Security` is also set in production to enforce HTTPS.
-
-## Username Availability
-
-When you attempt to sign up or change your profile name, the API checks if the requested username is available. If the name is already in use, the API responds with:
-
-- **Status:** `400 Bad Request`
-- **Error message:** `That name is not available`
-
-The response does **not** indicate that the name is taken. This prevents attackers from probing which usernames exist.
-
-> **Note:** Previous versions returned `409 Conflict` and the error message `That name is already taken`. This has changed as of vNEXT.
-
-### Rationale
-
-By returning a generic error and status code, the app avoids leaking information about which usernames are registered. This is a common security practice to reduce the risk of enumeration attacks.
-
-### Related Endpoints
-
-- [`POST /api/auth/signup`](reference/api.md#post-apiauthsignup)
-- [`PATCH /api/auth/profile`](reference/api.md#patch-apiauthprofile)
-
----
-
-_Last updated for vNEXT. If you change security headers, update this page._
+Session invalidation on password change is available in version NEXT (after PR #70).
