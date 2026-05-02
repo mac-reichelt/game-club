@@ -65,13 +65,21 @@ export async function searchGamedb(
 
 // Imports a game by RAWG id (auto-creates in gamedb) and returns the full
 // detail record including the internal gamedb id.
+// Validates a positive integer id and returns it as a digits-only string
+// suitable for safe URL path interpolation. The regex test is a CodeQL
+// recognized sanitizer for SSRF (js/request-forgery).
+function safeIdSegment(id: number): string {
+  const s = String(id);
+  if (!/^[1-9][0-9]{0,14}$/.test(s)) {
+    throw new Error("Invalid id");
+  }
+  return s;
+}
+
 export async function importByRawgId(rawgId: number): Promise<GamedbDetail> {
   if (!BASE) throw new Error("GAMEDB_URL not configured");
-  if (!Number.isInteger(rawgId) || rawgId <= 0 || rawgId > Number.MAX_SAFE_INTEGER) {
-    throw new Error("Invalid rawgId");
-  }
-  const url = new URL(`${BASE}/api/games/by-rawg/${rawgId}`);
-  const res = await fetch(url.toString());
+  const id = safeIdSegment(rawgId);
+  const res = await fetch(`${BASE}/api/games/by-rawg/${id}`);
   if (!res.ok) throw new Error(`gamedb import failed: ${res.status}`);
   return (await res.json()) as GamedbDetail;
 }
@@ -80,11 +88,13 @@ export async function getGamedbDetail(
   gamedbId: number,
 ): Promise<GamedbDetail | null> {
   if (!BASE) return null;
-  if (!Number.isInteger(gamedbId) || gamedbId <= 0 || gamedbId > Number.MAX_SAFE_INTEGER) {
+  let id: string;
+  try {
+    id = safeIdSegment(gamedbId);
+  } catch {
     return null;
   }
-  const url = new URL(`${BASE}/api/games/${gamedbId}`);
-  const res = await fetch(url.toString(), {
+  const res = await fetch(`${BASE}/api/games/${id}`, {
     next: { revalidate: 3600 },
   });
   if (res.status === 404) return null;
