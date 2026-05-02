@@ -4,7 +4,7 @@ This project prioritizes user safety and data integrity. Below are the current s
 
 ## SSRF Mitigation
 
-As of version [insert version/tag], the backend validates all game database fetches by sanitizing numeric IDs used in URL paths. Only positive integers (1–15 digits) are accepted, preventing server-side request forgery (SSRF) via crafted path segments. The validation uses a regex (`/^[1-9][0-9]{0,14}$/`) recognized by CodeQL as a safe sanitizer.
+As of version main, the backend validates all game database fetches by sanitizing numeric IDs used in URL paths. Only positive integers (1–15 digits) are accepted, preventing server-side request forgery (SSRF) via crafted path segments. The validation uses a regex (`/^[1-9][0-9]{0,14}$/`) recognized by CodeQL as a safe sanitizer.
 
 **Example:**
 
