@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromToken } from "@/lib/auth";
 
+// Escapes special regex characters in a string.
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Strips the RAWG API key from error messages and stack traces before logging.
+function sanitizeRawgError(err: unknown, apiKey: string): string {
+  const msg =
+    err instanceof Error ? (err.stack ?? err.message) : String(err);
+  return msg.replace(new RegExp(escapeRegExp(apiKey), "g"), "[REDACTED]");
+}
+
 // Store ID → name mapping from RAWG
 const STORE_NAMES: Record<number, string> = {
   1: "Steam",
@@ -86,7 +98,7 @@ export async function GET(
 
     return NextResponse.json({ stores, trailerUrl });
   } catch (err) {
-    console.error("RAWG detail fetch error:", err);
+    console.error("RAWG detail fetch error:", sanitizeRawgError(err, apiKey));
     return NextResponse.json(
       { error: "Failed to fetch game details" },
       { status: 500 }

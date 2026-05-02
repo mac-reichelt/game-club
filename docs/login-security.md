@@ -1,4 +1,4 @@
-# Login Security
+# Login & Security
 
 ## Session Management
 
@@ -39,3 +39,19 @@ If you change your password at 12:00pm:
 
 - [Password Requirements](./passwords.md)
 - [Session Tokens](./sessions.md)
+
+## Username Availability
+
+When you attempt to sign up or change your profile name, the API checks if the requested username is available. If the name is already in use, the API responds with:
+
+- **Status:** `400 Bad Request`
+- **Error message:** `That name is not available`
+
+The response does **not** indicate that the name is taken. This prevents attackers from probing which usernames exist.
+
+> **Note:** Previous versions returned `409 Conflict` and the error message `That name is already taken`. This has changed as of vNEXT.
+
+### Related Endpoints
+
+- [`POST /api/auth/signup`](reference/api.md#post-apiauthsignup)
+- [`PATCH /api/auth/profile`](reference/api.md#patch-apiauthprofile)
