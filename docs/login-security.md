@@ -1,48 +1,47 @@
-_Last updated: vNEXT_
+# Login & Security
 
-This page documents the login throttling and lockout logic for Game Club.
+This document describes the security headers and login-related protections in Game Club.
 
-## Overview
+## Content Security Policy (CSP)
 
-To protect against brute-force attacks, the login system enforces two types of rate limits:
+Game Club sets a strict [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) header on all responses to mitigate XSS and related attacks.
 
-- **Per-account lockout**: Too many failed login attempts for a given account **from a single IP address** will temporarily lock out further attempts for that (username, IP) pair.
-- **Per-IP throttling**: Too many failed attempts from a single IP address (across any accounts) will throttle further attempts from that IP.
+### Directives
 
-## Per-Account Lockout (by Username and IP)
+The CSP includes the following directives:
 
-- If there are **10 or more failed login attempts** for the same username **from the same IP address** within a 10-minute window, further login attempts for that (username, IP) pair are locked out for 10 minutes.
-- **Lockout is scoped to the (username, IP) tuple.**
-  - Example: If an attacker from IP `9.9.9.9` fails to log in as `alice` 10 times, only attempts to log in as `alice` from `9.9.9.9` are locked out. Legitimate users logging in as `alice` from other IPs are unaffected.
-  - This prevents attackers from locking out legitimate users by failing logins from their own IP.
-- A successful login for a (username, IP) pair **resets the failed-attempt counter for that pair only**.
+- `default-src 'self'`
+- `img-src 'self' https://media.rawg.io data:`
+- `script-src 'self'`
+- `style-src 'self' 'unsafe-inline'` — Next.js injects critical CSS at runtime; a nonce-based approach is tracked as a follow-up improvement.
+- `connect-src 'self'`
+- `frame-ancestors 'none'`
+- `form-action 'self'`
+- `base-uri 'self'`
+- `upgrade-insecure-requests` — **only in production**
 
-## Per-IP Throttling
+### Environment Differences
 
-- If there are **30 or more failed login attempts** from the same IP address (across any usernames) within a 10-minute window, further login attempts from that IP are throttled.
-- This is independent of the per-account lockout.
+- In **production** (`NODE_ENV=production`), the `upgrade-insecure-requests` directive is included. This ensures all requests are upgraded to HTTPS.
+- In **development**, `upgrade-insecure-requests` is omitted to allow local development over HTTP (e.g., `http://localhost`).
 
-## Implementation Details
+### Example Header
 
-- The lockout and throttling logic is enforced in the login API route.
-- Failed attempts are recorded with an identifier:
-  - For account lockout: the identifier is the username and IP, separated by a null byte (`\x00`).
-  - For IP throttling: the identifier is the IP address.
-- On successful login, only the failed-attempt records for the (username, IP) pair are cleared. IP-based records remain.
+In production, the CSP header looks like:
 
-## Example Scenarios
+```
+Content-Security-Policy: default-src 'self'; img-src 'self' https://media.rawg.io data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; upgrade-insecure-requests
+```
 
-| Username | IP         | Failed Attempts | Locked Out? |
-|----------|------------|----------------|-------------|
-| alice    | 1.2.3.4    | 10             | Yes         |
-| alice    | 5.6.7.8    | 0              | No          |
-| bob      | 1.2.3.4    | 0              | No          |
-| alice    | 9.9.9.9    | 10             | Yes         |
-| alice    | 1.2.3.4    | 0              | No          |
+In development, it omits `upgrade-insecure-requests`:
 
-## Version
+```
+Content-Security-Policy: default-src 'self'; img-src 'self' https://media.rawg.io data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'
+```
 
-- This logic applies as of vNEXT (see [CHANGELOG.md](../CHANGELOG.md)).
+## Other Security Headers
+
+- `Strict-Transport-Security` is also set in production to enforce HTTPS.
 
 ## Username Availability
 
@@ -63,3 +62,7 @@ By returning a generic error and status code, the app avoids leaking information
 
 - [`POST /api/auth/signup`](reference/api.md#post-apiauthsignup)
 - [`PATCH /api/auth/profile`](reference/api.md#patch-apiauthprofile)
+
+---
+
+_Last updated for vNEXT. If you change security headers, update this page._
