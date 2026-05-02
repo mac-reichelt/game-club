@@ -84,15 +84,58 @@ For each finding cite file:line, show the vulnerable snippet and a concrete fix.
 Categories: A01 Access Control, A02 Crypto, A03 Injection, A04 Insecure Design, A05 Misconfig,
 A07 Auth, A08 Integrity, A09 Logging, A10 SSRF.
 
-### gameclub (Next.js 15, TypeScript) focus areas:
-- A01: Route handlers missing `requireAuth()` or `getCurrentUser()` checks
-- A02: Password hashing uses SHA256+salt (not bcrypt) — acceptable for private club, not for public auth
-- A03: `better-sqlite3` raw SQL injection via unparameterized queries
-- A04: Session tokens must be 32-byte hex; check generation entropy
-- A05: RAWG API key exposure in client-side code
-- A07: Cookie `HttpOnly` + `SameSite` flags on session_token
-- A09: No secrets/PII in server logs
-- A10: RAWG API proxy must validate/sanitize external URLs
+### What's already covered by automated tools (DO NOT duplicate)
+
+This repo has **CodeQL default setup** (javascript-typescript + actions) and
+**Dependabot** enabled. They run on every PR + push to main. CodeQL gates the
+branch protection. **Skip these categories — the tools already cover them
+deeper than an LLM review can:**
+
+- **A03 Injection** — `js/sql-injection`, `js/code-injection`, `js/xss`,
+  `js/reflected-xss`, `js/stored-xss`, `js/command-line-injection`
+- **A05 Misconfig (path traversal)** — `js/path-injection`, `js/zipslip`
+- **A06 Vuln dependencies** — Dependabot alerts (don't review `package.json`
+  versions; trust dependabot)
+- **A10 SSRF** — `js/request-forgery`, `js/server-side-request-forgery`
+- **A02 Weak crypto primitives** — `js/weak-cryptographic-algorithm`,
+  `js/insufficient-password-hash` (note: CodeQL doesn't recognize scrypt as a
+  KDF — flag any **CodeQL false-positive dismissal** that doesn't justify why)
+
+If you spot one of the above and CodeQL didn't flag it, do mention it — that's
+a gap worth closing. But do not run a checklist over those categories
+proactively.
+
+### Focus areas LLM review uniquely catches (CodeQL is BLIND here)
+
+- **A01 Access Control logic flaws** — route handler missing
+  `requireAuth()` / `getCurrentUser()`; horizontal privesc (user A reads
+  user B's resource); missing role check on admin endpoints
+- **A04 Insecure Design / business logic** — account lockout enabling DoS;
+  signup invite-code reuse; password change not invalidating sessions;
+  off-by-one in voting/ballot logic; race conditions in election close
+- **A07 Auth flow** — timing oracles in login (verify dummy hash on unknown
+  user); cookie flags (`HttpOnly`, `SameSite`, `Secure`); session token
+  entropy; CSRF protection on mutation endpoints
+- **A09 Logging & info leak** — secrets/PII in server logs; error messages
+  leaking internals (RAWG key in URL, stack traces with paths); 409 responses
+  enabling username/email enumeration
+- **A02 Crypto USE (not primitives)** — wrong constant-time comparison
+  (`===` on tokens), reusing IVs/nonces, missing pepper on hashes,
+  storing reversibly-encrypted passwords, JWT alg=none acceptance
+- **API contract / framework misuse** — CORS wide-open, missing rate-limit
+  on auth, GraphQL introspection on prod, unsafe `dangerouslySetInnerHTML`
+  with computed strings (CodeQL catches obvious cases; LLM catches subtle
+  ones with conditional sanitizers)
+
+### gameclub (Next.js 16, TypeScript, public app) current state
+- Public-facing as of 2026-05-01; Authelia gate removed
+- Auth: scrypt password hashing (N=16384, r=8, p=1), per-account + per-IP
+  login throttle, 12-char min password + banned-list, signup gated by
+  invite code env, `X-Real-Ip` then rightmost-XFF for client IP
+- Session token in `HttpOnly` `Secure` cookie
+- Known open follow-ups: lockout DoS (#54), signup name enumeration (#55),
+  no signup throttle (#56), session-invalidation on password change (#57),
+  RAWG key in error logs (#58)
 
 ## Code Mode: OWASP LLM Top 10
 

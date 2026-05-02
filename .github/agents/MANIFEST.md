@@ -29,3 +29,13 @@ as they are not relevant to the game-club stack:
 
 - `telemetry-expert.agent.md` — Forza UDP packet schema, sim physics
 - `race-engineer.agent.md` — Real-world tuning knowledge
+
+## Local Overrides
+
+The following agents intentionally diverge from the upstream
+`~/.copilot/agents/` roster and are excluded from sync (see
+`.sync-overrides`):
+
+- `security-review` — Customized to defer to CodeQL on OWASP A02/A03/A05/A06/A10
+  (CodeQL gates BP on this repo). Refocuses LLM review on business logic,
+  auth flow, info leak — categories CodeQL can't see. Do not re-sync.

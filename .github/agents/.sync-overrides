@@ -1,0 +1,9 @@
+# Agents in this list are NOT overwritten by ~/.copilot/skills/sync-agent-roster.
+# Use sparingly — only when the per-repo divergence is intentional and documented.
+
+# security-review: this repo has CodeQL default setup gating BP, so the agent is
+# tuned to skip OWASP categories CodeQL covers and focus on what CodeQL can't see
+# (business-logic flaws, auth-flow timing, info leak via 409s/logs). The upstream
+# agent in ~/.copilot/agents/ doesn't assume CodeQL exists because most repos in
+# the roster are private (CodeQL is paid for private). Do not re-sync this one.
+security-review
