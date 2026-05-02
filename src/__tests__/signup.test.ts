@@ -11,8 +11,12 @@ vi.mock("@/lib/db", () => {
 
 // Mock auth helpers
 vi.mock("@/lib/auth", () => ({
-  hashPassword: vi.fn().mockReturnValue("salt:hashedpassword"),
+  hashPassword: vi.fn().mockResolvedValue("salt:hashedpassword"),
   createSession: vi.fn().mockReturnValue("mock-session-token"),
+  isIpThrottled: vi.fn().mockReturnValue(false),
+  recordIpAttempt: vi.fn(),
+  cleanupOldLoginAttempts: vi.fn(),
+  getClientIp: vi.fn().mockReturnValue("1.2.3.4"),
 }));
 
 function makeRequest(body: Record<string, unknown>) {
@@ -85,3 +89,86 @@ describe("POST /api/auth/signup — invite code gate", () => {
     expect(data.error).toMatch(/not available/i);
   });
 });
+
+describe("POST /api/auth/signup — IP throttle", () => {
+  const VALID_CODE = "super-secret-club-code";
+
+  beforeEach(() => {
+    vi.stubEnv("SIGNUP_INVITE_CODE", VALID_CODE);
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.clearAllMocks();
+  });
+
+  it("returns 429 when the IP is throttled", async () => {
+    const auth = await import("@/lib/auth");
+    vi.mocked(auth.isIpThrottled).mockReturnValue(true);
+
+    const { POST } = await import("@/app/api/auth/signup/route");
+    const req = makeRequest({
+      name: "Alice",
+      password: "Sup3rUniqueT3st!",
+      inviteCode: VALID_CODE,
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(429);
+    const data = await res.json();
+    expect(data.error).toMatch(/too many requests/i);
+  });
+
+  it("does not throttle when IP is under the limit", async () => {
+    const auth = await import("@/lib/auth");
+    vi.mocked(auth.isIpThrottled).mockReturnValue(false);
+
+    const { POST } = await import("@/app/api/auth/signup/route");
+    const req = makeRequest({
+      name: "Alice",
+      password: "Sup3rUniqueT3st!",
+      inviteCode: VALID_CODE,
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+  });
+
+  it("records an IP attempt when name is already taken", async () => {
+    const db = await import("@/lib/db");
+    const auth = await import("@/lib/auth");
+    vi.mocked(auth.isIpThrottled).mockReturnValue(false);
+
+    // Simulate name already taken
+    const mockGet = vi.fn().mockReturnValue({ id: 1 });
+    const mockPrepare = vi.fn().mockReturnValue({ get: mockGet, run: vi.fn() });
+    vi.mocked(db.default).mockReturnValue({ prepare: mockPrepare } as never);
+
+    const { POST } = await import("@/app/api/auth/signup/route");
+    const req = makeRequest({
+      name: "Alice",
+      password: "Sup3rUniqueT3st!",
+      inviteCode: VALID_CODE,
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(409);
+    expect(auth.recordIpAttempt).toHaveBeenCalled();
+  });
+
+  it("does not check throttle before validating invite code", async () => {
+    const auth = await import("@/lib/auth");
+    vi.mocked(auth.isIpThrottled).mockReturnValue(true);
+
+    const { POST } = await import("@/app/api/auth/signup/route");
+    // Wrong invite code — throttle should NOT be checked (no DB call)
+    const req = makeRequest({
+      name: "Alice",
+      password: "Sup3rUniqueT3st!",
+      inviteCode: "wrong-code",
+    });
+    const res = await POST(req);
+    // Should get 403 (bad invite code), not 429 (throttled)
+    expect(res.status).toBe(403);
+    expect(auth.isIpThrottled).not.toHaveBeenCalled();
+  });
+});
+

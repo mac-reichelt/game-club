@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import getDb from "@/lib/db";
-import { hashPassword, createSession } from "@/lib/auth";
+import {
+  hashPassword,
+  createSession,
+  isIpThrottled,
+  recordIpAttempt,
+  cleanupOldLoginAttempts,
+  getClientIp,
+} from "@/lib/auth";
 import { isBannedPassword } from "@/lib/bannedPasswords";
 
 function safeCompare(a: string, b: string): boolean {
@@ -39,6 +46,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const db = getDb();
+  const ip = getClientIp(request);
+
+  // Periodic housekeeping
+  if (Math.random() < 0.05) {
+    cleanupOldLoginAttempts(db);
+  }
+
+  // Per-IP throttle — prevents bulk account creation and username enumeration.
+  // Reuses the same login_attempts table and thresholds as the login endpoint
+  // so that abuse on either endpoint contributes to the shared IP counter.
+  if (isIpThrottled(ip, db)) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   if (!name || !name.trim()) {
     return NextResponse.json(
       { error: "Name is required" },
@@ -60,12 +85,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const db = getDb();
-
   const existing = db
     .prepare("SELECT id FROM members WHERE name = ?")
     .get(name.trim());
   if (existing) {
+    recordIpAttempt(ip, db);
     return NextResponse.json(
       { error: "That name is already taken" },
       { status: 409 }
