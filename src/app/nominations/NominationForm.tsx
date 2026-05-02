@@ -42,16 +42,20 @@ export default function NominationForm() {
   const [trailerUrl, setTrailerUrl] = useState("");
   const [loadingDetails, setLoadingDetails] = useState(false);
 
+  function hostMatches(host: string, domains: string[]): boolean {
+    return domains.some((d) => host === d || host.endsWith("." + d));
+  }
+
   function inferStoreName(domain: string): string {
-    if (domain.includes("steampowered") || domain.includes("store.steam")) return "Steam";
-    if (domain.includes("playstation")) return "PlayStation Store";
-    if (domain.includes("microsoft") || domain.includes("xbox")) return "Xbox Store";
-    if (domain.includes("nintendo")) return "Nintendo Store";
-    if (domain.includes("epicgames")) return "Epic Games";
-    if (domain.includes("gog.com")) return "GOG";
-    if (domain.includes("itch.io")) return "itch.io";
-    if (domain.includes("apple.com")) return "App Store";
-    if (domain.includes("play.google")) return "Google Play";
+    if (hostMatches(domain, ["steampowered.com", "store.steampowered.com", "steamcommunity.com"])) return "Steam";
+    if (hostMatches(domain, ["playstation.com"])) return "PlayStation Store";
+    if (hostMatches(domain, ["microsoft.com", "xbox.com"])) return "Xbox Store";
+    if (hostMatches(domain, ["nintendo.com"])) return "Nintendo Store";
+    if (hostMatches(domain, ["epicgames.com"])) return "Epic Games";
+    if (hostMatches(domain, ["gog.com"])) return "GOG";
+    if (hostMatches(domain, ["itch.io"])) return "itch.io";
+    if (hostMatches(domain, ["apple.com"])) return "App Store";
+    if (hostMatches(domain, ["play.google.com"])) return "Google Play";
     return domain;
   }
 
@@ -63,8 +67,8 @@ export default function NominationForm() {
     for (const line of lines) {
       try {
         const url = new URL(line);
-        const host = url.hostname.replace("www.", "");
-        if (host.includes("youtube.com") || host.includes("youtu.be")) {
+        const host = url.hostname.replace(/^www\./, "");
+        if (host === "youtube.com" || host.endsWith(".youtube.com") || host === "youtu.be") {
           if (!trailer) trailer = line;
         } else {
           stores.push({ name: inferStoreName(host), url: line, domain: host });
