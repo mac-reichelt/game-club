@@ -1,41 +1,41 @@
 # Login Security
 
-## Client IP Extraction (v0.1.0+)
+## Session Management
 
-When a user logs in, the app extracts the client IP address for rate-limiting and security checks. The extraction logic depends on trusted proxy headers:
+Game Club uses session tokens to authenticate users. Each login creates a new session, which is stored in the database and associated with the user's account.
 
-- **Traefik** (our reverse proxy) sets `X-Real-Ip` to the actual connecting peer.
-- Traefik **appends** the connecting peer to `X-Forwarded-For` (rightmost entry), rather than replacing it.
+### Session Invalidation on Password Change
 
-### Extraction Logic
+**Version:** vNEXT (after PR #70)
 
-1. **If `X-Real-Ip` is present:**
-   - The app trusts this value as the real client IP.
-2. **If `X-Real-Ip` is absent but `X-Forwarded-For` is present:**
-   - The app uses the **rightmost** entry in `X-Forwarded-For` (the one Traefik appended).
-3. **If neither header is present:**
-   - The app falls back to `unknown`.
+When you change your password, Game Club:
 
-> **Note:** Earlier entries in `X-Forwarded-For` may be attacker-supplied and are **not trusted**.
+- **Invalidates all existing sessions** for your account, including those on other devices.
+- **Issues a fresh session token** for your current device, so you stay logged in.
+- **Removes all session tokens** that were created before the password change. This prevents attackers from using old sessions if your password was compromised.
 
-### Security Implications
+#### Technical Details
 
-- **Trusted Proxy Required:**
-  - The app must be deployed behind a trusted reverse proxy (e.g., Traefik, Nginx, or a cloud load-balancer) that sets these headers.
-  - Without a trusted proxy, an attacker can spoof headers and bypass per-IP throttling.
-- **Do not trust leftmost `X-Forwarded-For`:**
-  - Picking the leftmost entry (common in client-trusted scenarios) would let attackers rotate spoofed values per request and defeat throttling.
+- The `members` table now includes a `password_changed_at` timestamp.
+- Session validation checks that the session's `created_at` is **after** `password_changed_at`. Sessions created before a password change are rejected.
+- When you update your password, the backend:
+  - Updates `password_hash` and sets `password_changed_at` to the current time.
+  - Deletes all sessions for your user ID.
+  - Creates a new session token for your current device.
 
-### Example
+#### Example
 
-```
-X-Forwarded-For: 203.0.113.1, 198.51.100.2
-X-Real-Ip: 198.51.100.2
-```
+If you change your password at 12:00pm:
 
-- `X-Real-Ip` is trusted: `198.51.100.2`
-- If `X-Real-Ip` is missing, use rightmost `X-Forwarded-For`: `198.51.100.2`
+- Any session created before 12:00pm is invalidated.
+- Only sessions created at or after 12:00pm are valid.
 
----
+## Security Implications
 
-**Minimum compatible version:** v0.1.0
+- **Immediate session revocation:** If an attacker has a session token, changing your password will log them out everywhere.
+- **Current device stays logged in:** You won't be logged out on the device where you changed your password.
+
+## Related Topics
+
+- [Password Requirements](./passwords.md)
+- [Session Tokens](./sessions.md)
