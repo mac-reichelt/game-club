@@ -206,6 +206,58 @@ export function recordLoginAttempt(
   })();
 }
 
+/**
+ * Atomically re-checks the per-account lockout threshold and — if not yet
+ * reached — records the failed login attempt, all within a single
+ * `BEGIN EXCLUSIVE` transaction.
+ *
+ * This eliminates the TOCTOU race between the early `isAccountLocked` check
+ * in the login handler and the subsequent INSERT: concurrent requests that
+ * both pass the initial check will contend on the exclusive lock, and only
+ * those that find the count still below the threshold will insert a record.
+ *
+ * Returns `true` when the attempt was recorded (account was below the limit),
+ * or `false` when the account was already at or over the threshold (no record
+ * inserted). In both cases the caller should respond with the same generic
+ * "Invalid credentials" error to prevent account enumeration.
+ */
+export function checkAndRecordAttempt(
+  name: string,
+  ip: string,
+  db?: Database.Database
+): boolean {
+  const database = db ?? getDb();
+  let recorded = false;
+
+  const checkStmt = database.prepare(
+    `SELECT COUNT(*) as cnt FROM login_attempts
+     WHERE identifier = ? AND type = 'account'
+     AND attempted_at > datetime('now', ?)`
+  );
+  const insertStmt = database.prepare(
+    "INSERT INTO login_attempts (identifier, type) VALUES (?, ?)"
+  );
+
+  database
+    .transaction(() => {
+      const row = checkStmt.get(
+        name,
+        `-${ACCOUNT_WINDOW_MINUTES} minutes`
+      ) as { cnt: number };
+
+      if (row.cnt >= ACCOUNT_MAX_ATTEMPTS) {
+        return; // already at the limit — do not insert
+      }
+
+      insertStmt.run(name, "account");
+      insertStmt.run(ip, "ip");
+      recorded = true;
+    })
+    .exclusive();
+
+  return recorded;
+}
+
 export function recordIpAttempt(ip: string, db?: Database.Database): void {
   const database = db ?? getDb();
   database
