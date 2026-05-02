@@ -1,68 +1,30 @@
-# Login & Security
+# Login and Signup Security
 
-This document describes the security headers and login-related protections in Game Club.
+## Per-IP Throttling
 
-## Content Security Policy (CSP)
+Both the **login** and **signup** endpoints implement per-IP rate limiting to prevent brute-force attacks, bulk account creation, and username enumeration. The throttle logic uses a shared `login_attempts` table and thresholds, so abuse on either endpoint contributes to the same IP counter.
 
-Game Club sets a strict [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) header on all responses to mitigate XSS and related attacks.
+- **Login:** If an IP exceeds the allowed number of failed login attempts, further requests return HTTP 429 (Too Many Requests).
+- **Signup:** If an IP exceeds the allowed number of signup attempts (including username collisions), further requests return HTTP 429 (Too Many Requests).
 
-### Directives
+### How IPs Are Determined
 
-The CSP includes the following directives:
+The app extracts the real client IP using trusted headers:
 
-- `default-src 'self'`
-- `img-src 'self' https://media.rawg.io data:`
-- `script-src 'self'`
-- `style-src 'self' 'unsafe-inline'` — Next.js injects critical CSS at runtime; a nonce-based approach is tracked as a follow-up improvement.
-- `connect-src 'self'`
-- `frame-ancestors 'none'`
-- `form-action 'self'`
-- `base-uri 'self'`
-- `upgrade-insecure-requests` — **only in production**
+- `X-Real-Ip` (set by Traefik reverse proxy) is always used if present.
+- Otherwise, the rightmost entry in `X-Forwarded-For` is used (also set by Traefik).
 
-### Environment Differences
+Earlier entries in `X-Forwarded-For` are ignored, as they may be attacker-supplied.
 
-- In **production** (`NODE_ENV=production`), the `upgrade-insecure-requests` directive is included. This ensures all requests are upgraded to HTTPS.
-- In **development**, `upgrade-insecure-requests` is omitted to allow local development over HTTP (e.g., `http://localhost`).
+### Throttle Behavior
 
-### Example Header
+- **Signup throttle is only checked after invite code validation.** If the invite code is invalid, the throttle logic is not triggered.
+- **Username collisions:** If a signup attempt fails because the username is already taken, the IP attempt is recorded and contributes to the throttle.
 
-In production, the CSP header looks like:
+### Housekeeping
 
-```
-Content-Security-Policy: default-src 'self'; img-src 'self' https://media.rawg.io data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; upgrade-insecure-requests
-```
+Both endpoints periodically clean up old login attempts from the database.
 
-In development, it omits `upgrade-insecure-requests`:
+## Minimum Version
 
-```
-Content-Security-Policy: default-src 'self'; img-src 'self' https://media.rawg.io data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'
-```
-
-## Other Security Headers
-
-- `Strict-Transport-Security` is also set in production to enforce HTTPS.
-
-## Username Availability
-
-When you attempt to sign up or change your profile name, the API checks if the requested username is available. If the name is already in use, the API responds with:
-
-- **Status:** `400 Bad Request`
-- **Error message:** `That name is not available`
-
-The response does **not** indicate that the name is taken. This prevents attackers from probing which usernames exist.
-
-> **Note:** Previous versions returned `409 Conflict` and the error message `That name is already taken`. This has changed as of vNEXT.
-
-### Rationale
-
-By returning a generic error and status code, the app avoids leaking information about which usernames are registered. This is a common security practice to reduce the risk of enumeration attacks.
-
-### Related Endpoints
-
-- [`POST /api/auth/signup`](reference/api.md#post-apiauthsignup)
-- [`PATCH /api/auth/profile`](reference/api.md#patch-apiauthprofile)
-
----
-
-_Last updated for vNEXT. If you change security headers, update this page._
+This behavior is present in Game Club version 0.1.0 and later.
