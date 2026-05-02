@@ -1,41 +1,47 @@
 # Login Security
 
-## Client IP Extraction (v0.1.0+)
+_Last updated: vNEXT_
 
-When a user logs in, the app extracts the client IP address for rate-limiting and security checks. The extraction logic depends on trusted proxy headers:
+This page documents the login throttling and lockout logic for Game Club.
 
-- **Traefik** (our reverse proxy) sets `X-Real-Ip` to the actual connecting peer.
-- Traefik **appends** the connecting peer to `X-Forwarded-For` (rightmost entry), rather than replacing it.
+## Overview
 
-### Extraction Logic
+To protect against brute-force attacks, the login system enforces two types of rate limits:
 
-1. **If `X-Real-Ip` is present:**
-   - The app trusts this value as the real client IP.
-2. **If `X-Real-Ip` is absent but `X-Forwarded-For` is present:**
-   - The app uses the **rightmost** entry in `X-Forwarded-For` (the one Traefik appended).
-3. **If neither header is present:**
-   - The app falls back to `unknown`.
+- **Per-account lockout**: Too many failed login attempts for a given account **from a single IP address** will temporarily lock out further attempts for that (username, IP) pair.
+- **Per-IP throttling**: Too many failed attempts from a single IP address (across any accounts) will throttle further attempts from that IP.
 
-> **Note:** Earlier entries in `X-Forwarded-For` may be attacker-supplied and are **not trusted**.
+## Per-Account Lockout (by Username and IP)
 
-### Security Implications
+- If there are **10 or more failed login attempts** for the same username **from the same IP address** within a 10-minute window, further login attempts for that (username, IP) pair are locked out for 10 minutes.
+- **Lockout is scoped to the (username, IP) tuple.**
+  - Example: If an attacker from IP `9.9.9.9` fails to log in as `alice` 10 times, only attempts to log in as `alice` from `9.9.9.9` are locked out. Legitimate users logging in as `alice` from other IPs are unaffected.
+  - This prevents attackers from locking out legitimate users by failing logins from their own IP.
+- A successful login for a (username, IP) pair **resets the failed-attempt counter for that pair only**.
 
-- **Trusted Proxy Required:**
-  - The app must be deployed behind a trusted reverse proxy (e.g., Traefik, Nginx, or a cloud load-balancer) that sets these headers.
-  - Without a trusted proxy, an attacker can spoof headers and bypass per-IP throttling.
-- **Do not trust leftmost `X-Forwarded-For`:**
-  - Picking the leftmost entry (common in client-trusted scenarios) would let attackers rotate spoofed values per request and defeat throttling.
+## Per-IP Throttling
 
-### Example
+- If there are **30 or more failed login attempts** from the same IP address (across any usernames) within a 10-minute window, further login attempts from that IP are throttled.
+- This is independent of the per-account lockout.
 
-```
-X-Forwarded-For: 203.0.113.1, 198.51.100.2
-X-Real-Ip: 198.51.100.2
-```
+## Implementation Details
 
-- `X-Real-Ip` is trusted: `198.51.100.2`
-- If `X-Real-Ip` is missing, use rightmost `X-Forwarded-For`: `198.51.100.2`
+- The lockout and throttling logic is enforced in the login API route.
+- Failed attempts are recorded with an identifier:
+  - For account lockout: the identifier is the username and IP, separated by a null byte (`\x00`).
+  - For IP throttling: the identifier is the IP address.
+- On successful login, only the failed-attempt records for the (username, IP) pair are cleared. IP-based records remain.
 
----
+## Example Scenarios
 
-**Minimum compatible version:** v0.1.0
+| Username | IP         | Failed Attempts | Locked Out? |
+|----------|------------|----------------|-------------|
+| alice    | 1.2.3.4    | 10             | Yes         |
+| alice    | 5.6.7.8    | 0              | No          |
+| bob      | 1.2.3.4    | 0              | No          |
+| alice    | 9.9.9.9    | 10             | Yes         |
+| alice    | 1.2.3.4    | 0              | No          |
+
+## Version
+
+- This logic applies as of vNEXT (see [CHANGELOG.md](../CHANGELOG.md)).
