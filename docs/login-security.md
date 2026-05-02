@@ -1,41 +1,48 @@
-# Login Security
+# Login & Security
 
-## Client IP Extraction (v0.1.0+)
+This document describes the security headers and login-related protections in Game Club.
 
-When a user logs in, the app extracts the client IP address for rate-limiting and security checks. The extraction logic depends on trusted proxy headers:
+## Content Security Policy (CSP)
 
-- **Traefik** (our reverse proxy) sets `X-Real-Ip` to the actual connecting peer.
-- Traefik **appends** the connecting peer to `X-Forwarded-For` (rightmost entry), rather than replacing it.
+Game Club sets a strict [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) header on all responses to mitigate XSS and related attacks.
 
-### Extraction Logic
+### Directives
 
-1. **If `X-Real-Ip` is present:**
-   - The app trusts this value as the real client IP.
-2. **If `X-Real-Ip` is absent but `X-Forwarded-For` is present:**
-   - The app uses the **rightmost** entry in `X-Forwarded-For` (the one Traefik appended).
-3. **If neither header is present:**
-   - The app falls back to `unknown`.
+The CSP includes the following directives:
 
-> **Note:** Earlier entries in `X-Forwarded-For` may be attacker-supplied and are **not trusted**.
+- `default-src 'self'`
+- `img-src 'self' https://media.rawg.io data:`
+- `script-src 'self'`
+- `style-src 'self' 'unsafe-inline'` — Next.js injects critical CSS at runtime; a nonce-based approach is tracked as a follow-up improvement.
+- `connect-src 'self'`
+- `frame-ancestors 'none'`
+- `form-action 'self'`
+- `base-uri 'self'`
+- `upgrade-insecure-requests` — **only in production**
 
-### Security Implications
+### Environment Differences
 
-- **Trusted Proxy Required:**
-  - The app must be deployed behind a trusted reverse proxy (e.g., Traefik, Nginx, or a cloud load-balancer) that sets these headers.
-  - Without a trusted proxy, an attacker can spoof headers and bypass per-IP throttling.
-- **Do not trust leftmost `X-Forwarded-For`:**
-  - Picking the leftmost entry (common in client-trusted scenarios) would let attackers rotate spoofed values per request and defeat throttling.
+- In **production** (`NODE_ENV=production`), the `upgrade-insecure-requests` directive is included. This ensures all requests are upgraded to HTTPS.
+- In **development**, `upgrade-insecure-requests` is omitted to allow local development over HTTP (e.g., `http://localhost`).
 
-### Example
+### Example Header
+
+In production, the CSP header looks like:
 
 ```
-X-Forwarded-For: 203.0.113.1, 198.51.100.2
-X-Real-Ip: 198.51.100.2
+Content-Security-Policy: default-src 'self'; img-src 'self' https://media.rawg.io data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; upgrade-insecure-requests
 ```
 
-- `X-Real-Ip` is trusted: `198.51.100.2`
-- If `X-Real-Ip` is missing, use rightmost `X-Forwarded-For`: `198.51.100.2`
+In development, it omits `upgrade-insecure-requests`:
+
+```
+Content-Security-Policy: default-src 'self'; img-src 'self' https://media.rawg.io data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'
+```
+
+## Other Security Headers
+
+- `Strict-Transport-Security` is also set in production to enforce HTTPS.
 
 ---
 
-**Minimum compatible version:** v0.1.0
+_Last updated for vNEXT. If you change security headers, update this page._
