@@ -92,6 +92,22 @@ describe("GET /api/games/search/[id]", () => {
     }
   });
 
+  it("does not log the RAWG API key when a fetch error occurs", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockFetch.mockRejectedValue(
+      new TypeError(
+        "Failed to fetch https://api.rawg.io/api/games/42/stores?key=test-key"
+      )
+    );
+
+    await callRoute("42");
+
+    const loggedArgs = consoleSpy.mock.calls.flat().join(" ");
+    expect(loggedArgs).not.toContain("test-key");
+    expect(loggedArgs).toContain("[REDACTED]");
+    consoleSpy.mockRestore();
+  });
+
   it("returns 400 when id is an empty string", async () => {
     const res = await callRoute("");
     expect(res.status).toBe(400);
