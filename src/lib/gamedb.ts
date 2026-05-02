@@ -67,7 +67,11 @@ export async function searchGamedb(
 // detail record including the internal gamedb id.
 export async function importByRawgId(rawgId: number): Promise<GamedbDetail> {
   if (!BASE) throw new Error("GAMEDB_URL not configured");
-  const res = await fetch(`${BASE}/api/games/by-rawg/${rawgId}`);
+  if (!Number.isInteger(rawgId) || rawgId <= 0 || rawgId > Number.MAX_SAFE_INTEGER) {
+    throw new Error("Invalid rawgId");
+  }
+  const url = new URL(`${BASE}/api/games/by-rawg/${rawgId}`);
+  const res = await fetch(url.toString());
   if (!res.ok) throw new Error(`gamedb import failed: ${res.status}`);
   return (await res.json()) as GamedbDetail;
 }
@@ -76,7 +80,11 @@ export async function getGamedbDetail(
   gamedbId: number,
 ): Promise<GamedbDetail | null> {
   if (!BASE) return null;
-  const res = await fetch(`${BASE}/api/games/${gamedbId}`, {
+  if (!Number.isInteger(gamedbId) || gamedbId <= 0 || gamedbId > Number.MAX_SAFE_INTEGER) {
+    return null;
+  }
+  const url = new URL(`${BASE}/api/games/${gamedbId}`);
+  const res = await fetch(url.toString(), {
     next: { revalidate: 3600 },
   });
   if (res.status === 404) return null;
