@@ -26,19 +26,21 @@ function setupDb(): Database.Database {
   return db;
 }
 
-/** Insert `n` account-type attempt records for `name`, optionally at an offset. */
+/** Insert `n` account-type attempt records for `name` from `ip`, optionally at an offset. */
 function insertAccountAttempts(
   db: Database.Database,
   name: string,
   n: number,
-  offsetMinutes = 0
+  offsetMinutes = 0,
+  ip = "1.2.3.4"
 ): void {
+  const identifier = `${name}\x00${ip}`;
   const stmt = db.prepare(
     `INSERT INTO login_attempts (identifier, type, attempted_at)
      VALUES (?, 'account', datetime('now', ?))`
   );
   for (let i = 0; i < n; i++) {
-    stmt.run(name, `${offsetMinutes} minutes`);
+    stmt.run(identifier, `${offsetMinutes} minutes`);
   }
 }
 
@@ -70,34 +72,49 @@ describe("isAccountLocked", () => {
   });
 
   it("returns false when there are no attempts", () => {
-    expect(isAccountLocked("alice", db)).toBe(false);
+    expect(isAccountLocked("alice", "1.2.3.4", db)).toBe(false);
   });
 
   it("returns false when failed attempts are below the threshold (9)", () => {
     insertAccountAttempts(db, "alice", 9);
-    expect(isAccountLocked("alice", db)).toBe(false);
+    expect(isAccountLocked("alice", "1.2.3.4", db)).toBe(false);
   });
 
   it("returns true when there are exactly 10 recent failed attempts (threshold reached)", () => {
     insertAccountAttempts(db, "alice", 10);
-    expect(isAccountLocked("alice", db)).toBe(true);
+    expect(isAccountLocked("alice", "1.2.3.4", db)).toBe(true);
   });
 
   it("the 11th attempt is rejected (account is locked after 10 failures)", () => {
     // Simulate 10 failures already recorded.
     insertAccountAttempts(db, "alice", 10);
     // isAccountLocked returning true means the 11th attempt will be rejected.
-    expect(isAccountLocked("alice", db)).toBe(true);
+    expect(isAccountLocked("alice", "1.2.3.4", db)).toBe(true);
   });
 
   it("does not lock when all attempts are outside the 10-minute window", () => {
     insertAccountAttempts(db, "alice", 10, -11); // 11 minutes ago
-    expect(isAccountLocked("alice", db)).toBe(false);
+    expect(isAccountLocked("alice", "1.2.3.4", db)).toBe(false);
   });
 
   it("does not affect a different account", () => {
     insertAccountAttempts(db, "alice", 10);
-    expect(isAccountLocked("bob", db)).toBe(false);
+    expect(isAccountLocked("bob", "1.2.3.4", db)).toBe(false);
+  });
+
+  it("lockout from one IP does not affect the same account from a different IP", () => {
+    // Attacker from 9.9.9.9 hammers alice's account — should NOT lock alice
+    // out for users coming from 1.2.3.4.
+    insertAccountAttempts(db, "alice", 10, 0, "9.9.9.9");
+    expect(isAccountLocked("alice", "1.2.3.4", db)).toBe(false);
+  });
+
+  it("lockout is scoped to the (username, ip) tuple", () => {
+    insertAccountAttempts(db, "alice", 10, 0, "9.9.9.9");
+    // The attacker's own (alice, 9.9.9.9) pair IS locked.
+    expect(isAccountLocked("alice", "9.9.9.9", db)).toBe(true);
+    // A legitimate user from another IP is unaffected.
+    expect(isAccountLocked("alice", "1.2.3.4", db)).toBe(false);
   });
 });
 
@@ -159,7 +176,10 @@ describe("recordLoginAttempt", () => {
       .prepare("SELECT identifier, type FROM login_attempts ORDER BY id")
       .all() as { identifier: string; type: string }[];
     expect(rows).toHaveLength(2);
-    expect(rows).toContainEqual({ identifier: "alice", type: "account" });
+    // Account identifier is the (username, ip) tuple separated by a null byte
+    // to prevent an attacker from locking out a target account by failing from
+    // their own IP.
+    expect(rows).toContainEqual({ identifier: "alice\x001.2.3.4", type: "account" });
     expect(rows).toContainEqual({ identifier: "1.2.3.4", type: "ip" });
   });
 });
@@ -198,11 +218,11 @@ describe("resetLoginAttempts", () => {
 
   it("successful login resets the per-account counter", () => {
     insertAccountAttempts(db, "alice", 10);
-    expect(isAccountLocked("alice", db)).toBe(true);
+    expect(isAccountLocked("alice", "1.2.3.4", db)).toBe(true);
 
-    resetLoginAttempts("alice", db);
+    resetLoginAttempts("alice", "1.2.3.4", db);
 
-    expect(isAccountLocked("alice", db)).toBe(false);
+    expect(isAccountLocked("alice", "1.2.3.4", db)).toBe(false);
   });
 
   it("does not remove IP-type records", () => {
@@ -213,10 +233,10 @@ describe("resetLoginAttempts", () => {
     expect(isIpThrottled("1.2.3.4", db)).toBe(false); // only 10, below 30
     insertIpAttempts(db, "1.2.3.4", 20); // bring total IP to 30
 
-    resetLoginAttempts("alice", db);
+    resetLoginAttempts("alice", "1.2.3.4", db);
 
     // Account lock is gone…
-    expect(isAccountLocked("alice", db)).toBe(false);
+    expect(isAccountLocked("alice", "1.2.3.4", db)).toBe(false);
     // …but IP throttle is still in effect.
     expect(isIpThrottled("1.2.3.4", db)).toBe(true);
   });
@@ -225,10 +245,19 @@ describe("resetLoginAttempts", () => {
     insertAccountAttempts(db, "alice", 10);
     insertAccountAttempts(db, "bob", 10);
 
-    resetLoginAttempts("alice", db);
+    resetLoginAttempts("alice", "1.2.3.4", db);
 
-    expect(isAccountLocked("alice", db)).toBe(false);
-    expect(isAccountLocked("bob", db)).toBe(true);
+    expect(isAccountLocked("alice", "1.2.3.4", db)).toBe(false);
+    expect(isAccountLocked("bob", "1.2.3.4", db)).toBe(true);
+  });
+
+  it("does not reset attempts for the same account from a different IP", () => {
+    insertAccountAttempts(db, "alice", 10, 0, "9.9.9.9");
+
+    resetLoginAttempts("alice", "1.2.3.4", db);
+
+    // Attacker's (alice, 9.9.9.9) lockout should remain intact.
+    expect(isAccountLocked("alice", "9.9.9.9", db)).toBe(true);
   });
 });
 
