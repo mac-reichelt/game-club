@@ -1,41 +1,38 @@
-# Login Security
+# Login and Signup Security
 
-## Client IP Extraction (v0.1.0+)
+This app implements per-IP rate limiting and lockout for both login and signup endpoints to prevent brute-force attacks, bulk account creation, and username enumeration.
 
-When a user logs in, the app extracts the client IP address for rate-limiting and security checks. The extraction logic depends on trusted proxy headers:
+## Per-IP Throttling
 
-- **Traefik** (our reverse proxy) sets `X-Real-Ip` to the actual connecting peer.
-- Traefik **appends** the connecting peer to `X-Forwarded-For` (rightmost entry), rather than replacing it.
+Both `/api/auth/login` and `/api/auth/signup` endpoints share a common IP-based throttle. Abuse on either endpoint contributes to the same IP counter. If an IP exceeds the configured threshold, further requests are rejected with HTTP 429:
 
-### Extraction Logic
-
-1. **If `X-Real-Ip` is present:**
-   - The app trusts this value as the real client IP.
-2. **If `X-Real-Ip` is absent but `X-Forwarded-For` is present:**
-   - The app uses the **rightmost** entry in `X-Forwarded-For` (the one Traefik appended).
-3. **If neither header is present:**
-   - The app falls back to `unknown`.
-
-> **Note:** Earlier entries in `X-Forwarded-For` may be attacker-supplied and are **not trusted**.
-
-### Security Implications
-
-- **Trusted Proxy Required:**
-  - The app must be deployed behind a trusted reverse proxy (e.g., Traefik, Nginx, or a cloud load-balancer) that sets these headers.
-  - Without a trusted proxy, an attacker can spoof headers and bypass per-IP throttling.
-- **Do not trust leftmost `X-Forwarded-For`:**
-  - Picking the leftmost entry (common in client-trusted scenarios) would let attackers rotate spoofed values per request and defeat throttling.
-
-### Example
-
-```
-X-Forwarded-For: 203.0.113.1, 198.51.100.2
-X-Real-Ip: 198.51.100.2
+```json
+{
+  "error": "Too many requests. Please try again later."
+}
 ```
 
-- `X-Real-Ip` is trusted: `198.51.100.2`
-- If `X-Real-Ip` is missing, use rightmost `X-Forwarded-For`: `198.51.100.2`
+### IP Extraction
 
----
+The app extracts the real client IP using trusted headers set by the Traefik reverse proxy:
 
-**Minimum compatible version:** v0.1.0
+- `X-Real-Ip` is always trustworthy when set by Traefik.
+- The rightmost entry of `X-Forwarded-For` is the one Traefik added; earlier entries may be attacker-supplied and are ignored.
+
+### When Throttling Applies
+
+- **Login:** Every failed login attempt increments the IP counter. If the IP is throttled, login is blocked.
+- **Signup:** Every failed signup attempt (e.g., username already taken) increments the IP counter. If the IP is throttled, signup is blocked.
+- **Invite Code:** Throttling is not checked until after the invite code is validated. Invalid invite codes do not increment the IP counter.
+
+### Housekeeping
+
+Both endpoints periodically clean up old login attempts from the database.
+
+## Username Enumeration Protection
+
+When a signup attempt fails due to a username collision, the IP attempt is recorded. This prevents attackers from enumerating valid usernames without triggering the throttle.
+
+## Minimum Version
+
+This behavior is present in v0.1.0 and later.
