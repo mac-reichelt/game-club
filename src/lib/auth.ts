@@ -229,6 +229,10 @@ export function checkAndRecordAttempt(
   const database = db ?? getDb();
   let recorded = false;
 
+  // Use the same (name, ip) tuple as isAccountLocked / recordLoginAttempt so
+  // the TOCTOU-safe check operates on the same identifier space.
+  const accountIdentifier = `${name}\x00${ip}`;
+
   const checkStmt = database.prepare(
     `SELECT COUNT(*) as cnt FROM login_attempts
      WHERE identifier = ? AND type = 'account'
@@ -241,7 +245,7 @@ export function checkAndRecordAttempt(
   database
     .transaction(() => {
       const row = checkStmt.get(
-        name,
+        accountIdentifier,
         `-${ACCOUNT_WINDOW_MINUTES} minutes`
       ) as { cnt: number };
 
@@ -249,7 +253,7 @@ export function checkAndRecordAttempt(
         return; // already at the limit — do not insert
       }
 
-      insertStmt.run(name, "account");
+      insertStmt.run(accountIdentifier, "account");
       insertStmt.run(ip, "ip");
       recorded = true;
     })

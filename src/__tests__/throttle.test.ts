@@ -336,7 +336,7 @@ describe("checkAndRecordAttempt", () => {
     const rows = db
       .prepare("SELECT identifier, type FROM login_attempts")
       .all() as { identifier: string; type: string }[];
-    expect(rows).toContainEqual({ identifier: "alice", type: "account" });
+    expect(rows).toContainEqual({ identifier: "alice\x001.2.3.4", type: "account" });
     expect(rows).toContainEqual({ identifier: "1.2.3.4", type: "ip" });
   });
 
@@ -352,9 +352,9 @@ describe("checkAndRecordAttempt", () => {
       db
         .prepare(
           `SELECT COUNT(*) as cnt FROM login_attempts
-           WHERE identifier = 'alice' AND type = 'account'`
+           WHERE identifier = ? AND type = 'account'`
         )
-        .get() as { cnt: number }
+        .get("alice\x001.2.3.4") as { cnt: number }
     ).cnt;
     expect(accountCount).toBe(10);
   });
@@ -375,9 +375,9 @@ describe("checkAndRecordAttempt", () => {
       db
         .prepare(
           `SELECT COUNT(*) as cnt FROM login_attempts
-           WHERE identifier = 'alice' AND type = 'account'`
+           WHERE identifier = ? AND type = 'account'`
         )
-        .get() as { cnt: number }
+        .get("alice\x001.2.3.4") as { cnt: number }
     ).cnt;
     // Exactly 10 (9 pre-loaded + 1 from the first call), not 11.
     expect(accountCount).toBe(10);
