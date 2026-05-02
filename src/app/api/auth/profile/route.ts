@@ -33,8 +33,8 @@ export async function PATCH(request: NextRequest) {
       .get(name.trim(), user.id);
     if (existing) {
       return NextResponse.json(
-        { error: "That name is already taken" },
-        { status: 409 }
+        { error: "That name is not available" },
+        { status: 400 }
       );
     }
   }

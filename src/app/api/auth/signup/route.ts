@@ -91,8 +91,8 @@ export async function POST(request: NextRequest) {
   if (existing) {
     recordIpAttempt(ip, db);
     return NextResponse.json(
-      { error: "That name is already taken" },
-      { status: 409 }
+      { error: "That name is not available" },
+      { status: 400 }
     );
   }
 

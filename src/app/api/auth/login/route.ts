@@ -7,7 +7,7 @@ import {
   createSession,
   isAccountLocked,
   isIpThrottled,
-  recordLoginAttempt,
+  checkAndRecordAttempt,
   recordIpAttempt,
   resetLoginAttempts,
   cleanupOldLoginAttempts,
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   const passwordValid = await verifyPassword(password, storedHash);
 
   if (!member || !member.password_hash || !passwordValid) {
-    recordLoginAttempt(name, ip, db);
+    checkAndRecordAttempt(name, ip, db);
     return NextResponse.json(
       { error: INVALID_CREDENTIALS },
       { status: 401 }
