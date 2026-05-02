@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import getDb from "@/lib/db";
-import { getUserFromToken, hashPassword, verifyPassword } from "@/lib/auth";
+import {
+  getUserFromToken,
+  hashPassword,
+  verifyPassword,
+  invalidateAllSessions,
+  createSession,
+} from "@/lib/auth";
 import { isBannedPassword } from "@/lib/bannedPasswords";
 
 // PATCH /api/auth/profile - update current user's profile
@@ -86,12 +92,19 @@ export async function PATCH(request: NextRequest) {
       user.id
     );
   }
+
+  let newSessionToken: string | null = null;
   if (newPassword) {
     const newHash = await hashPassword(newPassword);
-    db.prepare("UPDATE members SET password_hash = ? WHERE id = ?").run(
-      newHash,
-      user.id
-    );
+    const now = new Date().toISOString();
+    db.prepare(
+      "UPDATE members SET password_hash = ?, password_changed_at = ? WHERE id = ?"
+    ).run(newHash, now, user.id);
+    // Invalidate all existing sessions (including the current one) and issue a
+    // fresh session so the current device stays logged in while all other
+    // sessions (potentially held by an attacker) become invalid.
+    invalidateAllSessions(user.id);
+    newSessionToken = createSession(user.id);
   }
 
   // Return updated user
@@ -99,5 +112,15 @@ export async function PATCH(request: NextRequest) {
     .prepare("SELECT id, name, avatar, joined_at FROM members WHERE id = ?")
     .get(user.id);
 
-  return NextResponse.json(updated);
+  const response = NextResponse.json(updated);
+  if (newSessionToken) {
+    response.cookies.set("session_token", newSessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60,
+    });
+  }
+  return response;
 }
