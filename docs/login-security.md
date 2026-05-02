@@ -1,41 +1,43 @@
 # Login Security
 
-## Client IP Extraction (v0.1.0+)
+This page documents the login attempt throttling and account lockout mechanisms used by Game Club.
 
-When a user logs in, the app extracts the client IP address for rate-limiting and security checks. The extraction logic depends on trusted proxy headers:
+## Account Lockout and Throttling
 
-- **Traefik** (our reverse proxy) sets `X-Real-Ip` to the actual connecting peer.
-- Traefik **appends** the connecting peer to `X-Forwarded-For` (rightmost entry), rather than replacing it.
+Game Club protects against brute-force login attempts by tracking failed login attempts per account and per IP address. If too many failed attempts occur within a short window, further login attempts are blocked.
 
-### Extraction Logic
+### Per-Account Lockout
 
-1. **If `X-Real-Ip` is present:**
-   - The app trusts this value as the real client IP.
-2. **If `X-Real-Ip` is absent but `X-Forwarded-For` is present:**
-   - The app uses the **rightmost** entry in `X-Forwarded-For` (the one Traefik appended).
-3. **If neither header is present:**
-   - The app falls back to `unknown`.
+- The app tracks failed login attempts for each account.
+- If an account exceeds the maximum allowed failed attempts within a configured window (e.g., 10 attempts in 15 minutes), it is temporarily locked out.
+- The lockout prevents further login attempts until the window expires.
 
-> **Note:** Earlier entries in `X-Forwarded-For` may be attacker-supplied and are **not trusted**.
+### Per-IP Throttling
 
-### Security Implications
+- Failed login attempts are also tracked per IP address.
+- If an IP exceeds its threshold, further attempts from that IP are throttled.
 
-- **Trusted Proxy Required:**
-  - The app must be deployed behind a trusted reverse proxy (e.g., Traefik, Nginx, or a cloud load-balancer) that sets these headers.
-  - Without a trusted proxy, an attacker can spoof headers and bypass per-IP throttling.
-- **Do not trust leftmost `X-Forwarded-For`:**
-  - Picking the leftmost entry (common in client-trusted scenarios) would let attackers rotate spoofed values per request and defeat throttling.
+## Atomic Attempt Recording
 
-### Example
+**Since vNEXT**, the login handler uses an atomic function (`checkAndRecordAttempt`) to record failed login attempts:
 
-```
-X-Forwarded-For: 203.0.113.1, 198.51.100.2
-X-Real-Ip: 198.51.100.2
-```
+- The function checks the current count of failed attempts for the account within the lockout window.
+- If the count is below the threshold, it records both the account and IP attempt in a single exclusive transaction.
+- If the count is at or above the threshold, it does not record a new attempt.
+- This prevents race conditions where concurrent requests could bypass the lockout by both checking before inserting.
 
-- `X-Real-Ip` is trusted: `198.51.100.2`
-- If `X-Real-Ip` is missing, use rightmost `X-Forwarded-For`: `198.51.100.2`
+**Security Note:**
+- The login handler always responds with a generic "Invalid credentials" error, regardless of whether the account is locked, to prevent account enumeration.
 
----
+## Implementation Details
 
-**Minimum compatible version:** v0.1.0
+- The `checkAndRecordAttempt` function ensures that only one request can increment the attempt count at a time, eliminating TOCTOU (time-of-check-to-time-of-use) races.
+- See [`src/lib/auth.ts`](../src/lib/auth.ts) for implementation.
+
+## Minimum Version
+
+- Atomic lockout logic is available in Game Club vNEXT and later.
+
+## Related
+- [SECURITY.md](../SECURITY.md)
+- [README.md](../README.md)
