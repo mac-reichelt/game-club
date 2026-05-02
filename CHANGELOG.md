@@ -1,6 +1,4 @@
-# Changelog
-
 ## [Unreleased]
 
 ### Added
-- Session invalidation on password change: When a user changes their password, all existing sessions are deleted and a new session is issued for the current device. This logs out all other devices and protects against session theft. See [docs/login-security.md](docs/login-security.md).
+- CI: Added `auto-ready-copilot-prs` GitHub Actions workflow. This workflow automatically marks draft PRs authored by Copilot (`copilot-swe-agent[bot]`, `app/copilot-swe-agent`, or `Copilot`) as "Ready for review" when opened or reopened, enabling auto-approve and auto-merge pipelines to proceed without manual intervention.
