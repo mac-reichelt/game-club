@@ -100,11 +100,25 @@ export function deleteSession(token: string): void {
   db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
 }
 
+export function invalidateAllSessions(
+  memberId: number,
+  db?: Database.Database
+): void {
+  const database = db ?? getDb();
+  database
+    .prepare("DELETE FROM sessions WHERE member_id = ?")
+    .run(memberId);
+}
+
 function getMemberByToken(token: string): Member | null {
   const db = getDb();
   const session = db
     .prepare(
-      "SELECT member_id FROM sessions WHERE token = ? AND expires_at > datetime('now')"
+      `SELECT s.member_id FROM sessions s
+       JOIN members m ON m.id = s.member_id
+       WHERE s.token = ?
+         AND s.expires_at > datetime('now')
+         AND (m.password_changed_at IS NULL OR s.created_at >= m.password_changed_at)`
     )
     .get(token) as { member_id: number } | undefined;
   if (!session) return null;

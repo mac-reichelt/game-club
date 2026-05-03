@@ -1,0 +1,51 @@
+name: auto-ready-copilot-prs
+
+# The cloud Copilot agent (`copilot-swe-agent`) opens PRs in DRAFT state.
+# Drafts are skipped by branch protection, auto-approve-bots, and auto-merge,
+# so PRs sit indefinitely waiting on the human to click "Ready for review".
+# This workflow flips Copilot-authored draft PRs to ready immediately so the
+# rest of the pipeline (auto-approve-bots → required checks → auto-merge)
+# takes over.
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  mark-ready:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.pull_request.draft == true && (
+        github.event.pull_request.user.login == 'copilot-swe-agent[bot]' ||
+        github.event.pull_request.user.login == 'app/copilot-swe-agent' ||
+        github.event.pull_request.user.login == 'Copilot'
+      )
+    steps:
+      - name: Mark PR ready for review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Defense-in-depth: re-validate author against allowlist in shell,
+          # in addition to the job-level `if:` gate. PR_AUTHOR comes from the
+          # webhook payload (GitHub-controlled, not user input), but treat
+          # as untrusted and never interpolate into a command string.
+          case "$PR_AUTHOR" in
+            copilot-swe-agent\[bot\]|Copilot) ;;
+            *)
+              echo "Refusing to flip ready: author '$PR_AUTHOR' not on allowlist" >&2
+              exit 1
+              ;;
+          esac
+          case "$PR_NUMBER" in
+            ''|*[!0-9]*) echo "Invalid PR_NUMBER: $PR_NUMBER" >&2; exit 1 ;;
+          esac
+          echo "Marking PR #$PR_NUMBER (author: $PR_AUTHOR) ready for review"
+          gh pr ready "$PR_NUMBER" --repo "$REPO"
