@@ -1,10 +1,5 @@
-# Changelog
-
 ## [Unreleased]
 
-### Added
-- Per-IP rate limiting for the signup endpoint. Signup requests now use the same throttle and login_attempts table as login, preventing bulk account creation and username enumeration attacks. If an IP exceeds the limit, signup returns HTTP 429 (Too Many Requests).
-
-### Changed
-- The login and signup endpoints now share rate-limiting logic and cleanup routines.
+### Security
+- Login lockout is now scoped to the (username, IP address) tuple, not just username. This prevents attackers from locking out legitimate users by failing logins from a different IP. A successful login only resets the failed-attempt counter for that (username, IP) pair.
 
