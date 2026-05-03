@@ -29,7 +29,8 @@ function initSchema(db: Database.Database) {
       avatar TEXT NOT NULL DEFAULT '🎮',
       password_hash TEXT NOT NULL DEFAULT '',
       disabled INTEGER NOT NULL DEFAULT 0,
-      joined_at TEXT NOT NULL DEFAULT (datetime('now'))
+      joined_at TEXT NOT NULL DEFAULT (datetime('now')),
+      password_changed_at TEXT
     );
 
     CREATE TABLE IF NOT EXISTS games (
@@ -125,6 +126,9 @@ function initSchema(db: Database.Database) {
     db.exec(
       "ALTER TABLE members ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0"
     );
+  }
+  if (!memberCols.some((c) => c.name === "password_changed_at")) {
+    db.exec("ALTER TABLE members ADD COLUMN password_changed_at TEXT");
   }
 
   const electionCols = db

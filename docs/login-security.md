@@ -1,25 +1,19 @@
 # Login Security
 
-## Brute-force Protection
+## Session Management
 
-Game Club implements multiple layers of brute-force protection for login attempts.
+When you log in, the app issues a session token stored in a secure, HTTP-only cookie. Sessions expire after 30 days.
 
-### Per-IP Throttling
-- If an IP address makes too many failed login attempts in a short window, further attempts from that IP are temporarily blocked.
-- Default: 30 failed attempts per 10 minutes per IP.
+## Password Change and Session Invalidation
 
-### Per-Account Lockout (Scoped by IP)
-- If there are too many failed login attempts for a given username **from a single IP address**, further attempts for that (username, IP) pair are temporarily locked out.
-- Default: 10 failed attempts per 10 minutes **per (username, IP) tuple**.
-- **Note:** This prevents an attacker from locking out a target account globally by failing logins from their own IP. Only the (username, IP) pair that exceeded the threshold is locked out; other users (or the same user from a different IP) are unaffected.
+When you change your password:
 
-### Lockout Reset
-- A successful login for a (username, IP) pair resets the failed-attempt counter for that pair.
-- IP-based throttling is not reset by a successful login.
+- **All existing sessions for your account are immediately invalidated.** This includes sessions on other devices and browsers.
+- **A new session is issued for your current device.** You stay logged in after changing your password, but all other devices are logged out.
+- **Sessions created before your password change cannot be used.** If an attacker had a session token, it becomes invalid as soon as you change your password.
 
-### Implementation Details
-- The lockout identifier for account lockouts is the concatenation of the username and IP address, separated by a null byte (`\x00`).
-- All lockout windows and thresholds are configurable in the code.
+This protects your account if your session token is ever leaked or stolen.
 
-## Version
-- This behavior is accurate as of vNEXT (after PR #67).
+## Minimum Version
+
+Session invalidation on password change is available in version NEXT (after PR #70).
