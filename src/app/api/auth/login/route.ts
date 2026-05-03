@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   }
 
   // --- Per-account lockout ---
-  if (isAccountLocked(name, db)) {
+  if (isAccountLocked(name, ip, db)) {
     recordIpAttempt(ip, db);
     return NextResponse.json(
       { error: INVALID_CREDENTIALS },
@@ -80,8 +80,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Successful login — reset the per-account failed-attempt counter.
-  resetLoginAttempts(name, db);
+  // Successful login — reset the per-(account,ip) failed-attempt counter.
+  resetLoginAttempts(name, ip, db);
 
   const token = createSession(member.id);
 

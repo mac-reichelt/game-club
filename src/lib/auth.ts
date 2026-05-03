@@ -200,16 +200,20 @@ const CLEANUP_AGE_MINUTES = 60;
 
 export function isAccountLocked(
   name: string,
+  ip: string,
   db?: Database.Database
 ): boolean {
   const database = db ?? getDb();
+  // Lock by (username, ip) tuple to prevent an attacker from locking out a
+  // target account by intentionally failing logins from their own IP.
+  const identifier = `${name}\x00${ip}`;
   const row = database
     .prepare(
       `SELECT COUNT(*) as cnt FROM login_attempts
        WHERE identifier = ? AND type = 'account'
        AND attempted_at > datetime('now', ?)`
     )
-    .get(name, `-${ACCOUNT_WINDOW_MINUTES} minutes`) as { cnt: number };
+    .get(identifier, `-${ACCOUNT_WINDOW_MINUTES} minutes`) as { cnt: number };
   return row.cnt >= ACCOUNT_MAX_ATTEMPTS;
 }
 
@@ -231,11 +235,14 @@ export function recordLoginAttempt(
   db?: Database.Database
 ): void {
   const database = db ?? getDb();
+  // Account-type identifier is the (name, ip) tuple so that lockouts are
+  // scoped to a specific attacker IP and cannot be used to DoS other users.
+  const accountIdentifier = `${name}\x00${ip}`;
   const stmt = database.prepare(
     "INSERT INTO login_attempts (identifier, type) VALUES (?, ?)"
   );
   database.transaction(() => {
-    stmt.run(name, "account");
+    stmt.run(accountIdentifier, "account");
     stmt.run(ip, "ip");
   })();
 }
@@ -263,6 +270,10 @@ export function checkAndRecordAttempt(
   const database = db ?? getDb();
   let recorded = false;
 
+  // Use the same (name, ip) tuple as isAccountLocked / recordLoginAttempt so
+  // the TOCTOU-safe check operates on the same identifier space.
+  const accountIdentifier = `${name}\x00${ip}`;
+
   const checkStmt = database.prepare(
     `SELECT COUNT(*) as cnt FROM login_attempts
      WHERE identifier = ? AND type = 'account'
@@ -275,7 +286,7 @@ export function checkAndRecordAttempt(
   database
     .transaction(() => {
       const row = checkStmt.get(
-        name,
+        accountIdentifier,
         `-${ACCOUNT_WINDOW_MINUTES} minutes`
       ) as { cnt: number };
 
@@ -283,7 +294,7 @@ export function checkAndRecordAttempt(
         return; // already at the limit — do not insert
       }
 
-      insertStmt.run(name, "account");
+      insertStmt.run(accountIdentifier, "account");
       insertStmt.run(ip, "ip");
       recorded = true;
     })
@@ -303,14 +314,16 @@ export function recordIpAttempt(ip: string, db?: Database.Database): void {
 
 export function resetLoginAttempts(
   name: string,
+  ip: string,
   db?: Database.Database
 ): void {
   const database = db ?? getDb();
+  const identifier = `${name}\x00${ip}`;
   database
     .prepare(
       "DELETE FROM login_attempts WHERE identifier = ? AND type = 'account'"
     )
-    .run(name);
+    .run(identifier);
 }
 
 export function cleanupOldLoginAttempts(db?: Database.Database): void {
