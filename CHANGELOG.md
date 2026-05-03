@@ -2,9 +2,9 @@
 
 ## [Unreleased]
 
-### Security
-- **Login lockout is now scoped to (username, IP) pairs.**
-  - Previously, too many failed login attempts for a username from any IP would lock out that account for all users.
-  - Now, lockouts only apply to the (username, IP) tuple. This prevents attackers from locking out legitimate users by failing logins from a different IP address.
-  - A successful login only resets the failed-attempt counter for that (username, IP) pair.
+### Added
+- Per-IP rate limiting for the signup endpoint. Signup requests now use the same throttle and login_attempts table as login, preventing bulk account creation and username enumeration attacks. If an IP exceeds the limit, signup returns HTTP 429 (Too Many Requests).
+
+### Changed
+- The login and signup endpoints now share rate-limiting logic and cleanup routines.
 
