@@ -1,4 +1,10 @@
+# Changelog
+
 ## [Unreleased]
 
-### Added
-- CI: Added `auto-ready-copilot-prs` GitHub Actions workflow. This workflow automatically marks draft PRs authored by Copilot (`copilot-swe-agent[bot]`, `app/copilot-swe-agent`, or `Copilot`) as "Ready for review" when opened or reopened, enabling auto-approve and auto-merge pipelines to proceed without manual intervention.
+### Security
+- **Login lockout is now scoped to (username, IP) pairs.**
+  - Previously, too many failed login attempts for a username from any IP would lock out that account for all users.
+  - Now, lockouts only apply to the (username, IP) tuple. This prevents attackers from locking out legitimate users by failing logins from a different IP address.
+  - A successful login only resets the failed-attempt counter for that (username, IP) pair.
+
