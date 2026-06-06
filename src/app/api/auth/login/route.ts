@@ -55,8 +55,10 @@ export async function POST(request: NextRequest) {
   }
 
   const member = db
-    .prepare("SELECT * FROM members WHERE name = ? AND disabled = 0")
-    .get(name) as (Member & { password_hash: string }) | undefined;
+    .prepare("SELECT * FROM members WHERE name = ?")
+    .get(name) as
+    | (Member & { password_hash: string; disabled: number; active?: number })
+    | undefined;
 
   // Always run verifyPassword (with a dummy scrypt hash for missing accounts)
   // to normalize response timing and prevent user enumeration.
@@ -68,6 +70,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: INVALID_CREDENTIALS },
       { status: 401 }
+    );
+  }
+
+  if (member.disabled || member.active === 0) {
+    return NextResponse.json(
+      { error: "Account has been deactivated. Contact an admin for help." },
+      { status: 403 }
     );
   }
 
