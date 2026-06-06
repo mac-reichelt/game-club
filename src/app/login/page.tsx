@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { isBannedPassword } from "@/lib/bannedPasswords";
 
 const AVATARS = [
@@ -105,7 +106,7 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className={mode === "signup" ? "mb-4" : "mb-6"}>
+          <div className={mode === "signup" ? "mb-4" : "mb-2"}>
             <label className="block text-sm text-[var(--color-text-muted)] mb-1">
               Password
             </label>
@@ -118,6 +119,18 @@ export default function LoginPage() {
               placeholder="Enter your password"
             />
           </div>
+
+          {mode === "login" && (
+            <div className="mb-6 text-right">
+              <Link
+                href="/forgot-password"
+                aria-label="Reset your password"
+                className="text-sm text-[var(--color-primary)] hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
+          )}
 
           {mode === "signup" && (
             <>
