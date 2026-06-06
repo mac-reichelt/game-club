@@ -2,10 +2,14 @@ import getDb from "@/lib/db";
 import { GameWithNominator, Election } from "@/lib/types";
 import { requireAuth } from "@/lib/auth";
 import { checkAndCloseExpiredElections } from "@/lib/elections";
+import { getGamedbDetail, isGamedbConfigured } from "@/lib/gamedb";
 import NominationForm from "./NominationForm";
 import BallotForm from "./BallotForm";
 import CountdownTimer from "@/components/CountdownTimer";
-import NominationsList, { NominationStats } from "./NominationsList";
+import NominationsList, {
+  NominationGamedbInfo,
+  NominationStats,
+} from "./NominationsList";
 
 export const dynamic = "force-dynamic";
 
@@ -105,6 +109,57 @@ function getNominationStats(db: ReturnType<typeof getDb>): Record<number, Nomina
   return out;
 }
 
+async function getNominationGamedbInfo(
+  nominations: GameWithNominator[]
+): Promise<Record<number, NominationGamedbInfo>> {
+  if (!isGamedbConfigured()) return {};
+
+  const entries = await Promise.all(
+    nominations.map(async (game) => {
+      if (!game.gamedb_id) return null;
+      try {
+        const detail = await getGamedbDetail(game.gamedb_id);
+        if (!detail) return null;
+
+        const opencriticScore =
+          detail.opencritic?.score != null
+            ? Math.round(detail.opencritic.score)
+            : null;
+        const opencriticTier = detail.opencritic?.tier ?? null;
+        const hltb = detail.hltb
+          ? {
+              mainStoryHours: detail.hltb.main_story_hours,
+              mainExtraHours: detail.hltb.main_extra_hours,
+              completionistHours: detail.hltb.completionist_hours,
+            }
+          : null;
+        const hasHltbHours =
+          hltb?.mainStoryHours != null ||
+          hltb?.mainExtraHours != null ||
+          hltb?.completionistHours != null;
+
+        if (opencriticScore == null && !hasHltbHours) return null;
+
+        return [
+          game.id,
+          {
+            opencritic:
+              opencriticScore != null
+                ? { score: opencriticScore, tier: opencriticTier }
+                : null,
+            hltb: hasHltbHours ? hltb : null,
+          } satisfies NominationGamedbInfo,
+        ] as const;
+      } catch (err) {
+        console.error("nominations gamedb lookup failed:", err);
+        return null;
+      }
+    })
+  );
+
+  return Object.fromEntries(entries.filter((entry): entry is readonly [number, NominationGamedbInfo] => !!entry));
+}
+
 export default async function NominationsPage() {
   const user = await requireAuth();
   const db = getDb();
@@ -116,6 +171,7 @@ export default async function NominationsPage() {
   const openElection = getOpenElection(db);
   const electionHistory = getElectionHistory(db);
   const stats = getNominationStats(db);
+  const gamedbInfo = await getNominationGamedbInfo(nominations);
   const hasVoted = openElection
     ? openElection.voterIds.includes(user.id)
     : false;
@@ -199,6 +255,7 @@ export default async function NominationsPage() {
             nominations={nominations}
             stats={stats}
             electionHistory={electionHistory}
+            gamedbInfo={gamedbInfo}
           />
         )}
       </div>
