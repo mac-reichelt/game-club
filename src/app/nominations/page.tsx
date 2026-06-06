@@ -2,6 +2,7 @@ import getDb from "@/lib/db";
 import { GameWithNominator, Election } from "@/lib/types";
 import { requireAuth } from "@/lib/auth";
 import { checkAndCloseExpiredElections } from "@/lib/elections";
+import { isGamedbConfigured } from "@/lib/gamedb";
 import NominationForm from "./NominationForm";
 import BallotForm from "./BallotForm";
 import CountdownTimer from "@/components/CountdownTimer";
@@ -116,6 +117,7 @@ export default async function NominationsPage() {
   const openElection = getOpenElection(db);
   const electionHistory = getElectionHistory(db);
   const stats = getNominationStats(db);
+  const gamedbConfigured = isGamedbConfigured();
   const hasVoted = openElection
     ? openElection.voterIds.includes(user.id)
     : false;
@@ -199,6 +201,7 @@ export default async function NominationsPage() {
             nominations={nominations}
             stats={stats}
             electionHistory={electionHistory}
+            gamedbConfigured={gamedbConfigured}
           />
         )}
       </div>
