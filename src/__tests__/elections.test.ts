@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { closeElectionAndTally, checkAndCloseExpiredElections } from "@/lib/elections";
+import {
+  closeElectionAndTally,
+  checkAndCloseExpiredElections,
+  getOpenElectionData,
+} from "@/lib/elections";
 
 function setupDb(): Database.Database {
   const db = new Database(":memory:");
@@ -310,5 +314,33 @@ describe("checkAndCloseExpiredElections", () => {
       .prepare("SELECT status FROM elections WHERE id = ?")
       .get(electionId) as { status: string };
     expect(election.status).toBe("open");
+  });
+});
+
+describe("getOpenElectionData", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = setupDb();
+  });
+
+  it("returns null when there is no open election", () => {
+    expect(getOpenElectionData(db)).toBeNull();
+  });
+
+  it("returns open election games and distinct voter ids", () => {
+    const members = addMembers(db, 3);
+    const games = addGames(db, ["A", "B", "C"], members[0]);
+    const electionId = createElection(db, games);
+
+    castBallot(db, electionId, members[0], [games[0], games[1], games[2]]);
+    castBallot(db, electionId, members[1], [games[2], games[1], games[0]]);
+
+    const result = getOpenElectionData(db);
+    expect(result).toBeTruthy();
+    expect(result?.election.id).toBe(electionId);
+    expect(result?.games).toHaveLength(3);
+    expect(result?.voteCount).toBe(2);
+    expect(result?.voterIds).toEqual([members[0], members[1]]);
   });
 });
