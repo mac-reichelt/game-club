@@ -119,7 +119,7 @@ export default function BallotForm({
         onClick={() => setIsOpen(true)}
         className="w-full border border-dashed border-[var(--color-border)] rounded-lg p-3 text-sm text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
       >
-        🗳️ Cast Your Ballot
+        🗳️ Open Ballot
       </button>
     );
   }
