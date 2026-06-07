@@ -86,6 +86,7 @@ export async function importByRawgId(rawgId: number): Promise<GamedbDetail> {
 
 export async function getGamedbDetail(
   gamedbId: number,
+  options?: { noCache?: boolean },
 ): Promise<GamedbDetail | null> {
   if (!BASE) return null;
   let id: string;
@@ -94,9 +95,10 @@ export async function getGamedbDetail(
   } catch {
     return null;
   }
-  const res = await fetch(`${BASE}/api/games/${id}`, {
-    next: { revalidate: 3600 },
-  });
+  const res = await fetch(
+    `${BASE}/api/games/${id}`,
+    options?.noCache ? { cache: "no-store" } : { next: { revalidate: 3600 } }
+  );
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`gamedb fetch failed: ${res.status}`);
   return (await res.json()) as GamedbDetail;

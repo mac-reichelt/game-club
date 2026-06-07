@@ -102,6 +102,7 @@ export default async function NominationsPage() {
   const electionHistory = getElectionHistory(db);
   const stats = getNominationStats(db);
   const gamedbInfo = await getNominationGamedbInfo(nominations);
+  const gamedbConfigured = isGamedbConfigured();
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -134,6 +135,7 @@ export default async function NominationsPage() {
             stats={stats}
             electionHistory={electionHistory}
             gamedbInfo={gamedbInfo}
+            gamedbConfigured={gamedbConfigured}
           />
         )}
       </div>
