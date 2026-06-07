@@ -1,14 +1,14 @@
-# Game Club — Play, Vote, and Track Your Board Game Nights
+# Game Club — Track, vote, and play games with your club
 
-Game Club helps your group pick, play, and remember board games. Organize sessions, vote on what to play, and keep track of winners—all in one place.
+Game Club helps your group organize, vote on, and record board/video game sessions. Manage members, run elections, and keep a history of what you've played.
 
-![Screenshot](docs/assets/screenshot.png)
+![Game Club screenshot](docs/assets/screenshot.png)
 
 ## Features
-- ✅ Secure login with scrypt password hashing (auto-migrates old accounts)
-- ✅ Per-IP and per-account login throttling
-- ✅ Session management with secure cookies
-- ✅ Track games, sessions, and player stats
+- ✅ Member management — Sign up, edit profile, delete/deactivate account
+- ✅ Secure login — Password hashing, session invalidation, account deactivation
+- ✅ Game tracking — Add, vote, and record play sessions
+- ✅ Elections — Run ranked-choice votes for what to play next
 
 ## Quickstart
 
@@ -24,16 +24,17 @@ Then visit [http://localhost:3000](http://localhost:3000).
 
 ## Documentation
 - [Getting Started](docs/getting-started.md)
-- [Login Security](docs/login-security.md)
 - [Configuration](docs/configuration.md)
-- [API Reference](docs/reference/api.md)
+- [Login & Security](docs/login-security.md)
 
 ## Status
 | Feature                | Status   |
 |------------------------|----------|
-| Login & Auth           | Stable   |
-| Game Tracking          | Beta     |
-| Voting                 | Planned  |
+| Member sign-up/login   | Stable   |
+| Account deletion       | Beta     |
+| Game tracking          | Stable   |
+| Elections              | Stable   |
+| API docs               | Planned  |
 
 ## Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md).

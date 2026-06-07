@@ -1,13 +1,13 @@
 ## [Unreleased]
 
-### Changed
-- Updated development dependencies:
-  - `vitest` from 4.1.6 to 4.1.8
-  - `vite` from 8.0.12 to 8.0.16
-  - `rolldown` and related bindings from 1.0.0 to 1.0.3
-  - `tinyglobby` from 0.2.16 to 0.2.17
-  - `postcss` from 8.5.14 to 8.5.15
-  - `@oxc-project/types` from 0.129.0 to 0.133.0
-  - `@rolldown/pluginutils` from 1.0.0 to 1.0.1
+### Added
+- **Account deletion:** Users can now deactivate and anonymize their own account via the profile page. This sets the account as inactive, anonymizes the name, and logs the user out. ([#106](https://github.com/your-org/game-club/pull/106))
+- **API:** `DELETE /api/auth/profile` endpoint to deactivate/anonymize the current user's account. Requires current password and confirmation.
 
-No user-facing features or API changes. These updates improve build tooling and test reliability.
+### Changed
+- **Login security:** Login and session validation now reject accounts that are deactivated (`active = 0`).
+- **Database:** `members` table now includes `active` (default 1) and `deactivated_at` columns. Existing accounts are considered active by default.
+- **Members API:** `/api/members` now only returns active members.
+
+### Migration
+- Existing deployments will auto-migrate the `members` table to add `active` and `deactivated_at` columns on next start.
