@@ -1,11 +1,12 @@
 import getDb from "@/lib/db";
-import { ElectionWithWinner, GameWithNominator, Election } from "@/lib/types";
+import { ElectionWithWinner, GameWithNominator } from "@/lib/types";
 import { requireAuth } from "@/lib/auth";
-import { checkAndCloseExpiredElections } from "@/lib/elections";
+import { checkAndCloseExpiredElections, getOpenElectionData } from "@/lib/elections";
 import Link from "next/link";
 import StartElectionButton from "./StartElectionButton";
 import CloseElectionButton from "./CloseElectionButton";
 import CountdownTimer from "@/components/CountdownTimer";
+import BallotForm from "@/app/nominations/BallotForm";
 
 export const dynamic = "force-dynamic";
 
@@ -24,34 +25,6 @@ function getElections(db: ReturnType<typeof getDb>): ElectionWithWinner[] {
     .all() as ElectionWithWinner[];
 }
 
-function getOpenElection(db: ReturnType<typeof getDb>) {
-  const election = db
-    .prepare("SELECT * FROM elections WHERE status = 'open' LIMIT 1")
-    .get() as Election | undefined;
-
-  if (!election) return null;
-
-  const games = db
-    .prepare(
-      `SELECT g.*, m.name as nominatorName
-       FROM election_games eg
-       JOIN games g ON eg.game_id = g.id
-       JOIN members m ON g.nominated_by = m.id
-       WHERE eg.election_id = ?`
-    )
-    .all(election.id) as GameWithNominator[];
-
-  const voteCount = (
-    db
-      .prepare(
-        "SELECT COUNT(DISTINCT member_id) as count FROM ballots WHERE election_id = ?"
-      )
-      .get(election.id) as { count: number }
-  ).count;
-
-  return { election, games, voteCount };
-}
-
 function getNominatedGames(db: ReturnType<typeof getDb>): GameWithNominator[] {
   return db
     .prepare(
@@ -65,14 +38,15 @@ function getNominatedGames(db: ReturnType<typeof getDb>): GameWithNominator[] {
 }
 
 export default async function ElectionsPage() {
-  await requireAuth();
+  const user = await requireAuth();
   const db = getDb();
 
   checkAndCloseExpiredElections(db);
 
   const elections = getElections(db);
-  const openElection = getOpenElection(db);
+  const openElection = getOpenElectionData(db);
   const nominations = getNominatedGames(db);
+  const hasVoted = openElection ? openElection.voterIds.includes(user.id) : false;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -134,16 +108,13 @@ export default async function ElectionsPage() {
                 cast.
               </p>
             )}
-            <p className="text-xs text-[var(--color-text-muted)] mt-3">
-              Cast your ballot on the{" "}
-              <Link
-                href="/nominations"
-                className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]"
-              >
-                Nominations
-              </Link>{" "}
-              page.
-            </p>
+            <div className="mt-4">
+              <BallotForm
+                electionId={openElection.election.id}
+                games={openElection.games}
+                hasVoted={hasVoted}
+              />
+            </div>
           </div>
         </section>
       )}
