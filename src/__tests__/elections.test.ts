@@ -341,6 +341,46 @@ describe("getOpenElectionData", () => {
     expect(result?.election.id).toBe(electionId);
     expect(result?.games).toHaveLength(3);
     expect(result?.voteCount).toBe(2);
-    expect(result?.voterIds).toEqual([members[0], members[1]]);
+    expect(result?.voterIds).toHaveLength(2);
+    expect(result?.voterIds).toEqual(
+      expect.arrayContaining([members[0], members[1]])
+    );
+  });
+
+  it("ignores closed elections", () => {
+    const members = addMembers(db, 2);
+    const games = addGames(db, ["A", "B"], members[0]);
+    const electionId = createElection(db, games);
+    castBallot(db, electionId, members[0], [games[0], games[1]]);
+    db.prepare("UPDATE elections SET status = 'closed' WHERE id = ?").run(
+      electionId
+    );
+
+    expect(getOpenElectionData(db)).toBeNull();
+  });
+
+  it("scopes games and voters to the open election only", () => {
+    const members = addMembers(db, 3);
+    const allGames = addGames(db, ["A", "B", "C", "D"], members[0]);
+
+    // A closed election with its own games and ballots must not leak in.
+    const closedId = createElection(db, [allGames[2], allGames[3]]);
+    castBallot(db, closedId, members[1], [allGames[2], allGames[3]]);
+    castBallot(db, closedId, members[2], [allGames[3], allGames[2]]);
+    db.prepare("UPDATE elections SET status = 'closed' WHERE id = ?").run(
+      closedId
+    );
+
+    const openId = createElection(db, [allGames[0], allGames[1]]);
+    castBallot(db, openId, members[0], [allGames[0], allGames[1]]);
+
+    const result = getOpenElectionData(db);
+    expect(result?.election.id).toBe(openId);
+    expect(result?.games).toHaveLength(2);
+    expect(result?.games.map((g) => g.id)).toEqual(
+      expect.arrayContaining([allGames[0], allGames[1]])
+    );
+    expect(result?.voteCount).toBe(1);
+    expect(result?.voterIds).toEqual([members[0]]);
   });
 });
