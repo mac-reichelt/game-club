@@ -2,9 +2,9 @@ import getDb from "@/lib/db";
 import { GameWithNominator } from "@/lib/types";
 import { requireAuth } from "@/lib/auth";
 import { checkAndCloseExpiredElections } from "@/lib/elections";
-import { isGamedbConfigured } from "@/lib/gamedb";
+import { getGamedbDetail, isGamedbConfigured } from "@/lib/gamedb";
 import NominationForm from "./NominationForm";
-import NominationsList from "./NominationsList";
+import NominationsList, { NominationGamedbInfo } from "./NominationsList";
 import { getNominationStats } from "./nominationStats";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +40,57 @@ function getElectionHistory(db: ReturnType<typeof getDb>): Record<number, { id: 
   return map;
 }
 
+async function getNominationGamedbInfo(
+  nominations: GameWithNominator[]
+): Promise<Record<number, NominationGamedbInfo>> {
+  if (!isGamedbConfigured()) return {};
+
+  const entries = await Promise.all(
+    nominations.map(async (game) => {
+      if (!game.gamedb_id) return null;
+      try {
+        const detail = await getGamedbDetail(game.gamedb_id);
+        if (!detail) return null;
+
+        const opencriticScore =
+          detail.opencritic?.score != null
+            ? Math.round(detail.opencritic.score)
+            : null;
+        const opencriticTier = detail.opencritic?.tier ?? null;
+        const hltb = detail.hltb
+          ? {
+              mainStoryHours: detail.hltb.main_story_hours,
+              mainExtraHours: detail.hltb.main_extra_hours,
+              completionistHours: detail.hltb.completionist_hours,
+            }
+          : null;
+        const hasHltbHours =
+          hltb?.mainStoryHours != null ||
+          hltb?.mainExtraHours != null ||
+          hltb?.completionistHours != null;
+
+        if (opencriticScore == null && !hasHltbHours) return null;
+
+        return [
+          game.id,
+          {
+            opencritic:
+              opencriticScore != null
+                ? { score: opencriticScore, tier: opencriticTier }
+                : null,
+            hltb: hasHltbHours ? hltb : null,
+          } satisfies NominationGamedbInfo,
+        ] as const;
+      } catch (err) {
+        console.error("nominations gamedb lookup failed:", err);
+        return null;
+      }
+    })
+  );
+
+  return Object.fromEntries(entries.filter((entry): entry is readonly [number, NominationGamedbInfo] => !!entry));
+}
+
 export default async function NominationsPage() {
   await requireAuth();
   const db = getDb();
@@ -50,6 +101,7 @@ export default async function NominationsPage() {
   const nominations = getNominations(db);
   const electionHistory = getElectionHistory(db);
   const stats = getNominationStats(db);
+  const gamedbInfo = await getNominationGamedbInfo(nominations);
   const gamedbConfigured = isGamedbConfigured();
 
   return (
@@ -82,6 +134,7 @@ export default async function NominationsPage() {
             nominations={nominations}
             stats={stats}
             electionHistory={electionHistory}
+            gamedbInfo={gamedbInfo}
             gamedbConfigured={gamedbConfigured}
           />
         )}

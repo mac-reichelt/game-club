@@ -18,6 +18,18 @@ interface PastElection {
   closed_at: string | null;
 }
 
+export interface NominationGamedbInfo {
+  opencritic: {
+    score: number;
+    tier: string | null;
+  } | null;
+  hltb: {
+    mainStoryHours: number | null;
+    mainExtraHours: number | null;
+    completionistHours: number | null;
+  } | null;
+}
+
 type SortKey = "name" | "first" | "last" | "count";
 
 function getStoreIcon(storeName: string): string {
@@ -45,11 +57,13 @@ export default function NominationsList({
   nominations,
   stats,
   electionHistory,
+  gamedbInfo,
   gamedbConfigured,
 }: {
   nominations: GameWithNominator[];
   stats: Record<number, NominationStats>;
   electionHistory: Record<number, PastElection[]>;
+  gamedbInfo: Record<number, NominationGamedbInfo>;
   gamedbConfigured: boolean;
 }) {
   const router = useRouter();
@@ -167,6 +181,12 @@ export default function NominationsList({
             )}`;
             const pastElections = electionHistory[game.id] || [];
             const s = stats[game.id];
+            const info = gamedbInfo[game.id];
+            const hasOpenCritic = info?.opencritic?.score != null;
+            const hasHltb =
+              info?.hltb?.mainStoryHours != null ||
+              info?.hltb?.mainExtraHours != null ||
+              info?.hltb?.completionistHours != null;
 
             return (
               <div
@@ -238,6 +258,43 @@ export default function NominationsList({
                       </strong>
                     </span>
                   </div>
+
+                  {(hasOpenCritic || hasHltb) && (
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {hasOpenCritic && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 text-xs">
+                          OpenCritic {info.opencritic!.score}
+                          {info.opencritic!.tier && (
+                            <span className="ml-1 text-blue-200/90">
+                              · {info.opencritic!.tier}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      {hasHltb && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 text-xs">
+                          {info?.hltb?.mainStoryHours != null && (
+                            <span>Main {info.hltb.mainStoryHours}h</span>
+                          )}
+                          {info?.hltb?.mainExtraHours != null && (
+                            <span>
+                              {info?.hltb?.mainStoryHours != null ? " · " : ""}
+                              +Extras {info.hltb.mainExtraHours}h
+                            </span>
+                          )}
+                          {info?.hltb?.completionistHours != null && (
+                            <span>
+                              {info?.hltb?.mainStoryHours != null ||
+                              info?.hltb?.mainExtraHours != null
+                                ? " · "
+                                : ""}
+                              100% {info.hltb.completionistHours}h
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   {game.description && (
                     <p className="text-sm text-[var(--color-text-muted)] mt-2">
