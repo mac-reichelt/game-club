@@ -2,6 +2,7 @@ import getDb from "@/lib/db";
 import { GameWithNominator } from "@/lib/types";
 import { requireAuth } from "@/lib/auth";
 import { checkAndCloseExpiredElections } from "@/lib/elections";
+import { isGamedbConfigured } from "@/lib/gamedb";
 import NominationForm from "./NominationForm";
 import NominationsList from "./NominationsList";
 import { getNominationStats } from "./nominationStats";
@@ -49,6 +50,7 @@ export default async function NominationsPage() {
   const nominations = getNominations(db);
   const electionHistory = getElectionHistory(db);
   const stats = getNominationStats(db);
+  const gamedbConfigured = isGamedbConfigured();
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -80,6 +82,7 @@ export default async function NominationsPage() {
             nominations={nominations}
             stats={stats}
             electionHistory={electionHistory}
+            gamedbConfigured={gamedbConfigured}
           />
         )}
       </div>
