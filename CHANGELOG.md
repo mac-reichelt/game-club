@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Nominations now display OpenCritic scores and tiers, as well as HowLongToBeat (HLTB) estimated completion times, when available. This enhancement provides more context for each nominated game.
 - **Account deletion:** Users can now deactivate and anonymize their own account via the profile page. This sets the account as inactive, anonymizes the name, and logs the user out. ([#106](https://github.com/your-org/game-club/pull/106))
 - **API:** `DELETE /api/auth/profile` endpoint to deactivate/anonymize the current user's account. Requires current password and confirmation.
 - Introduced `getOpenElectionData` API for fetching the current open election, its games, and voter information.
