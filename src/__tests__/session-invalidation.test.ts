@@ -21,8 +21,10 @@ function setupDb(): Database.Database {
       avatar TEXT NOT NULL DEFAULT '🎮',
       password_hash TEXT NOT NULL DEFAULT '',
       disabled INTEGER NOT NULL DEFAULT 0,
+      active INTEGER NOT NULL DEFAULT 1,
       joined_at TEXT NOT NULL DEFAULT (datetime('now')),
-      password_changed_at TEXT
+      password_changed_at TEXT,
+      deactivated_at TEXT
     );
 
     CREATE TABLE sessions (
@@ -130,6 +132,8 @@ describe("stale session detection via password_changed_at", () => {
          JOIN members m ON m.id = s.member_id
          WHERE s.token = ?
            AND s.expires_at > datetime('now')
+           AND m.disabled = 0
+           AND m.active = 1
            AND (m.password_changed_at IS NULL OR s.created_at >= m.password_changed_at)`
       )
       .get(token) as { member_id: number } | undefined;
@@ -179,5 +183,13 @@ describe("stale session detection via password_changed_at", () => {
     ).run("exact-token", memberId, now);
 
     expect(validateSession("exact-token")).toBeDefined();
+  });
+
+  it("rejects a session when the member is inactive", () => {
+    const memberId = insertMember(db, "alice");
+    insertSession(db, memberId, "inactive-token");
+    db.prepare("UPDATE members SET active = 0 WHERE id = ?").run(memberId);
+
+    expect(validateSession("inactive-token")).toBeUndefined();
   });
 });

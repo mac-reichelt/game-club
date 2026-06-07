@@ -118,6 +118,8 @@ function getMemberByToken(token: string): Member | null {
        JOIN members m ON m.id = s.member_id
        WHERE s.token = ?
          AND s.expires_at > datetime('now')
+         AND m.disabled = 0
+         AND m.active = 1
          AND (m.password_changed_at IS NULL OR s.created_at >= m.password_changed_at)`
     )
     .get(token) as { member_id: number } | undefined;
