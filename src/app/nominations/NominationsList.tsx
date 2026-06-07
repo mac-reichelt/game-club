@@ -7,8 +7,8 @@ import Link from "next/link";
 export interface NominationStats {
   gameId: number;
   timesNominated: number;
-  firstNominatedAt: string;
-  lastNominatedAt: string;
+  firstNominatedAt: string | null;
+  lastNominatedAt: string | null;
 }
 
 interface PastElection {
@@ -75,15 +75,15 @@ export default function NominationsList({
           return ((sa?.timesNominated ?? 1) - (sb?.timesNominated ?? 1)) * dir;
         case "first":
           return (
-            ((sa?.firstNominatedAt ?? a.nominated_at) <
-            (sb?.firstNominatedAt ?? b.nominated_at)
+            ((sa?.firstNominatedAt ?? "") <
+            (sb?.firstNominatedAt ?? "")
               ? -1
               : 1) * dir
           );
         case "last":
           return (
-            ((sa?.lastNominatedAt ?? a.nominated_at) <
-            (sb?.lastNominatedAt ?? b.nominated_at)
+            ((sa?.lastNominatedAt ?? "") <
+            (sb?.lastNominatedAt ?? "")
               ? -1
               : 1) * dir
           );
@@ -176,13 +176,13 @@ export default function NominationsList({
                     <span>
                       First:{" "}
                       <strong className="text-[var(--color-text)]">
-                        {monthLabel(s?.firstNominatedAt ?? game.nominated_at)}
+                        {monthLabel(s?.firstNominatedAt ?? null)}
                       </strong>
                     </span>
                     <span>
                       Last:{" "}
                       <strong className="text-[var(--color-text)]">
-                        {monthLabel(s?.lastNominatedAt ?? game.nominated_at)}
+                        {monthLabel(s?.lastNominatedAt ?? null)}
                       </strong>
                     </span>
                   </div>
