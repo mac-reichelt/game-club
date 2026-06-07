@@ -3,7 +3,8 @@ import { GameWithNominator } from "@/lib/types";
 import { requireAuth } from "@/lib/auth";
 import { checkAndCloseExpiredElections } from "@/lib/elections";
 import NominationForm from "./NominationForm";
-import NominationsList, { NominationStats } from "./NominationsList";
+import NominationsList from "./NominationsList";
+import { getNominationStats } from "./nominationStats";
 
 export const dynamic = "force-dynamic";
 
@@ -36,45 +37,6 @@ function getElectionHistory(db: ReturnType<typeof getDb>): Record<number, { id: 
     map[row.game_id].push({ id: row.id, name: row.name, closed_at: row.closed_at });
   }
   return map;
-}
-
-function getNominationStats(db: ReturnType<typeof getDb>): Record<number, NominationStats> {
-  // Election ballot appearances are the source of truth for "first/last/times
-  // nominated". The games.nominated_at column is only a fallback for games
-  // that have never been on a ballot (because legacy seed data set it to a
-  // bulk import date that doesn't reflect real nomination history).
-  const rows = db
-    .prepare(
-      `SELECT g.id as game_id,
-              g.nominated_at as current_nominated_at,
-              MIN(e.created_at) as first_election_at,
-              MAX(e.created_at) as last_election_at,
-              COUNT(DISTINCT e.id) as election_count
-       FROM games g
-       LEFT JOIN election_games eg ON eg.game_id = g.id
-       LEFT JOIN elections e ON e.id = eg.election_id
-       WHERE g.status = 'nominated'
-       GROUP BY g.id`
-    )
-    .all() as {
-      game_id: number;
-      current_nominated_at: string;
-      first_election_at: string | null;
-      last_election_at: string | null;
-      election_count: number;
-    }[];
-
-  const out: Record<number, NominationStats> = {};
-  for (const r of rows) {
-    const hasElections = r.election_count > 0 && r.first_election_at && r.last_election_at;
-    out[r.game_id] = {
-      gameId: r.game_id,
-      timesNominated: hasElections ? r.election_count : 1,
-      firstNominatedAt: hasElections ? r.first_election_at! : r.current_nominated_at,
-      lastNominatedAt: hasElections ? r.last_election_at! : r.current_nominated_at,
-    };
-  }
-  return out;
 }
 
 export default async function NominationsPage() {
