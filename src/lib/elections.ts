@@ -1,5 +1,35 @@
 import type Database from "better-sqlite3";
 import { tallyRankedChoice } from "./rcv";
+import { Election, GameWithNominator } from "./types";
+
+export function getOpenElectionData(db: Database.Database) {
+  const election = db
+    .prepare("SELECT * FROM elections WHERE status = 'open' LIMIT 1")
+    .get() as Election | undefined;
+
+  if (!election) return null;
+
+  const games = db
+    .prepare(
+      `SELECT g.*, m.name as nominatorName
+       FROM election_games eg
+       JOIN games g ON eg.game_id = g.id
+       JOIN members m ON g.nominated_by = m.id
+       WHERE eg.election_id = ?`
+    )
+    .all(election.id) as GameWithNominator[];
+
+  const voters = db
+    .prepare("SELECT DISTINCT member_id FROM ballots WHERE election_id = ?")
+    .all(election.id) as { member_id: number }[];
+
+  return {
+    election,
+    games,
+    voteCount: voters.length,
+    voterIds: voters.map((v) => v.member_id),
+  };
+}
 
 /**
  * Close an election: run RCV tally, save rounds, update election status,

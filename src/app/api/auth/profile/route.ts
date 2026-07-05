@@ -124,3 +124,54 @@ export async function PATCH(request: NextRequest) {
   }
   return response;
 }
+
+// DELETE /api/auth/profile - anonymize + deactivate current user's account
+export async function DELETE(request: NextRequest) {
+  const user = getUserFromToken(
+    request.cookies.get("session_token")?.value
+  );
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const db = getDb();
+  const body = await request.json();
+  const { currentPassword } = body as { currentPassword?: string };
+
+  if (!currentPassword) {
+    return NextResponse.json(
+      { error: "Current password is required to delete account" },
+      { status: 400 }
+    );
+  }
+
+  const member = db
+    .prepare("SELECT password_hash FROM members WHERE id = ?")
+    .get(user.id) as { password_hash: string } | undefined;
+
+  if (!member || !await verifyPassword(currentPassword, member.password_hash)) {
+    return NextResponse.json(
+      { error: "Current password is incorrect" },
+      { status: 401 }
+    );
+  }
+
+  const placeholderName = `Deleted User #${user.id}`;
+  const deactivatedAt = new Date().toISOString();
+  db.prepare(
+    `UPDATE members
+     SET name = ?, avatar = '🎮', active = 0, deactivated_at = ?
+     WHERE id = ?`
+  ).run(placeholderName, deactivatedAt, user.id);
+
+  invalidateAllSessions(user.id);
+
+  const response = NextResponse.json({ success: true });
+  response.cookies.set("session_token", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+  return response;
+}

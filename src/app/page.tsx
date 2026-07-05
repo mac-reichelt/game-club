@@ -1,8 +1,10 @@
 import getDb from "@/lib/db";
 import { GameWithNominator } from "@/lib/types";
 import { requireAuth } from "@/lib/auth";
-import { checkAndCloseExpiredElections } from "@/lib/elections";
+import { checkAndCloseExpiredElections, getOpenElectionData } from "@/lib/elections";
 import Link from "next/link";
+import CountdownTimer from "@/components/CountdownTimer";
+import BallotForm from "./nominations/BallotForm";
 
 export const dynamic = "force-dynamic";
 
@@ -31,12 +33,6 @@ function getRecentlyCompleted(db: ReturnType<typeof getDb>): GameWithNominator[]
     .all() as GameWithNominator[];
 }
 
-function hasOpenElection(db: ReturnType<typeof getDb>): boolean {
-  return !!db
-    .prepare("SELECT id FROM elections WHERE status = 'open' LIMIT 1")
-    .get();
-}
-
 function Stars({ rating }: { rating: number | null }) {
   if (rating === null) return <span className="text-[var(--color-text-muted)] text-sm">No ratings</span>;
   return (
@@ -57,16 +53,59 @@ function Stars({ rating }: { rating: number | null }) {
 }
 
 export default async function Dashboard() {
-  await requireAuth();
+  const user = await requireAuth();
   const db = getDb();
   checkAndCloseExpiredElections(db);
   const currentGame = getCurrentGame(db);
   const recent = getRecentlyCompleted(db);
-  const openElection = hasOpenElection(db);
+  const openElection = getOpenElectionData(db);
+  const hasVoted = openElection ? openElection.voterIds.includes(user.id) : false;
 
   return (
     <div className="max-w-5xl mx-auto">
       <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
+
+      {openElection && (
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <span>🗳️</span> Active Election
+          </h2>
+          <div className="bg-[var(--color-surface)] border-2 border-[var(--color-accent)] rounded-xl p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+              <div>
+                <h3 className="text-xl font-semibold">{openElection.election.name}</h3>
+                <p className="text-sm text-[var(--color-text-muted)] mt-1">
+                  {openElection.voteCount} vote(s) cast · {openElection.games.length} candidates
+                </p>
+              </div>
+              {openElection.election.closes_at && (
+                <CountdownTimer closesAt={openElection.election.closes_at} />
+              )}
+            </div>
+            <div className="grid gap-2 mb-4">
+              {openElection.games.map((game) => (
+                <Link
+                  key={game.id}
+                  href={`/games/${game.id}`}
+                  className="bg-[var(--color-bg)] rounded-lg p-3 flex items-center gap-3 hover:bg-[var(--color-surface-hover)] transition-colors"
+                >
+                  <span className="font-medium text-sm">{game.title}</span>
+                  {game.platform && (
+                    <span className="text-xs text-[var(--color-text-muted)]">
+                      ({game.platform})
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+            <BallotForm
+              electionId={openElection.election.id}
+              games={openElection.games}
+              hasVoted={hasVoted}
+            />
+          </div>
+        </section>
+      )}
 
       {/* Currently Playing */}
       <section className="mb-8">
@@ -106,7 +145,7 @@ export default async function Dashboard() {
               href="/nominations"
               className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] font-medium"
             >
-              {openElection ? "Vote in the current election →" : "Nominate and start a vote →"}
+              {openElection ? "Browse nominations →" : "Nominate and start a vote →"}
             </Link>
           </div>
         )}

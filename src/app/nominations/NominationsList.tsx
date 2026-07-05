@@ -3,18 +3,31 @@
 import { useState, useMemo } from "react";
 import { GameWithNominator, StoreLink } from "@/lib/types";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export interface NominationStats {
   gameId: number;
   timesNominated: number;
-  firstNominatedAt: string;
-  lastNominatedAt: string;
+  firstNominatedAt: string | null;
+  lastNominatedAt: string | null;
 }
 
 interface PastElection {
   id: number;
   name: string;
   closed_at: string | null;
+}
+
+export interface NominationGamedbInfo {
+  opencritic: {
+    score: number;
+    tier: string | null;
+  } | null;
+  hltb: {
+    mainStoryHours: number | null;
+    mainExtraHours: number | null;
+    completionistHours: number | null;
+  } | null;
 }
 
 type SortKey = "name" | "first" | "last" | "count";
@@ -44,14 +57,40 @@ export default function NominationsList({
   nominations,
   stats,
   electionHistory,
+  gamedbInfo,
+  gamedbConfigured,
 }: {
   nominations: GameWithNominator[];
   stats: Record<number, NominationStats>;
   electionHistory: Record<number, PastElection[]>;
+  gamedbInfo: Record<number, NominationGamedbInfo>;
+  gamedbConfigured: boolean;
 }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("last");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [refreshingGameId, setRefreshingGameId] = useState<number | null>(null);
+  const [refreshErrors, setRefreshErrors] = useState<Record<number, string>>({});
+
+  async function refreshGameInfo(game: GameWithNominator) {
+    setRefreshingGameId(game.id);
+    setRefreshErrors((prev) => ({ ...prev, [game.id]: "" }));
+    try {
+      const res = await fetch(`/api/games/${game.id}/refresh`, { method: "POST" });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error || "Failed to refresh game info");
+      router.refresh();
+    } catch (err) {
+      setRefreshErrors((prev) => ({
+        ...prev,
+        [game.id]:
+          err instanceof Error ? err.message : "Failed to refresh game info",
+      }));
+    } finally {
+      setRefreshingGameId(null);
+    }
+  }
 
   const filteredSorted = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -75,15 +114,15 @@ export default function NominationsList({
           return ((sa?.timesNominated ?? 1) - (sb?.timesNominated ?? 1)) * dir;
         case "first":
           return (
-            ((sa?.firstNominatedAt ?? a.nominated_at) <
-            (sb?.firstNominatedAt ?? b.nominated_at)
+            ((sa?.firstNominatedAt ?? "") <
+            (sb?.firstNominatedAt ?? "")
               ? -1
               : 1) * dir
           );
         case "last":
           return (
-            ((sa?.lastNominatedAt ?? a.nominated_at) <
-            (sb?.lastNominatedAt ?? b.nominated_at)
+            ((sa?.lastNominatedAt ?? "") <
+            (sb?.lastNominatedAt ?? "")
               ? -1
               : 1) * dir
           );
@@ -142,6 +181,12 @@ export default function NominationsList({
             )}`;
             const pastElections = electionHistory[game.id] || [];
             const s = stats[game.id];
+            const info = gamedbInfo[game.id];
+            const hasOpenCritic = info?.opencritic?.score != null;
+            const hasHltb =
+              info?.hltb?.mainStoryHours != null ||
+              info?.hltb?.mainExtraHours != null ||
+              info?.hltb?.completionistHours != null;
 
             return (
               <div
@@ -149,12 +194,39 @@ export default function NominationsList({
                 className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 hover:border-[var(--color-primary)] transition-colors"
               >
                 <div className="flex-1 min-w-0">
-                  <Link
-                    href={`/games/${game.id}`}
-                    className="text-lg font-semibold hover:text-[var(--color-primary)]"
-                  >
-                    {game.title}
-                  </Link>
+                  <div className="flex items-start justify-between gap-3">
+                    <Link
+                      href={`/games/${game.id}`}
+                      className="text-lg font-semibold hover:text-[var(--color-primary)]"
+                    >
+                      {game.title}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => refreshGameInfo(game)}
+                      disabled={
+                        refreshingGameId === game.id ||
+                        !gamedbConfigured ||
+                        !game.gamedb_id
+                      }
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:border-[var(--color-primary)] disabled:opacity-50 disabled:hover:text-[var(--color-text-muted)] disabled:hover:border-[var(--color-border)]"
+                      title={
+                        !gamedbConfigured
+                          ? "Refresh unavailable: gamedb is not configured"
+                          : !game.gamedb_id
+                            ? "Refresh unavailable: game is not linked to gamedb"
+                            : "Refresh game info"
+                      }
+                      aria-label={`Refresh game info for ${game.title}`}
+                    >
+                      <span
+                        className={refreshingGameId === game.id ? "animate-spin" : ""}
+                      >
+                        ↻
+                      </span>
+                      {refreshingGameId === game.id ? "Refreshing…" : "Refresh"}
+                    </button>
+                  </div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {game.platform && (
                       <span className="inline-block px-2 py-0.5 bg-[var(--color-primary)]/20 text-[var(--color-primary)] text-xs rounded">
@@ -176,16 +248,53 @@ export default function NominationsList({
                     <span>
                       First:{" "}
                       <strong className="text-[var(--color-text)]">
-                        {monthLabel(s?.firstNominatedAt ?? game.nominated_at)}
+                        {monthLabel(s?.firstNominatedAt ?? null)}
                       </strong>
                     </span>
                     <span>
                       Last:{" "}
                       <strong className="text-[var(--color-text)]">
-                        {monthLabel(s?.lastNominatedAt ?? game.nominated_at)}
+                        {monthLabel(s?.lastNominatedAt ?? null)}
                       </strong>
                     </span>
                   </div>
+
+                  {(hasOpenCritic || hasHltb) && (
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {hasOpenCritic && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 text-xs">
+                          OpenCritic {info.opencritic!.score}
+                          {info.opencritic!.tier && (
+                            <span className="ml-1 text-blue-200/90">
+                              · {info.opencritic!.tier}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      {hasHltb && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 text-xs">
+                          {info?.hltb?.mainStoryHours != null && (
+                            <span>Main {info.hltb.mainStoryHours}h</span>
+                          )}
+                          {info?.hltb?.mainExtraHours != null && (
+                            <span>
+                              {info?.hltb?.mainStoryHours != null ? " · " : ""}
+                              +Extras {info.hltb.mainExtraHours}h
+                            </span>
+                          )}
+                          {info?.hltb?.completionistHours != null && (
+                            <span>
+                              {info?.hltb?.mainStoryHours != null ||
+                              info?.hltb?.mainExtraHours != null
+                                ? " · "
+                                : ""}
+                              100% {info.hltb.completionistHours}h
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   {game.description && (
                     <p className="text-sm text-[var(--color-text-muted)] mt-2">
@@ -208,6 +317,9 @@ export default function NominationsList({
                         </Link>
                       ))}
                     </div>
+                  )}
+                  {refreshErrors[game.id] && (
+                    <p className="mt-2 text-xs text-red-400">{refreshErrors[game.id]}</p>
                   )}
 
                   <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[var(--color-border)]">

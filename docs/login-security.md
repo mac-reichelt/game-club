@@ -1,36 +1,51 @@
-# Login Security
+# Login & Account Security
 
-## Account Lockout and Throttling
+_Last updated: vNEXT_
 
-**Minimum version: vNEXT**
+## Authentication
 
-Game Club implements multiple layers of protection against brute-force login attempts:
+- Passwords are hashed using scrypt.
+- Sessions are stored server-side and validated on each request.
+- Changing your password invalidates all previous sessions.
 
-### Per-Account Lockout (by Username and IP)
+## Account Deactivation & Deletion
 
-- After **10 failed login attempts** for the same **(username, IP address) pair** within a 10-minute window, further login attempts for that pair are locked out for 10 minutes.
-- This means an attacker cannot lock out a user from all locations; only the specific (username, IP) pair is affected.
-- Legitimate users can still log in from other IP addresses even if an attacker triggers a lockout from their own IP.
+### Deactivating your account
 
-### Per-IP Throttling
+You can deactivate and anonymize your account from the profile page:
 
-- After **30 failed login attempts** from the same IP address (across all usernames) within a 10-minute window, all further login attempts from that IP are throttled for 10 minutes.
+1. Go to **Profile** > **Delete Account**.
+2. Enter your current password and type `DELETE` to confirm.
+3. Your account will be:
+   - Marked as inactive (`active = 0`)
+   - Name changed to `Deleted User #<id>`
+   - Avatar reset to default
+   - `deactivated_at` timestamp set
+   - All sessions invalidated and you will be logged out
 
-### Reset on Success
+This preserves club history (e.g., past games and votes) but removes your name and access.
 
-- A successful login **resets the failed-attempt counter** for that (username, IP) pair only. Other pairs remain unaffected.
+### API: DELETE /api/auth/profile
 
-### Implementation Notes
+- **Request:**
+  - Method: `DELETE`
+  - Body: `{ "currentPassword": "..." }`
+  - Cookie: `session_token`
+- **Response:**
+  - `200 OK` on success (JSON `{ success: true }`)
+  - `401 Unauthorized` if not logged in or password incorrect
+  - `400 Bad Request` if password missing
 
-- The lockout identifier is the concatenation of the username and IP address, separated by a null byte (`\x00`).
-- This prevents attackers from locking out legitimate users by failing logins from a different IP.
+### Login and Sessions
 
-## Example Scenarios
+- Deactivated accounts (`active = 0`) cannot log in. Login returns `403` with an error message.
+- Existing sessions for deactivated accounts are invalidated and cannot be used.
+- The `/api/members` endpoint only returns active members.
 
-- **Attacker from IP A fails 10 times for user alice:** Only (alice, IP A) is locked out. Alice can still log in from IP B.
-- **Attacker from IP A fails 30 times for any usernames:** All logins from IP A are throttled.
-- **Alice logs in successfully from IP B:** Only (alice, IP B) counter resets. (alice, IP A) remains locked if previously triggered.
+## Database Schema Changes
 
-## See Also
-- [Authentication API Reference](reference/api.md#login)
-- [Security Overview](../SECURITY.md)
+- `members` table now includes:
+  - `active INTEGER NOT NULL DEFAULT 1` — 0 if deactivated
+  - `deactivated_at TEXT` — timestamp of deactivation
+
+Existing deployments auto-migrate these columns on next start.
