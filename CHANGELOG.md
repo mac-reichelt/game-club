@@ -1,5 +1,8 @@
 ## [Unreleased]
 
-### Changed
-- Updated dependency: `js-yaml` from 4.1.1 to 4.3.0.
+### Added
+- Login page now includes a **Forgot password?** link for account recovery.
+- Added a dedicated **Forgot Password** page with instructions to contact club admin for password reset.
 
+### Changed
+- Login form layout adjusted to accommodate the new recovery link.
