@@ -41,7 +41,7 @@ Adapt names/triggers per project but keep the spirit.
 
 - **Pin actions by SHA**, not by tag, for security. Use `actions/checkout@<sha> # v4`.
 - **`permissions:` block at workflow scope** with least privilege. Default to `contents: read`.
-- **Concurrency groups** to cancel superseded runs: `concurrency: { group: ci-${{ github.ref }}, cancel-in-progress: true }`.
+- **Concurrency groups** to cancel superseded runs: `concurrency:` keyed on the ref (`group: ci-<github.ref>`) with `cancel-in-progress: true`.
 - **Reusable workflows** for anything used >1x: `.github/workflows/reusable-*.yml`.
 - **Caching**: `actions/cache` with content-hash keys (e.g., `package-lock.json`).
 - **Job-level timeouts**: `timeout-minutes: <reasonable>` to catch hangs.
@@ -91,7 +91,7 @@ Required secrets for this repo:
 ## Anti-Patterns
 
 ❌ One mega-workflow that does everything in serial — split for parallelism + readability.
-❌ `${{ secrets.GITHUB_TOKEN }}` with default permissions — over-privileged.
+❌ `secrets.GITHUB_TOKEN` with default permissions — over-privileged.
 ❌ Pinning actions by `@main` — supply chain risk.
 ❌ No caching — wastes minutes per run.
 ❌ Required checks not actually wired into branch protection.

@@ -16,13 +16,13 @@ For security-sensitive reports, see [SECURITY.md](./SECURITY.md).
 The CI/review pipeline relies on workflows that require write access to this
 repository's API:
 
-- `agent-review`, `devops-review`, `security-review`, `tech-writer-review` all
-  publish PR reviews and check-runs via `gh api`.
-- Tech-writer additionally pushes doc-fix commits back to the PR branch.
+- The gh-aw review workflows (`code-review`, `security-review`, `devops-review`,
+  `docs-review`) publish PR reviews and `agent/*` check runs through a GitHub App.
+- `docs-review` additionally pushes doc-fix commits back to the PR branch.
 
 GitHub policy gives fork-PR workflows a **read-only** `GITHUB_TOKEN` and no
 access to repository secrets. As a result, a PR opened from a fork will sit in
-a broken state: the four required `*-review` checks will fail with 403s, and
+a broken state: the required `agent/*` checks will never pass, and
 the PR will be unmergeable through the normal flow.
 
 This is a deliberate trade-off (tracked under [issue #73](https://github.com/mac-reichelt/game-club/issues/73)). Mergeable fork PRs
@@ -66,5 +66,5 @@ npm run build
 - `fix(auth): tighten signup throttle`
 - `docs(security): note fork-PR limitation`
 
-The `tech-writer-review` workflow auto-maintains user-facing docs, so a
+The `docs-review` workflow auto-maintains user-facing docs, so a
 "missing CHANGELOG entry" review note is normal — let it land its own commit.
