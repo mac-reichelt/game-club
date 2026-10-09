@@ -35,13 +35,33 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = getDb();
-  const body = await request.json();
-  const { platform, description, storesJson, trailerUrl, igdbId } = body;
+  let body: Record<string, unknown>;
+  try {
+    const parsed = await request.json();
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("not an object");
+    body = parsed as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  const { platform, description, storesJson, trailerUrl, igdbId } = body as {
+    platform?: string; description?: string; storesJson?: string; trailerUrl?: unknown; igdbId?: unknown;
+  };
+  // Only https URLs may be stored; they are rendered as links.
+  let safeTrailer = "";
+  if (typeof trailerUrl === "string" && trailerUrl.trim()) {
+    try {
+      const u = new URL(trailerUrl.trim());
+      if (u.protocol !== "https:") throw new Error("scheme");
+      safeTrailer = u.toString();
+    } catch {
+      return NextResponse.json({ error: "Trailer URL must be an https URL" }, { status: 400 });
+    }
+  }
   let title: string = typeof body.title === "string" ? body.title.trim() : "";
 
   let gamedbId: number | null = null;
   if (igdbId !== undefined && igdbId !== null) {
-    if (!Number.isInteger(igdbId) || igdbId <= 0) {
+    if (typeof igdbId !== "number" || !Number.isInteger(igdbId) || igdbId <= 0) {
       return NextResponse.json({ error: "Invalid igdbId" }, { status: 400 });
     }
     try {
@@ -88,7 +108,7 @@ export async function POST(request: NextRequest) {
       gamedbId ? "" : platform || "",
       gamedbId ? "" : description || "",
       gamedbId ? "" : storesJson || "",
-      typeof trailerUrl === "string" ? trailerUrl : "",
+      safeTrailer,
       user.id,
       gamedbId
     );

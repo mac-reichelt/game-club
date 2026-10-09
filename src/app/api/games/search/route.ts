@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
         name: g.name,
         image: g.background_image,
         released: g.released,
-        platforms: g.platforms.join(", "),
-        genres: g.genres.join(", "),
+        platforms: (Array.isArray(g.platforms) ? g.platforms : []).join(", "),
+        genres: (Array.isArray(g.genres) ? g.genres : []).join(", "),
         opencriticScore:
           g.opencritic?.top_critic_score != null && g.opencritic.top_critic_score > 0
             ? Math.round(g.opencritic.top_critic_score)

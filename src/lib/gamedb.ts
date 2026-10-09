@@ -133,6 +133,7 @@ export async function getGamedbDetails(ids: number[]): Promise<Map<number, Gamed
   results.forEach((r, i) => {
     if (r.status === "fulfilled" && r.value) out.set(unique[i], r.value);
     else if (r.status === "rejected") console.error(`gamedb lookup failed for ${unique[i]}:`, r.reason);
+    else console.warn(`gamedb game ${unique[i]} not found; nomination is linked but has no gamedb record`);
   });
   return out;
 }
