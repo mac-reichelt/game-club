@@ -1,20 +1,15 @@
 name: Update open PR branches after main push
 
-# Repo's branch protection requires linear history but allow_update_branch may
-# not always trigger fast enough. This fires on every push to main and updates
-# each open non-draft PR branch so the auto-merge gate sees a fresh green build
-# before merging the next PR.
-#
-# Uses AUTOMATION_PAT (not GITHUB_TOKEN) so the resulting branch update
-# re-triggers PR Checks (GITHUB_TOKEN-triggered updates are suppressed).
+# After each push to main, bring open non-draft PRs up to date so the merge
+# gate evaluates them against the current main. Uses a short-lived GitHub App
+# token so the branch update re-triggers PR Checks and the agent reviews.
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
-permissions:
-  contents: read
-  pull-requests: write
+permissions: {}
 
 concurrency:
   group: update-pr-branches
@@ -24,25 +19,26 @@ jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions: {}
     steps:
-      - name: Verify AUTOMATION_PAT is configured
-        env:
-          PAT: ${{ secrets.AUTOMATION_PAT }}
-        run: |
-          if [ -z "$PAT" ]; then
-            echo "::error::AUTOMATION_PAT secret missing. GITHUB_TOKEN-triggered branch updates do not re-trigger CI."
-            exit 1
-          fi
-
+      - name: Mint short-lived GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
       - name: Update each open PR's branch
         env:
-          GH_TOKEN: ${{ secrets.AUTOMATION_PAT }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           PRS=$(gh pr list --repo "$REPO" --state open --base main \
-            --json number,isDraft,mergeStateStatus \
-            --jq '.[] | select(.isDraft == false and (.mergeStateStatus == "BEHIND" or .mergeStateStatus == "DIRTY" or .mergeStateStatus == "UNKNOWN")) | .number')
+            --json number,isDraft,mergeStateStatus,headRepository,headRepositoryOwner \
+            --jq '.[] | select(.isDraft == false and .headRepositoryOwner.login == "'"${GITHUB_REPOSITORY_OWNER}"'" and (.mergeStateStatus == "BEHIND" or .mergeStateStatus == "UNKNOWN")) | .number')
           if [ -z "$PRS" ]; then
             echo "No open non-draft PRs needing update."
             exit 0
