@@ -24,16 +24,19 @@ export async function GET(request: NextRequest) {
 
   try {
     const results = await searchGamedb(query, 8);
-    // Map to the shape the existing NominationForm expects.
     return NextResponse.json(
       results.map((g) => ({
-        id: g.igdb_id,
+        igdbId: g.igdb_id,
         name: g.name,
         image: g.background_image,
         released: g.released,
-        
         platforms: g.platforms.join(", "),
         genres: g.genres.join(", "),
+        opencriticScore:
+          g.opencritic?.top_critic_score != null && g.opencritic.top_critic_score > 0
+            ? Math.round(g.opencritic.top_critic_score)
+            : null,
+        hltbMainHours: g.hltb?.main_story_hours ?? null,
       }))
     );
   } catch (err) {

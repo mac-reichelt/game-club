@@ -13,6 +13,9 @@ export interface GamedbSearchResult {
   genres: string[];
   rating: number | null;
   game_type: string | null;
+  game_id: number | null;
+  opencritic: { top_critic_score: number | null; tier: string | null; percent_recommended: number | null } | null;
+  hltb: { main_story_hours: number | null; main_extra_hours: number | null; completionist_hours: number | null } | null;
 }
 
 export interface GamedbScore {
@@ -23,7 +26,6 @@ export interface GamedbScore {
 export interface GamedbDetail {
   id: number;
   igdb_id: number | null;
-  rawg_id: number | null;
   name: string;
   slug: string | null;
   release_date: string | null;
@@ -34,12 +36,15 @@ export interface GamedbDetail {
   genres: string[];
   developers: string[];
   publishers: string[];
+  game_type: string | null;
   igdb_rating: number | null;
   igdb_rating_count: number | null;
-  rawg_rating: number | null;
-  rawg_ratings_count: number | null;
-  metacritic_score: number | null;
-  opencritic: { tier: string | null; score: number | null } | null;
+  opencritic: {
+    url: string | null;
+    top_critic_score: number | null;
+    percent_recommended: number | null;
+    tier: string | null;
+  } | null;
   steam: { app_id: number | null; review_score: number | null } | null;
   hltb: {
     main_story_hours: number | null;
@@ -106,4 +111,28 @@ export async function getGamedbDetail(
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`gamedb fetch failed: ${res.status}`);
   return (await res.json()) as GamedbDetail;
+}
+
+// Force gamedb to re-fetch upstream data (IGDB, OpenCritic, HLTB, Steam) for a game.
+export async function refreshGamedb(gamedbId: number): Promise<GamedbDetail | null> {
+  if (!BASE) throw new Error("GAMEDB_URL not configured");
+  const id = safeIdSegment(gamedbId);
+  const res = await fetch(`${BASE}/api/games/${id}/refresh`, { method: "POST", cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`gamedb refresh failed: ${res.status}`);
+  return (await res.json()) as GamedbDetail;
+}
+
+// Fetch several games in parallel; failures are logged and omitted so one bad
+// row never breaks a page.
+export async function getGamedbDetails(ids: number[]): Promise<Map<number, GamedbDetail>> {
+  const out = new Map<number, GamedbDetail>();
+  if (!BASE) return out;
+  const unique = [...new Set(ids.filter((i) => Number.isInteger(i) && i > 0))];
+  const results = await Promise.allSettled(unique.map((id) => getGamedbDetail(id)));
+  results.forEach((r, i) => {
+    if (r.status === "fulfilled" && r.value) out.set(unique[i], r.value);
+    else if (r.status === "rejected") console.error(`gamedb lookup failed for ${unique[i]}:`, r.reason);
+  });
+  return out;
 }
