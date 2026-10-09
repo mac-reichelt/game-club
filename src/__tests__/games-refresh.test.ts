@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockGetUserFromToken = vi.fn();
 const mockIsGamedbConfigured = vi.fn();
-const mockGetGamedbDetail = vi.fn();
+const mockRefreshGamedb = vi.fn();
 const mockGet = vi.fn();
 const mockRun = vi.fn();
 const mockPrepare = vi.fn();
@@ -11,9 +11,13 @@ vi.mock("@/lib/auth", () => ({
   getUserFromToken: mockGetUserFromToken,
 }));
 
+const mockRevalidateTag = vi.fn();
+vi.mock("next/cache", () => ({ revalidateTag: mockRevalidateTag }));
+
 vi.mock("@/lib/gamedb", () => ({
   isGamedbConfigured: mockIsGamedbConfigured,
-  getGamedbDetail: mockGetGamedbDetail,
+  refreshGamedb: mockRefreshGamedb,
+  gamedbDetailTag: (id: number) => `gamedb-game-${id}`,
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -61,47 +65,31 @@ describe("POST /api/games/[id]/refresh", () => {
     expect(res.status).toBe(400);
   });
 
-  it("refreshes image_url and stores_json from gamedb using no-store", async () => {
-    mockGet.mockImplementation((sql: string) => {
-      if (sql.includes("SELECT id, gamedb_id FROM games")) {
-        return { id: 12, gamedb_id: 99 };
-      }
-      return null;
-    });
-    mockGetGamedbDetail.mockResolvedValue({
-      id: 99,
-      background_image: "https://example.com/image.jpg",
-      store_links: {
-        Steam: "https://store.steampowered.com/app/123",
-        BadUrl: "not-a-url",
-      },
-    });
+  it("asks gamedb to refresh and writes nothing locally", async () => {
+    mockGet.mockImplementation((sql: string) =>
+      sql.includes("SELECT id, gamedb_id FROM games") ? { id: 12, gamedb_id: 99 } : null
+    );
+    mockRefreshGamedb.mockResolvedValue({ id: 99, store_links: {} });
 
     const res = await callRoute("12");
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toMatchObject({ success: true });
-    expect(mockGetGamedbDetail).toHaveBeenCalledWith(99, { noCache: true });
+    expect(mockRefreshGamedb).toHaveBeenCalledWith(99);
+    expect(mockRevalidateTag).toHaveBeenCalledWith("gamedb-game-99", { expire: 0 });
+    expect(mockRun).not.toHaveBeenCalled();
+  });
 
-    const updateCall = mockRun.mock.calls.find((call) =>
-      String(call[0]).includes("UPDATE games SET image_url = ?, stores_json = ?")
-    );
-    expect(updateCall).toBeTruthy();
-    expect(updateCall?.[1]).toBe("https://example.com/image.jpg");
-    expect(updateCall?.[3]).toBe(12);
+  it("returns 400 when the game is not linked to gamedb", async () => {
+    mockGet.mockReturnValue({ id: 12, gamedb_id: null });
+    const res = await callRoute("12");
+    expect(res.status).toBe(400);
+    expect(mockRefreshGamedb).not.toHaveBeenCalled();
+  });
 
-    const stores = JSON.parse(String(updateCall?.[2])) as Array<{
-      name: string;
-      domain: string;
-    }>;
-    expect(stores).toContainEqual({
-      name: "Steam",
-      url: "https://store.steampowered.com/app/123",
-      domain: "store.steampowered.com",
-    });
-    expect(stores).toContainEqual({
-      name: "BadUrl",
-      url: "not-a-url",
-      domain: "",
-    });
+  it("returns 502 when gamedb refresh fails", async () => {
+    mockGet.mockReturnValue({ id: 12, gamedb_id: 99 });
+    mockRefreshGamedb.mockRejectedValue(new Error("boom"));
+    const res = await callRoute("12");
+    expect(res.status).toBe(502);
   });
 });
