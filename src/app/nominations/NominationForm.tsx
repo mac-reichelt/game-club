@@ -4,13 +4,14 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 interface SearchResult {
-  id: number;
+  igdbId: number;
   name: string;
   image: string | null;
   released: string | null;
-  metacritic: number | null;
   platforms: string;
   genres: string;
+  opencriticScore: number | null;
+  hltbMainHours: number | null;
 }
 
 export default function NominationForm() {
@@ -37,10 +38,6 @@ export default function NominationForm() {
   const [description, setDescription] = useState("");
   const [linksText, setLinksText] = useState("");
 
-  // Store/trailer data from RAWG
-  const [storesJson, setStoresJson] = useState("");
-  const [trailerUrl, setTrailerUrl] = useState("");
-  const [loadingDetails, setLoadingDetails] = useState(false);
 
   function hostMatches(host: string, domains: string[]): boolean {
     return domains.some((d) => host === d || host.endsWith("." + d));
@@ -130,37 +127,13 @@ export default function NominationForm() {
     debounceRef.current = setTimeout(() => searchGames(value), 350);
   }
 
-  async function selectGame(game: SearchResult) {
+  function selectGame(game: SearchResult) {
+    // Game info (platforms, description, stores, scores) comes from gamedb at
+    // display time; only the IGDB id and title are submitted.
     setSelectedGame(game);
     setQuery(game.name);
     setShowResults(false);
-
-    // Pre-fill fields from RAWG data
     setTitle(game.name);
-    setPlatform(game.platforms);
-    setDescription(
-      [game.genres, game.released ? `Released ${game.released}` : ""]
-        .filter(Boolean)
-        .join(" · ")
-    );
-
-    // Fetch store links and trailers
-    setLoadingDetails(true);
-    try {
-      const res = await fetch(`/api/games/search/${game.id}`);
-      if (res.ok) {
-        const details = await res.json();
-        if (details.stores && details.stores.length > 0) {
-          setStoresJson(JSON.stringify(details.stores));
-        }
-        if (details.trailerUrl) {
-          setTrailerUrl(details.trailerUrl);
-        }
-      }
-    } catch {
-      // Silently fail — stores/trailer are optional
-    }
-    setLoadingDetails(false);
   }
 
   function switchToManual() {
@@ -189,35 +162,28 @@ export default function NominationForm() {
     setDescription("");
     setLinksText("");
     setSearchError("");
-    setStoresJson("");
-    setTrailerUrl("");
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
 
-    let finalStores = storesJson;
-    let finalTrailer = trailerUrl;
-
-    // For manual mode, parse the links textarea
-    if (manualMode && linksText.trim()) {
-      const parsed = parseLinks(linksText);
-      finalStores = parsed.stores;
-      if (parsed.trailer) finalTrailer = parsed.trailer;
-    }
+    const parsed = linksText.trim() ? parseLinks(linksText) : { stores: "", trailer: "" };
+    const body =
+      !manualMode && selectedGame
+        ? { igdbId: selectedGame.igdbId, trailerUrl: parsed.trailer || undefined }
+        : {
+            title: title.trim(),
+            platform: platform.trim() || undefined,
+            description: description.trim() || undefined,
+            storesJson: parsed.stores || undefined,
+            trailerUrl: parsed.trailer || undefined,
+          };
 
     const res = await fetch("/api/games", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: title.trim(),
-        platform: platform.trim() || undefined,
-        description: description.trim() || undefined,
-        storesJson: finalStores || undefined,
-        trailerUrl: finalTrailer || undefined,
-        rawgId: selectedGame?.id,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (res.ok) {
@@ -301,7 +267,7 @@ export default function NominationForm() {
               <div className="absolute z-10 top-full mt-1 w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg max-h-72 overflow-y-auto">
                 {results.map((game) => (
                   <button
-                    key={game.id}
+                    key={game.igdbId}
                     type="button"
                     onClick={() => selectGame(game)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[var(--color-surface-hover)] transition-colors text-left border-b border-[var(--color-border)] last:border-0"
@@ -325,9 +291,6 @@ export default function NominationForm() {
                         {[
                           game.platforms,
                           game.released?.slice(0, 4),
-                          game.metacritic
-                            ? `Metacritic: ${game.metacritic}`
-                            : "",
                         ]
                           .filter(Boolean)
                           .join(" · ")}
@@ -397,30 +360,15 @@ export default function NominationForm() {
                     Released {selectedGame.released}
                   </p>
                 )}
-                {selectedGame.metacritic && (
-                  <span className="inline-block mt-1 px-1.5 py-0.5 text-xs rounded bg-green-500/20 text-green-400">
-                    Metacritic: {selectedGame.metacritic}
-                  </span>
-                )}
-                {loadingDetails && (
-                  <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                    Loading store links...
+                {(selectedGame.opencriticScore != null || selectedGame.hltbMainHours != null) && (
+                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                    {[
+                      selectedGame.opencriticScore != null ? `OpenCritic ${selectedGame.opencriticScore}` : "",
+                      selectedGame.hltbMainHours != null ? `Main story ${selectedGame.hltbMainHours}h` : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
-                )}
-                {!loadingDetails && storesJson && (
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    {(JSON.parse(storesJson) as { name: string; url: string }[]).map((store) => (
-                      <a
-                        key={store.url}
-                        href={store.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs rounded bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
-                      >
-                        🔗 {store.name}
-                      </a>
-                    ))}
-                  </div>
                 )}
               </div>
             </div>
@@ -434,8 +382,8 @@ export default function NominationForm() {
               </label>
               <input
                 type="url"
-                value={trailerUrl}
-                onChange={(e) => setTrailerUrl(e.target.value)}
+                value={linksText}
+                onChange={(e) => setLinksText(e.target.value)}
                 className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
                 placeholder="YouTube or video URL (leave blank to auto-search)"
               />
