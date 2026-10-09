@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
   const db = getDb();
   const body = await request.json();
-  const { title, platform, description, storesJson, trailerUrl, rawgId } = body;
+  const { title, platform, description, storesJson, trailerUrl, igdbId } = body;
 
   if (!title) {
     return NextResponse.json(
@@ -54,13 +54,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // If a RAWG id was supplied (auto-search path), import into gamedb to get
+  // If an IGDB id was supplied (auto-search path), import into gamedb to get
   // the internal id we'll persist for cross-service linking.
   let gamedbId: number | null = null;
-  if (rawgId && Number.isInteger(rawgId)) {
+  if (igdbId && Number.isInteger(igdbId)) {
     try {
-      const { importByRawgId } = await import("@/lib/gamedb");
-      const detail = await importByRawgId(rawgId);
+      const { importByIgdbId } = await import("@/lib/gamedb");
+      const detail = await importByIgdbId(igdbId);
       gamedbId = detail.id;
     } catch (err) {
       console.error("gamedb import failed (non-fatal):", err);

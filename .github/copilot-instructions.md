@@ -14,7 +14,7 @@ A "book club, but for games" web app. Members nominate games, vote via ranked-ch
 
 ### Data Flow
 1. Members sign up/log in → session cookie set
-2. Nominate games (optionally search RAWG for metadata)
+2. Nominate games (optionally search gamedb, backed by IGDB, for metadata)
 3. Admin creates election from nominated games (2+ required)
 4. Members submit ranked ballots (one per election)
 5. Election auto-closes after 72 hours OR admin manually closes
@@ -66,14 +66,14 @@ A "book club, but for games" web app. Members nominate games, vote via ranked-ch
 ## External APIs
 | Source | Auth | Notes |
 |--------|------|-------|
-| RAWG | API key (optional) | Game search for nominations. If `RAWG_API_KEY` not set, search is disabled (returns 503) |
+| gamedb | `GAMEDB_URL` (optional) | Game search/import for nominations (gamedb uses IGDB). If unset, search is disabled (returns 503) |
 
 ## Gotchas
 - better-sqlite3 is synchronous — don't use in hot loops or it blocks the event loop
 - Password hashing uses SHA256 (not bcrypt) — adequate for a private club app, not for public-facing auth
 - Election auto-close runs on dashboard page load, not via cron — if nobody visits, elections may stay open past deadline
 - `next lint` requires `eslint.config.mjs` to exist — without it, the command prompts interactively and hangs in CI
-- RAWG API key is optional — the app works without it, but game search/import is disabled
+- `GAMEDB_URL` is optional — the app works without it, but game search/import is disabled
 - Telemetry disabled in Docker: `NEXT_TELEMETRY_DISABLED=1`
 
 ## Agent Routing

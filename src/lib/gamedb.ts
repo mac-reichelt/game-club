@@ -4,7 +4,7 @@
 const BASE = process.env.GAMEDB_URL || "";
 
 export interface GamedbSearchResult {
-  rawg_id: number;
+  igdb_id: number;
   name: string;
   slug: string | null;
   released: string | null;
@@ -12,7 +12,7 @@ export interface GamedbSearchResult {
   platforms: string[];
   genres: string[];
   rating: number | null;
-  metacritic: number | null;
+  game_type: string | null;
 }
 
 export interface GamedbScore {
@@ -22,16 +22,20 @@ export interface GamedbScore {
 
 export interface GamedbDetail {
   id: number;
-  rawg_id: number;
+  igdb_id: number | null;
+  rawg_id: number | null;
   name: string;
   slug: string | null;
   release_date: string | null;
   description: string | null;
   background_image: string | null;
+  cover_image: string | null;
   platforms: string[];
   genres: string[];
   developers: string[];
   publishers: string[];
+  igdb_rating: number | null;
+  igdb_rating_count: number | null;
   rawg_rating: number | null;
   rawg_ratings_count: number | null;
   metacritic_score: number | null;
@@ -63,8 +67,6 @@ export async function searchGamedb(
   return data.results || [];
 }
 
-// Imports a game by RAWG id (auto-creates in gamedb) and returns the full
-// detail record including the internal gamedb id.
 // Validates a positive integer id and returns it as a digits-only string
 // suitable for safe URL path interpolation. The regex test is a CodeQL
 // recognized sanitizer for SSRF (js/request-forgery).
@@ -76,10 +78,12 @@ function safeIdSegment(id: number): string {
   return s;
 }
 
-export async function importByRawgId(rawgId: number): Promise<GamedbDetail> {
+// Imports a game by IGDB id (auto-creates in gamedb) and returns the full
+// detail record including the internal gamedb id.
+export async function importByIgdbId(igdbId: number): Promise<GamedbDetail> {
   if (!BASE) throw new Error("GAMEDB_URL not configured");
-  const id = safeIdSegment(rawgId);
-  const res = await fetch(`${BASE}/api/games/by-rawg/${id}`);
+  const id = safeIdSegment(igdbId);
+  const res = await fetch(`${BASE}/api/games/by-igdb/${id}`);
   if (!res.ok) throw new Error(`gamedb import failed: ${res.status}`);
   return (await res.json()) as GamedbDetail;
 }

@@ -101,7 +101,7 @@ async function fetchGamedb(game: GameWithNominator): Promise<GamedbDetail | null
     if (game.gamedb_id) {
       return await getGamedbDetail(game.gamedb_id);
     }
-    // Legacy nominations have no gamedb_id; cannot enrich without a RAWG id.
+    // Legacy nominations have no gamedb_id; nothing to enrich from.
     return null;
   } catch (err) {
     console.error("gamedb lookup failed:", err);
@@ -278,11 +278,11 @@ export default async function GameDetailPage({
                   </div>
                 </div>
               )}
-              {gamedb.rawg_rating !== null && (
+              {gamedb.igdb_rating != null && (
                 <div>
-                  <div className="text-xs text-[var(--color-text-muted)]">RAWG</div>
+                  <div className="text-xs text-[var(--color-text-muted)]">IGDB</div>
                   <div className="text-lg font-semibold">
-                    {gamedb.rawg_rating.toFixed(1)}/5
+                    {Math.round(gamedb.igdb_rating)}/100
                   </div>
                 </div>
               )}
