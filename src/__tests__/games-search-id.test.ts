@@ -28,7 +28,8 @@ vi.stubGlobal("fetch", mockFetch);
 const OLD_ENV = process.env;
 
 beforeEach(() => {
-  process.env = { ...OLD_ENV, RAWG_API_KEY: "test-key" };
+  process.env = { ...OLD_ENV, GAMEDB_URL: "http://gamedb:8000" };
+  vi.resetModules();
   mockFetch.mockReset();
 });
 
@@ -74,37 +75,50 @@ describe("GET /api/games/search/[id]", () => {
     expect(res.status).toBe(400);
   });
 
-  it("calls RAWG with only the validated integer in the URL", async () => {
+  it("calls gamedb by-igdb with only the validated integer in the URL", async () => {
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ results: [] }),
+      json: async () => ({ store_links: {} }),
     });
 
     await callRoute("42");
 
     const calledUrls = mockFetch.mock.calls.map((call) => call[0] as string);
-    expect(calledUrls.length).toBeGreaterThan(0);
-    for (const url of calledUrls) {
-      // URL should contain /games/42/ — no extra characters
-      expect(url).toMatch(/\/games\/42\//);
-      // Ensure the game ID segment contains only digits (no special chars injected)
-      expect(url).toMatch(/\/games\/\d+\//);
-    }
+    expect(calledUrls).toEqual(["http://gamedb:8000/api/games/by-igdb/42"]);
   });
 
-  it("does not log the RAWG API key when a fetch error occurs", async () => {
+  it("maps gamedb store_links to stores and drops non-http urls", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        store_links: {
+          Steam: "https://store.steampowered.com/app/374320",
+          Bad: "javascript:alert(1)",
+        },
+      }),
+    });
+
+    const res = await callRoute("11133");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      stores: [
+        { name: "Steam", url: "https://store.steampowered.com/app/374320", domain: "store.steampowered.com" },
+      ],
+      trailerUrl: "",
+    });
+  });
+
+  it("returns 503 when GAMEDB_URL is not set", async () => {
+    delete process.env.GAMEDB_URL;
+    const res = await callRoute("42");
+    expect(res.status).toBe(503);
+  });
+
+  it("returns 502 when gamedb fails", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    mockFetch.mockRejectedValue(
-      new TypeError(
-        "Failed to fetch https://api.rawg.io/api/games/42/stores?key=test-key"
-      )
-    );
-
-    await callRoute("42");
-
-    const loggedArgs = consoleSpy.mock.calls.flat().join(" ");
-    expect(loggedArgs).not.toContain("test-key");
-    expect(loggedArgs).toContain("[REDACTED]");
+    mockFetch.mockResolvedValue({ ok: false, status: 500 });
+    const res = await callRoute("42");
+    expect(res.status).toBe(502);
     consoleSpy.mockRestore();
   });
 

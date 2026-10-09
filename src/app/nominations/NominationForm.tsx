@@ -8,7 +8,6 @@ interface SearchResult {
   name: string;
   image: string | null;
   released: string | null;
-  metacritic: number | null;
   platforms: string;
   genres: string;
 }
@@ -37,7 +36,7 @@ export default function NominationForm() {
   const [description, setDescription] = useState("");
   const [linksText, setLinksText] = useState("");
 
-  // Store/trailer data from RAWG
+  // Store link data from gamedb
   const [storesJson, setStoresJson] = useState("");
   const [trailerUrl, setTrailerUrl] = useState("");
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -135,7 +134,7 @@ export default function NominationForm() {
     setQuery(game.name);
     setShowResults(false);
 
-    // Pre-fill fields from RAWG data
+    // Pre-fill fields from search result
     setTitle(game.name);
     setPlatform(game.platforms);
     setDescription(
@@ -216,7 +215,7 @@ export default function NominationForm() {
         description: description.trim() || undefined,
         storesJson: finalStores || undefined,
         trailerUrl: finalTrailer || undefined,
-        rawgId: selectedGame?.id,
+        igdbId: selectedGame?.id,
       }),
     });
 
@@ -325,9 +324,6 @@ export default function NominationForm() {
                         {[
                           game.platforms,
                           game.released?.slice(0, 4),
-                          game.metacritic
-                            ? `Metacritic: ${game.metacritic}`
-                            : "",
                         ]
                           .filter(Boolean)
                           .join(" · ")}
@@ -396,11 +392,6 @@ export default function NominationForm() {
                   <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                     Released {selectedGame.released}
                   </p>
-                )}
-                {selectedGame.metacritic && (
-                  <span className="inline-block mt-1 px-1.5 py-0.5 text-xs rounded bg-green-500/20 text-green-400">
-                    Metacritic: {selectedGame.metacritic}
-                  </span>
                 )}
                 {loadingDetails && (
                   <p className="text-xs text-[var(--color-text-muted)] mt-1">
