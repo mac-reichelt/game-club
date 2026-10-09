@@ -4,16 +4,24 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: read
+permissions: {}
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 25
           cache: npm
@@ -23,9 +31,14 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 25
           cache: npm
@@ -35,9 +48,14 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 25
           cache: npm
@@ -47,6 +65,44 @@ jobs:
   docker:
     name: Docker Build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
-      - run: docker build -t gameclub-test .
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: docker build -t game-club-test .
+
+  workflow-lint:
+    name: Agentic workflows compiled
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install gh-aw
+        uses: github/gh-aw-actions/setup-cli@aeaf7fe417d183340479027223c9a1c16464bdbc # v0.91.0
+        with:
+          version: v0.91.0
+
+      - name: Lock files match their .md sources
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Pin gh-aw-actions/setup to the v0.91.0 commit so local and CI output match.
+          gh aw compile --strict --action-mode action --action-tag aeaf7fe417d183340479027223c9a1c16464bdbc
+          # CI's compile appends a redundant "# <sha>" comment to gh-aw-actions refs that a
+          # local compile does not; ignore only lines naming that pinned ref so real drift still fails.
+          IGNORE='github/gh-aw-actions/(setup|setup-cli)@aeaf7fe417d183340479027223c9a1c16464bdbc'
+          if ! git diff --quiet -I "$IGNORE" -- .github/workflows; then
+            echo "::error::.lock.yml files are stale. Run 'gh aw compile --strict --action-mode action --action-tag aeaf7fe417d183340479027223c9a1c16464bdbc' and commit the result."
+            git diff --stat -- .github/workflows
+            git diff -U0 -I "$IGNORE" -- .github/workflows | head -n 120
+            exit 1
+          fi
