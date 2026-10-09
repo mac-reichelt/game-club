@@ -4,7 +4,7 @@ const isProd = process.env.NODE_ENV === "production";
 
 const cspDirectives = [
   "default-src 'self'",
-  "img-src 'self' https://media.rawg.io data:",
+  "img-src 'self' https://images.igdb.com data:",
   "script-src 'self'",
   // style-src includes 'unsafe-inline' because Next.js injects critical CSS
   // at runtime. A nonce-based approach is tracked as a follow-up improvement.
