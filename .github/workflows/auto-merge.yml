@@ -1,26 +1,208 @@
-name: Auto-merge on CI pass
+name: Merge gate
+
+# Deterministic merge gate. No LLM runs here; it only reads check results.
+#
+# A PR is merged when ALL of the following hold for its current head SHA:
+#   1. Every check run on the head SHA has completed, and none failed.
+#   2. The baseline CI checks exist and passed (Lint, Test, Docker Build,
+#      Agentic workflows compiled).
+#   3. Non-Dependabot PRs: agent/code-review and agent/docs-review passed,
+#      plus agent/security-review / agent/devops-review when the PR touches
+#      their paths.
+#   4. Human gate: a maintainer has approved the PR if it was written by the
+#      coding agent, or touches .github/**, Dockerfile, compose.yml, or
+#      dependency manifests (Dependabot patch/minor bumps excepted).
+#   5. The PR is not a draft and has no `do-not-merge` label.
+#
+# Merging uses a short-lived GitHub App installation token (vars.APP_ID /
+# secrets.APP_PRIVATE_KEY) so the push to main triggers Build & Publish.
+# (Merges made with GITHUB_TOKEN do not trigger other workflows.)
 
 on:
   workflow_run:
-    workflows: ["PR Checks"]
-    types:
-      - completed
+    workflows: ["PR Checks", "Code Review", "Security Review", "DevOps Review", "Docs Review"]
+    types: [completed]
+  pull_request_review:
+    types: [submitted]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR number to evaluate
+        required: true
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
-  auto-merge:
+  gate:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
+    timeout-minutes: 5
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.event == 'pull_request' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: read
+    concurrency:
+      group: merge-gate-${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha || github.event.inputs.pr_number }}
+      cancel-in-progress: true
+    outputs:
+      pr: ${{ steps.eval.outputs.pr }}
+      sha: ${{ steps.eval.outputs.sha }}
+      merge: ${{ steps.eval.outputs.merge }}
     steps:
-      - name: Merge PR
+      - name: Evaluate merge gate
+        id: eval
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          REVIEW_PR: ${{ github.event.pull_request.number }}
+          INPUT_PR: ${{ github.event.inputs.pr_number }}
+        shell: python
         run: |
-          PR_NUMBER=$(gh api repos/${{ github.repository }}/pulls \
-            --jq ".[] | select(.head.sha == \"${{ github.event.workflow_run.head_sha }}\") | .number")
-          if [ -n "$PR_NUMBER" ]; then
-            gh pr merge "$PR_NUMBER" --repo "${{ github.repository }}" --merge --delete-branch
-          fi
+          import fnmatch, json, os, re, subprocess, sys
+
+          repo = os.environ["REPO"]
+
+          def api(path, paginate=False):
+              cmd = ["gh", "api", path] + (["--paginate", "--slurp"] if paginate else [])
+              out = json.loads(subprocess.run(cmd, check=True, capture_output=True, text=True).stdout)
+              if paginate:
+                  merged = []
+                  for page in out:
+                      merged.extend(page if isinstance(page, list) else page.get("check_runs", []))
+                  return merged
+              return out
+
+          def output(**kw):
+              with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+                  for k, v in kw.items():
+                      fh.write(f"{k}={v}\n")
+
+          def stop(reason):
+              print(f"Not merging: {reason}")
+              output(merge="false")
+              sys.exit(0)
+
+          pr_number = os.environ.get("REVIEW_PR") or os.environ.get("INPUT_PR") or ""
+          if not pr_number:
+              sha = os.environ.get("RUN_SHA", "")
+              if not re.fullmatch(r"[0-9a-f]{40}", sha):
+                  stop("no PR context")
+              prs = [p for p in api(f"repos/{repo}/pulls?state=open&per_page=100") if p["head"]["sha"] == sha]
+              if not prs:
+                  stop(f"no open PR with head {sha}")
+              pr_number = str(prs[0]["number"])
+          if not pr_number.isdigit():
+              stop("invalid PR number")
+
+          pr = api(f"repos/{repo}/pulls/{pr_number}")
+          sha = pr["head"]["sha"]
+          author = pr["user"]["login"]
+          labels = {l["name"] for l in pr["labels"]}
+          if pr["state"] != "open" or pr["draft"]:
+              stop("PR is closed or draft")
+          if pr["head"]["repo"]["full_name"] != repo:
+              stop("fork PRs are never auto-merged")
+          if pr["base"]["ref"] != "main":
+              stop("base is not main")
+          if "do-not-merge" in labels:
+              stop("do-not-merge label")
+
+          files = [f["filename"] for f in api(f"repos/{repo}/pulls/{pr_number}/files?per_page=100", paginate=True)]
+          if len(files) != pr["changed_files"]:
+              # GitHub caps this endpoint at 3000 files; fail closed rather than miss gated paths.
+              stop(f"could only list {len(files)} of {pr['changed_files']} changed files")
+          def touches(*globs):
+              return any(fnmatch.fnmatch(f, g) for f in files for g in globs)
+
+          is_dependabot = author == "dependabot[bot]"
+          is_coding_agent = author in ("Copilot", "copilot-swe-agent[bot]", "copilot-swe-agent")
+
+          required = {"Lint", "Test", "Build", "Docker Build", "Agentic workflows compiled"}
+          if not is_dependabot:
+              required |= {"agent/code-review", "agent/docs-review"}
+              if touches("src/*", "src/**", "next.config.ts", "Dockerfile", "compose.yml", "package.json", "package-lock.json", ".github/*", ".github/**"):
+                  required.add("agent/security-review")
+              if touches(".github/*", ".github/**", "Dockerfile", "compose.yml", ".dockerignore"):
+                  required.add("agent/devops-review")
+
+          runs = api(f"repos/{repo}/commits/{sha}/check-runs?per_page=100", paginate=True)
+          # Key by (check suite, name): every gh-aw workflow has jobs called
+          # "agent", "conclusion", etc., so names alone are not unique.
+          latest = {}
+          for r in sorted(runs, key=lambda r: r.get("started_at") or ""):
+              latest[(r["check_suite"]["id"], r["name"])] = r
+          pending = [n for (_, n), r in latest.items() if r["status"] != "completed" and n not in ("gate", "merge")]
+          if pending:
+              stop(f"checks still running: {sorted(pending)}")
+          bad = [n for (_, n), r in latest.items() if r["conclusion"] not in ("success", "skipped", "neutral")]
+          if bad:
+              stop(f"checks not green: {sorted(bad)}")
+          passed = {n for (_, n), r in latest.items() if r["conclusion"] == "success"}
+          missing = sorted(required - passed)
+          if missing:
+              stop(f"required checks missing or not successful: {missing}")
+
+          needs_human = is_coding_agent or touches(".github/*", ".github/**", "Dockerfile", "compose.yml")
+          if is_dependabot:
+              title = pr["title"]
+              m = re.search(r"from (\d+)\.\S* to (\d+)\.", title)
+              grouped = "npm-minor-patch group" in title or "actions group" in title
+              if not grouped and (not m or m.group(1) != m.group(2)):
+                  needs_human = True  # major bump or unparseable title
+          elif touches("package.json", "package-lock.json"):
+              needs_human = True
+
+          if needs_human:
+              reviews = api(f"repos/{repo}/pulls/{pr_number}/reviews?per_page=100")
+              state = {}
+              for rv in reviews:
+                  if rv["user"]["type"] == "Bot" or rv["user"]["login"] == author:
+                      continue
+                  if rv["commit_id"] != sha and rv["state"] == "APPROVED":
+                      continue  # approvals must be for the current head
+                  if rv["state"] in ("APPROVED", "CHANGES_REQUESTED", "DISMISSED"):
+                      state[rv["user"]["login"]] = rv["state"]
+              approvers = [u for u, s in state.items() if s == "APPROVED"]
+              blockers = [u for u, s in state.items() if s == "CHANGES_REQUESTED"]
+              if blockers:
+                  stop(f"changes requested by {blockers}")
+              ok = []
+              for u in approvers:
+                  perm = api(f"repos/{repo}/collaborators/{u}/permission")["permission"]
+                  if perm in ("admin", "maintain", "write"):
+                      ok.append(u)
+              if not ok:
+                  stop("needs an approving review from a maintainer on the current head")
+
+          print(f"Gate passed for PR #{pr_number} @ {sha}")
+          output(merge="true", pr=pr_number, sha=sha)
+
+  merge:
+    needs: gate
+    if: needs.gate.outputs.merge == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Mint short-lived GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Squash-merge (pinned to the evaluated head SHA)
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ needs.gate.outputs.pr }}
+          SHA: ${{ needs.gate.outputs.sha }}
+        run: |
+          set -euo pipefail
+          gh pr merge "${PR}" --repo "${REPO}" --squash --delete-branch --match-head-commit "${SHA}"
