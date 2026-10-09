@@ -106,11 +106,18 @@ export async function getGamedbDetail(
   }
   const res = await fetch(
     `${BASE}/api/games/${id}`,
-    options?.noCache ? { cache: "no-store" } : { next: { revalidate: 3600 } }
+    options?.noCache
+      ? { cache: "no-store" }
+      : { next: { revalidate: 3600, tags: [gamedbDetailTag(gamedbId)] } }
   );
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`gamedb fetch failed: ${res.status}`);
   return (await res.json()) as GamedbDetail;
+}
+
+// Cache tag for a game's detail fetch; revalidated after a refresh.
+export function gamedbDetailTag(gamedbId: number): string {
+  return `gamedb-game-${gamedbId}`;
 }
 
 // Force gamedb to re-fetch upstream data (IGDB, OpenCritic, HLTB, Steam) for a game.

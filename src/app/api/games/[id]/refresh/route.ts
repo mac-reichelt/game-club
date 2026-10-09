@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import getDb from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
-import { refreshGamedb, isGamedbConfigured } from "@/lib/gamedb";
+import { revalidateTag } from "next/cache";
+import { refreshGamedb, isGamedbConfigured, gamedbDetailTag } from "@/lib/gamedb";
 
 interface GameRow {
   id: number;
@@ -53,6 +54,8 @@ export async function POST(
         { status: 404 }
       );
     }
+    // Drop the cached detail so pages show the refreshed data immediately.
+    revalidateTag(gamedbDetailTag(game.gamedb_id));
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("gamedb refresh failed:", err);
