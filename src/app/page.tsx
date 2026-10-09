@@ -5,6 +5,7 @@ import { checkAndCloseExpiredElections, getOpenElectionData } from "@/lib/electi
 import Link from "next/link";
 import CountdownTimer from "@/components/CountdownTimer";
 import BallotForm from "./nominations/BallotForm";
+import { loadGameInfos, type GameInfo } from "@/lib/gameInfo";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,10 @@ export default async function Dashboard() {
   const recent = getRecentlyCompleted(db);
   const openElection = getOpenElectionData(db);
   const hasVoted = openElection ? openElection.voterIds.includes(user.id) : false;
+  const infos: Record<number, GameInfo> = await loadGameInfos([
+    ...(currentGame ? [currentGame] : []),
+    ...recent,
+  ]);
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -117,18 +122,23 @@ export default async function Dashboard() {
             href={`/games/${currentGame.id}`}
             className="block bg-[var(--color-surface)] border border-[var(--color-primary)] rounded-xl p-4 md:p-6 flex flex-col sm:flex-row gap-4 md:gap-6 hover:border-[var(--color-primary-hover)] transition-colors"
           >
-            <div className="w-full sm:w-32 h-32 sm:h-44 rounded-lg bg-[var(--color-surface-hover)] flex items-center justify-center text-5xl shrink-0">
-              {currentGame.image_url || "🎮"}
+            <div className="w-full sm:w-32 h-32 sm:h-44 rounded-lg bg-[var(--color-surface-hover)] flex items-center justify-center text-5xl shrink-0 overflow-hidden">
+{infos[currentGame.id]?.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={infos[currentGame.id].image} alt={currentGame.title} className="w-full h-full object-cover rounded-lg" />
+              ) : (
+                "🎮"
+              )}
             </div>
             <div className="flex-1">
               <h3 className="text-2xl font-bold mb-1">{currentGame.title}</h3>
-              {currentGame.platform && (
+              {infos[currentGame.id]?.platform && (
                 <span className="inline-block px-2 py-0.5 bg-[var(--color-primary)]/20 text-[var(--color-primary)] text-xs rounded mb-2">
-                  {currentGame.platform}
+                  {infos[currentGame.id].platform}
                 </span>
               )}
-              <p className="text-[var(--color-text-muted)] text-sm mb-3">
-                {currentGame.description || "No description"}
+              <p className="text-[var(--color-text-muted)] text-sm mb-3 line-clamp-4">
+                {infos[currentGame.id]?.description || "No description"}
               </p>
               <p className="text-sm text-[var(--color-text-muted)]">
                 Nominated by{" "}
@@ -164,8 +174,13 @@ export default async function Dashboard() {
                 href={`/games/${game.id}`}
                 className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 hover:border-[var(--color-primary)] transition-colors"
               >
-                <div className="w-full h-28 rounded-lg bg-[var(--color-surface-hover)] flex items-center justify-center text-4xl mb-3">
-                  {game.image_url || "🎮"}
+                <div className="w-full h-28 rounded-lg bg-[var(--color-surface-hover)] flex items-center justify-center text-4xl mb-3 overflow-hidden">
+{infos[game.id]?.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={infos[game.id].image} alt={game.title} className="w-full h-full object-cover rounded-lg" />
+              ) : (
+                "🎮"
+              )}
                 </div>
                 <h3 className="font-semibold truncate mb-1">{game.title}</h3>
                 <Stars rating={game.avg_rating} />
