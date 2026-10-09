@@ -75,7 +75,7 @@ describe("POST /api/games/[id]/refresh", () => {
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toMatchObject({ success: true });
     expect(mockRefreshGamedb).toHaveBeenCalledWith(99);
-    expect(mockRevalidateTag).toHaveBeenCalledWith("gamedb-game-99");
+    expect(mockRevalidateTag).toHaveBeenCalledWith("gamedb-game-99", { expire: 0 });
     expect(mockRun).not.toHaveBeenCalled();
   });
 

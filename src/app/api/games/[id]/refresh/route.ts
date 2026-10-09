@@ -55,7 +55,7 @@ export async function POST(
       );
     }
     // Drop the cached detail so pages show the refreshed data immediately.
-    revalidateTag(gamedbDetailTag(game.gamedb_id));
+    revalidateTag(gamedbDetailTag(game.gamedb_id), { expire: 0 });
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("gamedb refresh failed:", err);
