@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import getDb from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
-import { getGamedbDetail, isGamedbConfigured } from "@/lib/gamedb";
+import { revalidateTag } from "next/cache";
+import { refreshGamedb, isGamedbConfigured, gamedbDetailTag } from "@/lib/gamedb";
 
 interface GameRow {
   id: number;
   gamedb_id: number | null;
 }
 
-function storeDomain(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return "";
-  }
-}
-
-// POST /api/games/[id]/refresh - refresh local game fields from gamedb
+// POST /api/games/[id]/refresh - ask gamedb to re-fetch upstream data.
+// Game metadata lives only in gamedb, so nothing is written locally.
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -53,32 +47,21 @@ export async function POST(
   }
 
   try {
-    const detail = await getGamedbDetail(game.gamedb_id, { noCache: true });
+    const detail = await refreshGamedb(game.gamedb_id);
     if (!detail) {
       return NextResponse.json(
         { error: "Game not found in gamedb" },
         { status: 404 }
       );
     }
-
-    const stores = Object.entries(detail.store_links || {}).map(
-      ([name, url]) => ({
-        name,
-        url,
-        domain: storeDomain(url),
-      })
-    );
-
-    db.prepare(
-      "UPDATE games SET image_url = ?, stores_json = ? WHERE id = ?"
-    ).run(detail.background_image || "", JSON.stringify(stores), gameId);
-
+    // Drop the cached detail so pages show the refreshed data immediately.
+    revalidateTag(gamedbDetailTag(game.gamedb_id), { expire: 0 });
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("gamedb refresh failed:", err);
     return NextResponse.json(
       { error: "Failed to refresh game data" },
-      { status: 500 }
+      { status: 502 }
     );
   }
 }

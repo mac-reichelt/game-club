@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserFromToken } from "@/lib/auth";
 import { searchGamedb, isGamedbConfigured } from "@/lib/gamedb";
 
-// GET /api/games/search?q=hades - search games via gamedb (proxies RAWG)
+// GET /api/games/search?q=hades - search games via gamedb (backed by IGDB)
 export async function GET(request: NextRequest) {
   const user = getUserFromToken(
     request.cookies.get("session_token")?.value
@@ -24,16 +24,19 @@ export async function GET(request: NextRequest) {
 
   try {
     const results = await searchGamedb(query, 8);
-    // Map to the shape the existing NominationForm expects.
     return NextResponse.json(
       results.map((g) => ({
-        id: g.rawg_id,
+        igdbId: g.igdb_id,
         name: g.name,
         image: g.background_image,
         released: g.released,
-        metacritic: g.metacritic,
-        platforms: g.platforms.join(", "),
-        genres: g.genres.join(", "),
+        platforms: (Array.isArray(g.platforms) ? g.platforms : []).join(", "),
+        genres: (Array.isArray(g.genres) ? g.genres : []).join(", "),
+        opencriticScore:
+          g.opencritic?.top_critic_score != null && g.opencritic.top_critic_score > 0
+            ? Math.round(g.opencritic.top_critic_score)
+            : null,
+        hltbMainHours: g.hltb?.main_story_hours ?? null,
       }))
     );
   } catch (err) {
