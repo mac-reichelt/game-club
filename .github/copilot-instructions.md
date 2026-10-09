@@ -93,7 +93,7 @@ which agents you consulted and why (e.g., "Consulted: security-review per routin
 | `.github/workflows/**` | `devops-engineer` + `security-review` |
 | `.github/agents/**`, `.github/instructions/**` | `devops-engineer` |
 | `src/__tests__/**` | `qa-engineer` |
-| `docs/**`, `README.md`, `CONTRIBUTING.md` | `tech-writer` |
+| `docs/**`, `README.md`, `CONTRIBUTING.md` | `docs-review` (tech-writer) |
 
 ### How to declare consultations in PR descriptions
 
@@ -108,3 +108,27 @@ Add a section to your PR body:
 
 If a path glob applies but the change is trivial (typo fix, rename only), you may
 skip consultation but must note it: "No agent consultation needed — trivial rename only."
+
+## Agent Infrastructure
+
+- **Team agents**: `.github/agents/` — 9-agent team roster (coordinator, producer, architect,
+  software-engineer, qa-engineer, devops-engineer, tech-writer, code-review, security-review),
+  plus `agentic-workflows.md` (gh-aw authoring agent).
+- **Instructions**: `.github/instructions/` (security, Docker, workflow hardening, cloud-agent
+  playbooks) and `.github/aw/instructions.md` (rules for agentic workflows — read before editing
+  any workflow).
+- **Agentic workflows (gh-aw)**: `code-review.md`, `security-review.md`, `devops-review.md`,
+  `docs-review.md`, `ci-doctor.md`, `issue-triage.md`. Edit the `.md`, then run
+  `gh aw compile --strict --action-mode action --action-tag aeaf7fe417d183340479027223c9a1c16464bdbc` and commit the `.lock.yml`. Review agents publish `agent/*` check runs.
+- **Deterministic plumbing (no LLM)**: `auto-merge.yml` (merge gate), `assign-coding-agent.yml`
+  (label `ready-for-coding-agent` → Copilot), `update-pr-branches.yml`, `main.yml`, `pr.yml`.
+- **Human gates**: the `ready-for-coding-agent` label, and maintainer approval for coding-agent PRs
+  and PRs touching `.github/**`, `Dockerfile`, `compose.yml` or `package.json`/`package-lock.json`.
+- **Inference**: agent workflows use `copilot-requests: write` (built-in token, org Copilot billing);
+  no Copilot PAT.
+- **Write credentials**: a GitHub App (`vars.APP_ID` = client ID, `secrets.APP_PRIVATE_KEY`) installed
+  on this repo only. gh-aw `safe-outputs.github-app` and `actions/create-github-app-token` mint
+  short-lived, per-job-scoped tokens for merges, branch updates and docs pushes (App-token events
+  trigger downstream workflows; `GITHUB_TOKEN` events do not).
+- **Only PAT**: `GH_AW_AGENT_TOKEN` (fine-grained, Issues R/W, this repo) for assigning the Copilot
+  coding agent — GitHub's assignment API rejects App installation tokens.
