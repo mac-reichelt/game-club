@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import ReviewForm from "./ReviewForm";
 import { getGamedbDetail, isGamedbConfigured, GamedbDetail } from "@/lib/gamedb";
+import { buildGameInfo } from "@/lib/gameInfo";
 
 export const dynamic = "force-dynamic";
 
@@ -101,7 +102,7 @@ async function fetchGamedb(game: GameWithNominator): Promise<GamedbDetail | null
     if (game.gamedb_id) {
       return await getGamedbDetail(game.gamedb_id);
     }
-    // Legacy nominations have no gamedb_id; cannot enrich without a RAWG id.
+    // Legacy nominations have no gamedb_id; nothing to enrich from.
     return null;
   } catch (err) {
     console.error("gamedb lookup failed:", err);
@@ -124,8 +125,8 @@ export default async function GameDetailPage({
   const elections = getElectionsForGame(db, game.id);
   const gamedb = await fetchGamedb(game);
 
-  // Use gamedb image if local one is missing
-  const imageSrc = game.image_url || gamedb?.background_image || "";
+  const info = buildGameInfo(game, gamedb);
+  const imageSrc = info.image;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -148,9 +149,9 @@ export default async function GameDetailPage({
               <div className="min-w-0">
                 <h1 className="text-2xl font-bold mb-1 break-words">{game.title}</h1>
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
-                  {game.platform && (
+                  {info.platform && (
                     <span className="inline-block px-2 py-0.5 bg-[var(--color-primary)]/20 text-[var(--color-primary)] text-xs rounded">
-                      {game.platform}
+                      {info.platform}
                     </span>
                   )}
                   <span
@@ -173,9 +174,9 @@ export default async function GameDetailPage({
                 </div>
               )}
             </div>
-            {(game.description || gamedb?.description) && (
+            {info.description && (
               <p className="text-[var(--color-text-muted)] text-sm mb-3 whitespace-pre-line">
-                {game.description || gamedb?.description}
+                {info.description}
               </p>
             )}
             <p className="text-sm text-[var(--color-text-muted)]">
@@ -259,30 +260,30 @@ export default async function GameDetailPage({
           <h2 className="text-xl font-semibold mb-4">Game Info</h2>
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 md:p-5 space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-              {gamedb.metacritic_score !== null && (
-                <div>
-                  <div className="text-xs text-[var(--color-text-muted)]">Metacritic</div>
-                  <div className="text-lg font-semibold">{gamedb.metacritic_score}</div>
-                </div>
-              )}
-              {gamedb.opencritic?.score != null && (
+              {info.opencritic && (
                 <div>
                   <div className="text-xs text-[var(--color-text-muted)]">OpenCritic</div>
                   <div className="text-lg font-semibold">
-                    {Math.round(gamedb.opencritic.score)}
-                    {gamedb.opencritic.tier && (
+                    {info.opencritic.url ? (
+                      <a href={info.opencritic.url} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-primary)]">
+                        {info.opencritic.score}
+                      </a>
+                    ) : (
+                      info.opencritic.score
+                    )}
+                    {info.opencritic.tier && (
                       <span className="ml-1 text-xs text-[var(--color-text-muted)]">
-                        {gamedb.opencritic.tier}
+                        {info.opencritic.tier}
                       </span>
                     )}
                   </div>
                 </div>
               )}
-              {gamedb.rawg_rating !== null && (
+              {gamedb.igdb_rating != null && (
                 <div>
-                  <div className="text-xs text-[var(--color-text-muted)]">RAWG</div>
+                  <div className="text-xs text-[var(--color-text-muted)]">IGDB</div>
                   <div className="text-lg font-semibold">
-                    {gamedb.rawg_rating.toFixed(1)}/5
+                    {Math.round(gamedb.igdb_rating)}/100
                   </div>
                 </div>
               )}
@@ -294,23 +295,23 @@ export default async function GameDetailPage({
               )}
             </div>
 
-            {gamedb.hltb && (gamedb.hltb.main_story_hours || gamedb.hltb.main_extra_hours || gamedb.hltb.completionist_hours) && (
+            {gamedb.hltb && (gamedb.hltb.main_story_hours != null || gamedb.hltb.main_extra_hours != null || gamedb.hltb.completionist_hours != null) && (
               <div>
                 <div className="text-xs text-[var(--color-text-muted)] mb-1">
                   How Long to Beat
                 </div>
                 <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-                  {gamedb.hltb.main_story_hours && (
+                  {gamedb.hltb.main_story_hours != null && (
                     <span>
                       Main: <strong>{gamedb.hltb.main_story_hours}h</strong>
                     </span>
                   )}
-                  {gamedb.hltb.main_extra_hours && (
+                  {gamedb.hltb.main_extra_hours != null && (
                     <span>
                       +Extras: <strong>{gamedb.hltb.main_extra_hours}h</strong>
                     </span>
                   )}
-                  {gamedb.hltb.completionist_hours && (
+                  {gamedb.hltb.completionist_hours != null && (
                     <span>
                       100%: <strong>{gamedb.hltb.completionist_hours}h</strong>
                     </span>
@@ -359,13 +360,13 @@ export default async function GameDetailPage({
               </div>
             )}
 
-            {Object.keys(gamedb.store_links).length > 0 && (
+            {info.stores.length > 0 && (
               <div>
                 <div className="text-xs text-[var(--color-text-muted)] mb-1">Stores</div>
                 <div className="flex flex-wrap gap-2">
-                  {Object.entries(gamedb.store_links).map(([name, url]) => (
+                  {info.stores.map(({ name, url }) => (
                     <a
-                      key={name}
+                      key={url}
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"

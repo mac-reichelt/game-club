@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { GameWithNominator, StoreLink } from "@/lib/types";
+import { GameWithNominator } from "@/lib/types";
+import type { GameInfo } from "@/lib/gameInfo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -16,18 +17,6 @@ interface PastElection {
   id: number;
   name: string;
   closed_at: string | null;
-}
-
-export interface NominationGamedbInfo {
-  opencritic: {
-    score: number;
-    tier: string | null;
-  } | null;
-  hltb: {
-    mainStoryHours: number | null;
-    mainExtraHours: number | null;
-    completionistHours: number | null;
-  } | null;
 }
 
 type SortKey = "name" | "first" | "last" | "count";
@@ -57,13 +46,13 @@ export default function NominationsList({
   nominations,
   stats,
   electionHistory,
-  gamedbInfo,
+  gameInfo,
   gamedbConfigured,
 }: {
   nominations: GameWithNominator[];
   stats: Record<number, NominationStats>;
   electionHistory: Record<number, PastElection[]>;
-  gamedbInfo: Record<number, NominationGamedbInfo>;
+  gameInfo: Record<number, GameInfo>;
   gamedbConfigured: boolean;
 }) {
   const router = useRouter();
@@ -98,7 +87,7 @@ export default function NominationsList({
       if (!q) return true;
       return (
         g.title.toLowerCase().includes(q) ||
-        (g.platform?.toLowerCase().includes(q) ?? false) ||
+        (gameInfo[g.id]?.platform.toLowerCase().includes(q) ?? false) ||
         g.nominatorName.toLowerCase().includes(q)
       );
     });
@@ -171,17 +160,14 @@ export default function NominationsList({
           </div>
         ) : (
           filteredSorted.map((game) => {
-            let stores: StoreLink[] = [];
-            try {
-              if (game.stores_json) stores = JSON.parse(game.stores_json);
-            } catch { /* ignore */ }
+            const info = gameInfo[game.id];
+            const stores = info?.stores ?? [];
             const trailerUrl = game.trailer_url || "";
             const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
               game.title + " official trailer"
             )}`;
             const pastElections = electionHistory[game.id] || [];
             const s = stats[game.id];
-            const info = gamedbInfo[game.id];
             const hasOpenCritic = info?.opencritic?.score != null;
             const hasHltb =
               info?.hltb?.mainStoryHours != null ||
@@ -228,9 +214,9 @@ export default function NominationsList({
                     </button>
                   </div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    {game.platform && (
+                    {info?.platform && (
                       <span className="inline-block px-2 py-0.5 bg-[var(--color-primary)]/20 text-[var(--color-primary)] text-xs rounded">
-                        {game.platform}
+                        {info.platform}
                       </span>
                     )}
                     <span className="text-sm text-[var(--color-text-muted)]">
@@ -296,9 +282,9 @@ export default function NominationsList({
                     </div>
                   )}
 
-                  {game.description && (
-                    <p className="text-sm text-[var(--color-text-muted)] mt-2">
-                      {game.description}
+                  {info?.description && (
+                    <p className="text-sm text-[var(--color-text-muted)] mt-2 line-clamp-3">
+                      {info.description}
                     </p>
                   )}
 
