@@ -1,0 +1,6 @@
+# Workflow, agent and supply-chain files require the owner's review.
+/.github/            @mac-reichelt
+/Dockerfile          @mac-reichelt
+/compose.yml         @mac-reichelt
+/package.json        @mac-reichelt
+/package-lock.json   @mac-reichelt
