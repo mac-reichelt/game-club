@@ -49,7 +49,7 @@ describe("password length validation rules (signup)", () => {
   });
 
   it("rejects the empty string", () => {
-    const password = "";
+    const password: string = "";
     expect(!password || password.length < 12).toBe(true);
   });
 });
