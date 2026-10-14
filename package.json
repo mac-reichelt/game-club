@@ -11,7 +11,7 @@
     "seed": "npx tsx src/lib/seed.ts"
   },
   "dependencies": {
-    "better-sqlite3": "^12.11.1",
+    "better-sqlite3": "^13.0.3",
     "next": "^16.3.8",
     "react": "^19.2.6",
     "react-dom": "^19.2.7"
