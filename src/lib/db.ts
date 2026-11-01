@@ -138,6 +138,12 @@ function initSchema(db: Database.Database) {
   if (!memberCols.some((c) => c.name === "deactivated_at")) {
     db.exec("ALTER TABLE members ADD COLUMN deactivated_at TEXT");
   }
+  if (!memberCols.some((c) => c.name === "is_admin")) {
+    db.exec(
+      "ALTER TABLE members ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"
+    );
+  }
+  ensureAdmin(db);
 
   const electionCols = db
     .prepare("PRAGMA table_info(elections)")
@@ -166,6 +172,19 @@ function initSchema(db: Database.Database) {
   if (!electionCols.some((c) => c.name === "auto_close_at_votes")) {
     db.exec("ALTER TABLE elections ADD COLUMN auto_close_at_votes INTEGER");
   }
+}
+
+/**
+ * Make sure the club has an admin (game-club #155). If nobody is admin yet,
+ * the longest-standing enabled, active member (lowest id) becomes one. More
+ * admins can be added with: UPDATE members SET is_admin = 1 WHERE name = '...'
+ */
+export function ensureAdmin(db: Database.Database) {
+  db.exec(`
+    UPDATE members SET is_admin = 1
+    WHERE id = (SELECT MIN(id) FROM members WHERE disabled = 0 AND active = 1)
+      AND NOT EXISTS (SELECT 1 FROM members WHERE is_admin = 1)
+  `);
 }
 
 export default getDb;
