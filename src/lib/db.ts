@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
+import { ensureRbac } from "@/lib/permissions";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 if (!fs.existsSync(DATA_DIR)) {
@@ -144,6 +145,7 @@ function initSchema(db: Database.Database) {
     );
   }
   ensureAdmin(db);
+  ensureRbac(db);
 
   const electionCols = db
     .prepare("PRAGMA table_info(elections)")
@@ -177,7 +179,8 @@ function initSchema(db: Database.Database) {
 /**
  * Make sure the club has an admin (game-club #155). If nobody is admin yet,
  * the longest-standing enabled, active member (lowest id) becomes one. More
- * admins can be added with: UPDATE members SET is_admin = 1 WHERE name = '...'
+ * Legacy flag only: permissions now come from roles (lib/permissions.ts), and this
+ * flag only seeds the initial Owner/Admin role assignment.
  */
 export function ensureAdmin(db: Database.Database) {
   db.exec(`

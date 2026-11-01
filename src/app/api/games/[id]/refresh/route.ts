@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { can } from "@/lib/permissions";
 import getDb from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 import { revalidateTag } from "next/cache";
@@ -18,6 +19,11 @@ export async function POST(
   const user = getUserFromToken(request.cookies.get("session_token")?.value);
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!can(user, "games.refresh"))
+    return NextResponse.json(
+      { error: "You don't have permission to do that" },
+      { status: 403 }
+    );
 
   if (!isGamedbConfigured()) {
     return NextResponse.json(
