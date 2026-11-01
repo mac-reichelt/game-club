@@ -3,6 +3,8 @@ export interface Member {
   name: string;
   avatar: string;
   joined_at: string;
+  /** Club admin: may start and close elections (game-club #155). */
+  is_admin: boolean;
 }
 
 export interface Game {

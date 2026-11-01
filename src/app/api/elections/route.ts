@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import getDb from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
+import { createElection, ElectionError } from "@/lib/elections";
 
 const MONTH_NAMES = [
   "January",
@@ -40,33 +41,38 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(elections);
 }
 
-// POST /api/elections - create a new election
-// Body: { gameIds: number[] }
+// POST /api/elections - create a new election (admins only)
+// Body: { gameIds: number[], closesAt?: string, autoCloseAtVotes?: number | null }
 export async function POST(request: NextRequest) {
   const user = getUserFromToken(
     request.cookies.get("session_token")?.value
   );
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user.is_admin)
+    return NextResponse.json(
+      { error: "Only club admins can start elections" },
+      { status: 403 }
+    );
 
-  const db = getDb();
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const { gameIds, closesAt, autoCloseAtVotes } = body as {
-    gameIds?: number[];
-    closesAt?: string;
-    autoCloseAtVotes?: number | null;
+    gameIds?: unknown;
+    closesAt?: unknown;
+    autoCloseAtVotes?: unknown;
   };
 
-  if (!gameIds || gameIds.length < 2) {
-    return NextResponse.json(
-      { error: "At least 2 games are required for an election" },
-      { status: 400 }
-    );
-  }
-
   let closesAtSql: string | null = null;
-  if (closesAt) {
-    const d = new Date(closesAt);
+  if (closesAt !== undefined && closesAt !== null && closesAt !== "") {
+    const d = typeof closesAt === "string" ? new Date(closesAt) : new Date(NaN);
     if (isNaN(d.getTime())) {
       return NextResponse.json({ error: "Invalid closesAt" }, { status: 400 });
     }
@@ -92,41 +98,25 @@ export async function POST(request: NextRequest) {
     threshold = n;
   }
 
-  const openElection = db
-    .prepare("SELECT id FROM elections WHERE status = 'open'")
-    .get();
-  if (openElection) {
-    return NextResponse.json(
-      {
-        error:
-          "An election is already open. Close it before starting a new one.",
-      },
-      { status: 409 }
-    );
-  }
-
   const now = new Date();
   const name = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
 
-  const result = closesAtSql
-    ? db
-        .prepare(
-          "INSERT INTO elections (name, closes_at, auto_close_at_votes) VALUES (?, ?, ?)"
-        )
-        .run(name, closesAtSql, threshold)
-    : db
-        .prepare(
-          "INSERT INTO elections (name, closes_at, auto_close_at_votes) VALUES (?, datetime('now', '+72 hours'), ?)"
-        )
-        .run(name, threshold);
-  const electionId = result.lastInsertRowid;
-
-  const insertGame = db.prepare(
-    "INSERT INTO election_games (election_id, game_id) VALUES (?, ?)"
-  );
-  for (const gid of gameIds) {
-    insertGame.run(electionId, gid);
+  try {
+    const created = createElection(getDb(), {
+      gameIds,
+      closesAtSql,
+      autoCloseAtVotes: threshold,
+      name,
+    });
+    return NextResponse.json(created, { status: 201 });
+  } catch (err) {
+    if (err instanceof ElectionError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    console.error("Failed to create election", err);
+    return NextResponse.json(
+      { error: "Failed to create election" },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ id: electionId, name }, { status: 201 });
 }
