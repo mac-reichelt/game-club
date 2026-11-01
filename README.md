@@ -8,7 +8,7 @@ Game Club helps your group organize, vote on, and record board/video game sessio
 - ✅ Member management — Sign up, edit profile, delete/deactivate account
 - ✅ Secure login — Password hashing, session invalidation, account deactivation
 - ✅ Game tracking — Add, vote, and record play sessions
-- ✅ Elections — Run ranked-choice votes for what to play next. Only admins can start or close elections; all members can vote. If no admin exists, the earliest enabled, active member becomes admin on startup.
+- ✅ Elections — Run ranked-choice votes for what to play next. Starting and closing elections require the `elections.create` and `elections.close` permissions (see [Roles & permissions](#roles--permissions)); voting requires `elections.vote`. If no admin exists, the earliest enabled, active member becomes admin on startup.
 
 ## Quickstart
 
@@ -41,3 +41,15 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 MIT — see [LICENSE](LICENSE).
+
+## Roles & permissions
+
+Access is role-based. Each member has the permissions of every role assigned to them, plus
+roles marked "applies to everyone". Built-in roles: **Owner** (every permission, can't be
+edited; the club always keeps at least one), **Admin** and **Member** (applies to everyone),
+seeded from the old `is_admin` flag on first start. Members with `roles.manage` edit roles
+and assignments at `/admin/roles`; they can only grant permissions they hold, and only an
+Owner can grant or revoke Owner.
+
+Permissions: `games.nominate`, `games.refresh`, `games.review`, `elections.vote`,
+`elections.create`, `elections.close`, `members.view`, `roles.manage`.

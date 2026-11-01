@@ -33,7 +33,7 @@ describe("POST /api/games", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    mockGetUserFromToken.mockReturnValue({ id: 1 });
+    mockGetUserFromToken.mockReturnValue({ id: 1, permissions: ["games.nominate"] });
     mockGet.mockReturnValue(undefined);
     mockRun.mockReturnValue({ lastInsertRowid: 7 });
   });
@@ -72,7 +72,7 @@ describe("GET /api/games/search", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    mockGetUserFromToken.mockReturnValue({ id: 1 });
+    mockGetUserFromToken.mockReturnValue({ id: 1, permissions: ["games.nominate"] });
   });
   it("tolerates rows with missing platforms/genres", async () => {
     mockSearch.mockResolvedValue([
@@ -88,5 +88,15 @@ describe("GET /api/games/search", () => {
     const body = await res.json();
     expect(body[0].platforms).toBe("");
     expect(body[1].hltbMainHours).toBe(10);
+  });
+  it("refuses members without games.nominate", async () => {
+    mockGetUserFromToken.mockReturnValue({ id: 1, permissions: [] });
+    const { POST } = await import("@/app/api/games/route");
+    const res = await POST({
+      cookies: { get: () => ({ value: "t" }) },
+      json: async () => ({ igdbId: 5 }),
+    } as never);
+    expect(res.status).toBe(403);
+    expect(mockRun).not.toHaveBeenCalled();
   });
 });

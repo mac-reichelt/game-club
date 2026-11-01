@@ -3,8 +3,10 @@ export interface Member {
   name: string;
   avatar: string;
   joined_at: string;
-  /** Club admin: may start and close elections (game-club #155). */
+  /** Legacy admin flag (game-club #155); permissions now come from roles. */
   is_admin: boolean;
+  /** Effective permissions from the member's roles (see lib/permissions.ts). */
+  permissions: string[];
 }
 
 export interface Game {

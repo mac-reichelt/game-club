@@ -14,6 +14,7 @@ interface NavbarUser {
   id: number;
   name: string;
   avatar: string;
+  permissions?: string[];
 }
 
 export default function Navbar({ user }: { user: NavbarUser }) {
@@ -39,7 +40,10 @@ export default function Navbar({ user }: { user: NavbarUser }) {
           </Link>
         </div>
         <div className="flex-1 p-3 flex flex-col gap-1">
-          {links.map((link) => {
+          {(user.permissions?.includes("roles.manage")
+            ? [...links, { href: "/admin/roles", label: "Roles", icon: "🛡️" }]
+            : links
+          ).map((link) => {
             const isActive =
               link.href === "/"
                 ? pathname === "/"
@@ -81,7 +85,10 @@ export default function Navbar({ user }: { user: NavbarUser }) {
       {/* Mobile bottom bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-[var(--color-border)] bg-[var(--color-surface)] z-40 safe-area-bottom">
         <div className="flex items-center justify-around px-1 py-1">
-          {links.map((link) => {
+          {(user.permissions?.includes("roles.manage")
+            ? [...links, { href: "/admin/roles", label: "Roles", icon: "🛡️" }]
+            : links
+          ).map((link) => {
             const isActive =
               link.href === "/"
                 ? pathname === "/"
