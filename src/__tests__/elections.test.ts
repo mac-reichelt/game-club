@@ -156,7 +156,7 @@ describe("closeElectionAndTally", () => {
 
     const result = closeElectionAndTally(db, electionId);
 
-    expect(result.winnerId).toBe(games[0]);
+    expect(result!.winnerId).toBe(games[0]);
 
     // Election should be marked closed with winner
     const election = db
@@ -236,7 +236,7 @@ describe("closeElectionAndTally", () => {
 
     const result = closeElectionAndTally(db, electionId);
 
-    expect(result.winnerId).toBeNull();
+    expect(result!.winnerId).toBeNull();
     const election = db
       .prepare("SELECT status, winner_id FROM elections WHERE id = ?")
       .get(electionId) as { status: string; winner_id: number | null };

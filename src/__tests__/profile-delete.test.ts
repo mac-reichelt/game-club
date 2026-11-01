@@ -60,6 +60,7 @@ describe("DELETE /api/auth/profile", () => {
       name: "Alice",
       avatar: "🎮",
       joined_at: "2024-01-01",
+      is_admin: false,
     });
 
     const { DELETE } = await import("@/app/api/auth/profile/route");
@@ -75,6 +76,7 @@ describe("DELETE /api/auth/profile", () => {
       name: "Alice",
       avatar: "🎮",
       joined_at: "2024-01-01",
+      is_admin: false,
     });
     vi.mocked(auth.verifyPassword).mockResolvedValue(true);
 
