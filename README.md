@@ -41,3 +41,15 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 MIT — see [LICENSE](LICENSE).
+
+## Roles & permissions
+
+Access is role-based. Each member has the permissions of every role assigned to them, plus
+roles marked "applies to everyone". Built-in roles: **Owner** (every permission, can't be
+edited; the club always keeps at least one), **Admin** and **Member** (applies to everyone),
+seeded from the old `is_admin` flag on first start. Members with `roles.manage` edit roles
+and assignments at `/admin/roles`; they can only grant permissions they hold, and only an
+Owner can grant or revoke Owner.
+
+Permissions: `games.nominate`, `games.refresh`, `games.review`, `elections.vote`,
+`elections.create`, `elections.close`, `members.view`, `roles.manage`.

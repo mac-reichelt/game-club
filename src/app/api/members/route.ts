@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { can } from "@/lib/permissions";
 import getDb from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 
@@ -9,6 +10,11 @@ export async function GET(request: NextRequest) {
   );
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!can(user, "members.view"))
+    return NextResponse.json(
+      { error: "You don't have permission to do that" },
+      { status: 403 }
+    );
 
   const db = getDb();
   const members = db
