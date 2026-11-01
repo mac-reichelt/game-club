@@ -124,9 +124,12 @@ function getMemberByToken(token: string): Member | null {
     )
     .get(token) as { member_id: number } | undefined;
   if (!session) return null;
-  return db
-    .prepare("SELECT id, name, avatar, joined_at FROM members WHERE id = ?")
-    .get(session.member_id) as Member | null;
+  const row = db
+    .prepare(
+      "SELECT id, name, avatar, joined_at, is_admin FROM members WHERE id = ?"
+    )
+    .get(session.member_id) as (Omit<Member, "is_admin"> & { is_admin: number }) | undefined;
+  return row ? { ...row, is_admin: row.is_admin === 1 } : null;
 }
 
 export function getUserFromToken(token: string | undefined): Member | null {
