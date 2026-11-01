@@ -40,7 +40,7 @@ describe("POST /api/games/[id]/refresh", () => {
     vi.resetModules();
     vi.clearAllMocks();
 
-    mockGetUserFromToken.mockReturnValue({ id: 1, name: "Test User" });
+    mockGetUserFromToken.mockReturnValue({ id: 1, name: "Test User", permissions: ["games.refresh"] });
     mockIsGamedbConfigured.mockReturnValue(true);
     mockPrepare.mockImplementation((sql: string) => ({
       get: (...args: unknown[]) => mockGet(sql, ...args),
@@ -91,5 +91,11 @@ describe("POST /api/games/[id]/refresh", () => {
     mockRefreshGamedb.mockRejectedValue(new Error("boom"));
     const res = await callRoute("12");
     expect(res.status).toBe(502);
+  });
+  it("refuses members without games.refresh", async () => {
+    mockGetUserFromToken.mockReturnValue({ id: 1, name: "Test User", permissions: [] });
+    const res = await callRoute("12");
+    expect(res.status).toBe(403);
+    expect(mockRefreshGamedb).not.toHaveBeenCalled();
   });
 });
