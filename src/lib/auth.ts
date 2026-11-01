@@ -6,6 +6,7 @@ import { promisify } from "util";
 import Database from "better-sqlite3";
 import getDb from "./db";
 import { Member } from "./types";
+import { getMemberPermissions, Permission } from "./permissions";
 
 // ---------------------------------------------------------------------------
 // Password helpers (scrypt with legacy SHA-256 fallback)
@@ -129,7 +130,9 @@ function getMemberByToken(token: string): Member | null {
       "SELECT id, name, avatar, joined_at, is_admin FROM members WHERE id = ?"
     )
     .get(session.member_id) as (Omit<Member, "is_admin"> & { is_admin: number }) | undefined;
-  return row ? { ...row, is_admin: row.is_admin === 1 } : null;
+  return row
+    ? { ...row, is_admin: row.is_admin === 1, permissions: getMemberPermissions(db, row.id) }
+    : null;
 }
 
 export function getUserFromToken(token: string | undefined): Member | null {
@@ -141,6 +144,19 @@ export async function getCurrentUser(): Promise<Member | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get("session_token")?.value;
   return token ? getMemberByToken(token) : null;
+}
+
+/** For API routes: 401 when signed out, 403 without the permission, else the member. */
+export function authorize(
+  request: NextRequest,
+  perm?: Permission
+): { user: Member; error?: undefined } | { user?: undefined; error: { message: string; status: number } } {
+  const user = getUserFromToken(request.cookies.get("session_token")?.value);
+  if (!user) return { error: { message: "Unauthorized", status: 401 } };
+  if (perm && !user.permissions.includes(perm)) {
+    return { error: { message: "You don't have permission to do that", status: 403 } };
+  }
+  return { user };
 }
 
 export async function requireAuth(): Promise<Member> {

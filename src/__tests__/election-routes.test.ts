@@ -40,8 +40,15 @@ function schema(): Database.Database {
   return d;
 }
 
-const admin = { id: 1, name: "a", avatar: "", joined_at: "", is_admin: true };
-const member = { ...admin, id: 2, name: "b", is_admin: false };
+const admin = {
+  id: 1,
+  name: "a",
+  avatar: "",
+  joined_at: "",
+  is_admin: true,
+  permissions: ["elections.create", "elections.close", "elections.vote"],
+};
+const member = { ...admin, id: 2, name: "b", is_admin: false, permissions: ["elections.vote"] };
 
 function req(body: unknown, raw = false) {
   return {

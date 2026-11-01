@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { can } from "@/lib/permissions";
 import getDb from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 import { Election } from "@/lib/types";
@@ -15,6 +16,11 @@ export async function POST(
   );
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!can(user, "elections.vote"))
+    return NextResponse.json(
+      { error: "You don't have permission to do that" },
+      { status: 403 }
+    );
 
   const { id } = await params;
   const db = getDb();

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { can } from "@/lib/permissions";
 import getDb from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 import { createElection, ElectionError } from "@/lib/elections";
@@ -49,9 +50,9 @@ export async function POST(request: NextRequest) {
   );
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!user.is_admin)
+  if (!can(user, "elections.create"))
     return NextResponse.json(
-      { error: "Only club admins can start elections" },
+      { error: "You don't have permission to do that" },
       { status: 403 }
     );
 
