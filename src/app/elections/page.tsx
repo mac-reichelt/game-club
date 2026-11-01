@@ -52,7 +52,7 @@ export default async function ElectionsPage() {
     <div className="max-w-4xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
         <h1 className="text-3xl font-bold">Elections</h1>
-        {!openElection && nominations.length >= 2 && (
+        {user.is_admin && !openElection && nominations.length >= 2 && (
           <StartElectionButton games={nominations} />
         )}
       </div>
@@ -78,10 +78,12 @@ export default async function ElectionsPage() {
                 {openElection.election.closes_at && (
                   <CountdownTimer closesAt={openElection.election.closes_at} />
                 )}
-                <CloseElectionButton
-                  electionId={openElection.election.id}
-                  voteCount={openElection.voteCount}
-                />
+                {user.is_admin && (
+                  <CloseElectionButton
+                    electionId={openElection.election.id}
+                    voteCount={openElection.voteCount}
+                  />
+                )}
               </div>
             </div>
             <div className="grid gap-2">
