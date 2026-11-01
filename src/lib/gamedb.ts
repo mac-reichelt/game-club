@@ -1,7 +1,42 @@
+import fs from "fs";
 // Client for the gamedb service. Reads GAMEDB_URL env (server-side only).
 // gamedb is the homelab's authoritative game database service.
 
 const BASE = process.env.GAMEDB_URL || "";
+
+let cachedToken: string | null | undefined;
+
+/**
+ * Bearer token for GameDB service auth (game-db #107), from GAMEDB_TOKEN or the
+ * file named by GAMEDB_TOKEN_FILE (a Docker secret). Read once per process.
+ */
+export function gamedbToken(): string | null {
+  if (cachedToken !== undefined) return cachedToken;
+  const file = process.env.GAMEDB_TOKEN_FILE;
+  if (file) {
+    // A configured-but-missing secret is a deployment error; fail loudly.
+    cachedToken = fs.readFileSync(file, "utf8").trim() || null;
+  } else {
+    cachedToken = process.env.GAMEDB_TOKEN?.trim() || null;
+  }
+  return cachedToken;
+}
+
+/** Reset the cached token (tests). */
+export function resetGamedbTokenCache() {
+  cachedToken = undefined;
+}
+
+/** fetch() against GameDB with the service token attached. Only used for BASE URLs. */
+export function gamedbFetch(
+  url: string,
+  init: RequestInit & { next?: { revalidate?: number; tags?: string[] } } = {}
+): Promise<Response> {
+  const token = gamedbToken();
+  const headers = new Headers(init.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  return fetch(url, { ...init, headers });
+}
 
 export interface GamedbSearchResult {
   igdb_id: number;
@@ -66,7 +101,7 @@ export async function searchGamedb(
   const url = new URL(`${BASE}/api/search`);
   url.searchParams.set("q", q);
   url.searchParams.set("page_size", String(pageSize));
-  const res = await fetch(url.toString(), { next: { revalidate: 3600 } });
+  const res = await gamedbFetch(url.toString(), { next: { revalidate: 3600 } });
   if (!res.ok) throw new Error(`gamedb search failed: ${res.status}`);
   const data = (await res.json()) as { results: GamedbSearchResult[] };
   return data.results || [];
@@ -88,7 +123,7 @@ function safeIdSegment(id: number): string {
 export async function importByIgdbId(igdbId: number): Promise<GamedbDetail> {
   if (!BASE) throw new Error("GAMEDB_URL not configured");
   const id = safeIdSegment(igdbId);
-  const res = await fetch(`${BASE}/api/games/by-igdb/${id}`);
+  const res = await gamedbFetch(`${BASE}/api/games/by-igdb/${id}`);
   if (!res.ok) throw new Error(`gamedb import failed: ${res.status}`);
   return (await res.json()) as GamedbDetail;
 }
@@ -104,7 +139,7 @@ export async function getGamedbDetail(
   } catch {
     return null;
   }
-  const res = await fetch(
+  const res = await gamedbFetch(
     `${BASE}/api/games/${id}`,
     options?.noCache
       ? { cache: "no-store" }
@@ -124,7 +159,7 @@ export function gamedbDetailTag(gamedbId: number): string {
 export async function refreshGamedb(gamedbId: number): Promise<GamedbDetail | null> {
   if (!BASE) throw new Error("GAMEDB_URL not configured");
   const id = safeIdSegment(gamedbId);
-  const res = await fetch(`${BASE}/api/games/${id}/refresh`, { method: "POST", cache: "no-store" });
+  const res = await gamedbFetch(`${BASE}/api/games/${id}/refresh`, { method: "POST", cache: "no-store" });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`gamedb refresh failed: ${res.status}`);
   return (await res.json()) as GamedbDetail;
