@@ -8,7 +8,7 @@ Game Club helps your group organize, vote on, and record board/video game sessio
 - ✅ Member management — Sign up, edit profile, delete/deactivate account
 - ✅ Secure login — Password hashing, session invalidation, account deactivation
 - ✅ Game tracking — Add, vote, and record play sessions
-- ✅ Elections — Run ranked-choice votes for what to play next. Only admins can start or close elections; all members can vote. If no admin exists, the earliest enabled, active member becomes admin on startup.
+- ✅ Elections — Run ranked-choice votes for what to play next. Starting and closing elections require the `elections.create` and `elections.close` permissions (see [Roles & permissions](#roles--permissions)); voting requires `elections.vote`. If no admin exists, the earliest enabled, active member becomes admin on startup.
 
 ## Quickstart
 
