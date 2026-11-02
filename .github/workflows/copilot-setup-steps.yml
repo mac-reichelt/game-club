@@ -36,6 +36,6 @@ jobs:
         run: npm ci
 
       - name: Install gh-aw extension
-        uses: github/gh-aw-actions/setup-cli@aeaf7fe417d183340479027223c9a1c16464bdbc # v0.91.0
+        uses: github/gh-aw-actions/setup-cli@d9128eb3ea40c18b77c76184eda03c0ff2608d79 # v0.93.2
         with:
           version: v0.91.0
