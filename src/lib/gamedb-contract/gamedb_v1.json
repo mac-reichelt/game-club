@@ -1,0 +1,3633 @@
+{
+  "components": {
+    "schemas": {
+      "AppGamesRequest": {
+        "properties": {
+          "app_ids": {
+            "items": {
+              "exclusiveMinimum": 0.0,
+              "maximum": 2147483647.0,
+              "type": "integer"
+            },
+            "maxItems": 5000,
+            "title": "App Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "app_ids"
+        ],
+        "title": "AppGamesRequest",
+        "type": "object"
+      },
+      "AppImportRequest": {
+        "properties": {
+          "app_ids": {
+            "items": {
+              "exclusiveMinimum": 0.0,
+              "maximum": 2147483647.0,
+              "type": "integer"
+            },
+            "maxItems": 5000,
+            "minItems": 1,
+            "title": "App Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "app_ids"
+        ],
+        "title": "AppImportRequest",
+        "type": "object"
+      },
+      "AppMetadataRequest": {
+        "properties": {
+          "app_ids": {
+            "items": {
+              "exclusiveMinimum": 0.0,
+              "maximum": 2147483647.0,
+              "type": "integer"
+            },
+            "maxItems": 5000,
+            "title": "App Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "app_ids"
+        ],
+        "title": "AppMetadataRequest",
+        "type": "object"
+      },
+      "BackfillResult": {
+        "properties": {
+          "processed": {
+            "title": "Processed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "processed"
+        ],
+        "title": "BackfillResult",
+        "type": "object"
+      },
+      "Compat": {
+        "properties": {
+          "deck": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deck"
+          },
+          "frame": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame"
+          },
+          "machine": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Machine"
+          },
+          "protondb": {
+            "$ref": "#/components/schemas/ProtonDB"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "steamos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steamos"
+          }
+        },
+        "required": [
+          "protondb",
+          "ready"
+        ],
+        "title": "Compat",
+        "type": "object"
+      },
+      "DataFreshness": {
+        "properties": {
+          "hltb": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hltb"
+          },
+          "igdb": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Igdb"
+          },
+          "opencritic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opencritic"
+          },
+          "rawg": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rawg"
+          },
+          "steam": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steam"
+          }
+        },
+        "title": "DataFreshness",
+        "type": "object"
+      },
+      "EditionDetail": {
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "dominant": {
+            "title": "Dominant",
+            "type": "boolean"
+          },
+          "game_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Game Id"
+          },
+          "hltb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HLTBData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hltb_rollup": {
+            "title": "Hltb Rollup",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "opencritic": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenCriticData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parent_edition_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Edition Id"
+          },
+          "pinned": {
+            "title": "Pinned",
+            "type": "boolean"
+          },
+          "release_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Date"
+          },
+          "score_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Rank"
+          },
+          "scores_hidden": {
+            "title": "Scores Hidden",
+            "type": "boolean"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/EditionSourceRef"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "dominant",
+          "hltb_rollup",
+          "scores_hidden",
+          "pinned",
+          "sources"
+        ],
+        "title": "EditionDetail",
+        "type": "object"
+      },
+      "EditionSettings": {
+        "properties": {
+          "clear_score_rank": {
+            "default": false,
+            "title": "Clear Score Rank",
+            "type": "boolean"
+          },
+          "hltb_rollup": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hltb Rollup"
+          },
+          "score_rank": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Rank"
+          },
+          "scores_hidden": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scores Hidden"
+          }
+        },
+        "title": "EditionSettings",
+        "type": "object"
+      },
+      "EditionSourceRef": {
+        "properties": {
+          "external_id": {
+            "title": "External Id",
+            "type": "string"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "external_id"
+        ],
+        "title": "EditionSourceRef",
+        "type": "object"
+      },
+      "GameDetail": {
+        "properties": {
+          "background_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Background Image"
+          },
+          "cover_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Image"
+          },
+          "data_freshness": {
+            "$ref": "#/components/schemas/DataFreshness",
+            "default": {}
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "developers": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Developers",
+            "type": "array"
+          },
+          "game_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Game Type"
+          },
+          "genres": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "hltb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HLTBData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "igdb_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Igdb Id"
+          },
+          "igdb_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Igdb Rating"
+          },
+          "igdb_rating_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Igdb Rating Count"
+          },
+          "metacritic_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metacritic Score"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "opencritic": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenCriticData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "platforms": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Platforms",
+            "type": "array"
+          },
+          "publishers": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Publishers",
+            "type": "array"
+          },
+          "rawg_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rawg Id"
+          },
+          "rawg_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rawg Rating"
+          },
+          "rawg_ratings_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rawg Ratings Count"
+          },
+          "release_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Date"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
+          "steam": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SteamData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "store_links": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Store Links",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "GameDetail",
+        "type": "object"
+      },
+      "GameIdsRequest": {
+        "properties": {
+          "game_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Game Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "game_ids"
+        ],
+        "title": "GameIdsRequest",
+        "type": "object"
+      },
+      "HLTBData": {
+        "properties": {
+          "completionist_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completionist Hours"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "main_extra_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Main Extra Hours"
+          },
+          "main_story_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Main Story Hours"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "title": "HLTBData",
+        "type": "object"
+      },
+      "HLTBSummary": {
+        "properties": {
+          "completionist_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completionist Hours"
+          },
+          "main_extra_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Main Extra Hours"
+          },
+          "main_story_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Main Story Hours"
+          }
+        },
+        "title": "HLTBSummary",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ImportResult": {
+        "properties": {
+          "imported": {
+            "title": "Imported",
+            "type": "integer"
+          },
+          "unmatched": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Unmatched",
+            "type": "array"
+          },
+          "works": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Works",
+            "type": "object"
+          }
+        },
+        "required": [
+          "imported",
+          "unmatched",
+          "works"
+        ],
+        "title": "ImportResult",
+        "type": "object"
+      },
+      "LegacyGameIds": {
+        "properties": {
+          "game_id": {
+            "title": "Game Id",
+            "type": "integer"
+          },
+          "igdb_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Igdb Id"
+          }
+        },
+        "required": [
+          "game_id"
+        ],
+        "title": "LegacyGameIds",
+        "type": "object"
+      },
+      "LegacyLookup": {
+        "properties": {
+          "rawg_ids": {
+            "items": {
+              "exclusiveMinimum": 0.0,
+              "maximum": 2147483647.0,
+              "type": "integer"
+            },
+            "maxItems": 2000,
+            "title": "Rawg Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rawg_ids"
+        ],
+        "title": "LegacyLookup",
+        "type": "object"
+      },
+      "LegacyLookupResult": {
+        "properties": {
+          "games": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LegacyGameIds"
+            },
+            "title": "Games",
+            "type": "object"
+          }
+        },
+        "required": [
+          "games"
+        ],
+        "title": "LegacyLookupResult",
+        "type": "object"
+      },
+      "MergeRequest": {
+        "properties": {
+          "dominant_work_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Dominant Work Id",
+            "type": "integer"
+          },
+          "merged_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Edition kind to give the merged editions, e.g. 'original'",
+            "title": "Merged Kind"
+          },
+          "merged_work_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Merged Work Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dominant_work_id",
+          "merged_work_id"
+        ],
+        "title": "MergeRequest",
+        "type": "object"
+      },
+      "OpenCriticData": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "num_reviews": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Reviews"
+          },
+          "percent_recommended": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent Recommended"
+          },
+          "tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier"
+          },
+          "top_critic_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Critic Score"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "title": "OpenCriticData",
+        "type": "object"
+      },
+      "OpenCriticSummary": {
+        "properties": {
+          "percent_recommended": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent Recommended"
+          },
+          "tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier"
+          },
+          "top_critic_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Critic Score"
+          }
+        },
+        "title": "OpenCriticSummary",
+        "type": "object"
+      },
+      "OverrideEntry": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "undone_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Undone At"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "payload"
+        ],
+        "title": "OverrideEntry",
+        "type": "object"
+      },
+      "OverrideList": {
+        "properties": {
+          "overrides": {
+            "items": {
+              "$ref": "#/components/schemas/OverrideEntry"
+            },
+            "title": "Overrides",
+            "type": "array"
+          }
+        },
+        "required": [
+          "overrides"
+        ],
+        "title": "OverrideList",
+        "type": "object"
+      },
+      "OverrideUndone": {
+        "properties": {
+          "override_id": {
+            "title": "Override Id",
+            "type": "integer"
+          },
+          "undone_at": {
+            "title": "Undone At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "override_id",
+          "undone_at"
+        ],
+        "title": "OverrideUndone",
+        "type": "object"
+      },
+      "OverrideWithWork": {
+        "properties": {
+          "override_id": {
+            "title": "Override Id",
+            "type": "integer"
+          },
+          "work": {
+            "$ref": "#/components/schemas/WorkDetail"
+          }
+        },
+        "required": [
+          "override_id",
+          "work"
+        ],
+        "title": "OverrideWithWork",
+        "type": "object"
+      },
+      "OwnedSteamGame": {
+        "properties": {
+          "app_id": {
+            "title": "App Id",
+            "type": "integer"
+          },
+          "header_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Header Image"
+          },
+          "icon_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Url"
+          },
+          "last_played": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Played"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "playtime_deck_minutes": {
+            "default": 0,
+            "title": "Playtime Deck Minutes",
+            "type": "integer"
+          },
+          "playtime_minutes": {
+            "default": 0,
+            "title": "Playtime Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "app_id",
+          "name"
+        ],
+        "title": "OwnedSteamGame",
+        "type": "object"
+      },
+      "PatchGameIds": {
+        "properties": {
+          "hltb_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hltb Id"
+          },
+          "igdb_id": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 2147483647.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Igdb Id"
+          },
+          "opencritic_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opencritic Id"
+          }
+        },
+        "title": "PatchGameIds",
+        "type": "object"
+      },
+      "ProtonDB": {
+        "properties": {
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "trending_tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trending Tier"
+          }
+        },
+        "title": "ProtonDB",
+        "type": "object"
+      },
+      "ResolvedWork": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "work_id": {
+            "title": "Work Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "work_id"
+        ],
+        "title": "ResolvedWork",
+        "type": "object"
+      },
+      "SearchResponse": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "query",
+          "count",
+          "results"
+        ],
+        "title": "SearchResponse",
+        "type": "object"
+      },
+      "SearchResult": {
+        "properties": {
+          "background_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Background Image"
+          },
+          "game_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Game Id"
+          },
+          "game_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Game Type"
+          },
+          "genres": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "hltb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HLTBSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "igdb_id": {
+            "title": "Igdb Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "opencritic": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenCriticSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "platforms": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Platforms",
+            "type": "array"
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating"
+          },
+          "released": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Released"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          }
+        },
+        "required": [
+          "igdb_id",
+          "name"
+        ],
+        "title": "SearchResult",
+        "type": "object"
+      },
+      "SeriesCreate": {
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "work_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 500,
+            "title": "Work Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "work_ids",
+          "name"
+        ],
+        "title": "SeriesCreate",
+        "type": "object"
+      },
+      "SeriesDetail": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "igdb_collection_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Igdb Collection Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "pinned": {
+            "title": "Pinned",
+            "type": "boolean"
+          },
+          "works": {
+            "items": {
+              "$ref": "#/components/schemas/SeriesMemberRef"
+            },
+            "title": "Works",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "pinned",
+          "works"
+        ],
+        "title": "SeriesDetail",
+        "type": "object"
+      },
+      "SeriesMemberRef": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "work_id": {
+            "title": "Work Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "work_id"
+        ],
+        "title": "SeriesMemberRef",
+        "type": "object"
+      },
+      "SeriesOrder": {
+        "properties": {
+          "work_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 500,
+            "title": "Work Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "work_ids"
+        ],
+        "title": "SeriesOrder",
+        "type": "object"
+      },
+      "SeriesOrderResult": {
+        "properties": {
+          "override_id": {
+            "title": "Override Id",
+            "type": "integer"
+          },
+          "series": {
+            "$ref": "#/components/schemas/SeriesDetail"
+          }
+        },
+        "required": [
+          "override_id",
+          "series"
+        ],
+        "title": "SeriesOrderResult",
+        "type": "object"
+      },
+      "SteamAppGame": {
+        "properties": {
+          "app_id": {
+            "title": "App Id",
+            "type": "integer"
+          },
+          "game_id": {
+            "title": "Game Id",
+            "type": "integer"
+          },
+          "hltb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HLTBData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "igdb_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Igdb Id"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "opencritic": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenCriticData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rawg_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rawg Id"
+          },
+          "release_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Date"
+          }
+        },
+        "required": [
+          "app_id",
+          "game_id",
+          "name"
+        ],
+        "title": "SteamAppGame",
+        "type": "object"
+      },
+      "SteamAppGames": {
+        "properties": {
+          "games": {
+            "items": {
+              "$ref": "#/components/schemas/SteamAppGame"
+            },
+            "title": "Games",
+            "type": "array"
+          }
+        },
+        "required": [
+          "games"
+        ],
+        "title": "SteamAppGames",
+        "type": "object"
+      },
+      "SteamAppMeta": {
+        "properties": {
+          "app_id": {
+            "title": "App Id",
+            "type": "integer"
+          },
+          "categories": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "coming_soon": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coming Soon"
+          },
+          "compat": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Compat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "details_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details Status"
+          },
+          "genres": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "release_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Date"
+          },
+          "release_date_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Date Text"
+          },
+          "tags": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "tags_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags Status"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          }
+        },
+        "required": [
+          "app_id",
+          "ready"
+        ],
+        "title": "SteamAppMeta",
+        "type": "object"
+      },
+      "SteamAppMetadata": {
+        "properties": {
+          "apps": {
+            "items": {
+              "$ref": "#/components/schemas/SteamAppMeta"
+            },
+            "title": "Apps",
+            "type": "array"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count",
+          "pending",
+          "apps"
+        ],
+        "title": "SteamAppMetadata",
+        "type": "object"
+      },
+      "SteamData": {
+        "properties": {
+          "app_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Id"
+          },
+          "discount_percent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discount Percent"
+          },
+          "header_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Header Image"
+          },
+          "is_free": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Free"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "price_formatted": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Formatted"
+          },
+          "short_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Short Description"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "title": "SteamData",
+        "type": "object"
+      },
+      "SteamOwned": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "games": {
+            "items": {
+              "$ref": "#/components/schemas/OwnedSteamGame"
+            },
+            "title": "Games",
+            "type": "array"
+          },
+          "steam_id": {
+            "title": "Steam Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "steam_id",
+          "count",
+          "games"
+        ],
+        "title": "SteamOwned",
+        "type": "object"
+      },
+      "StoreIds": {
+        "properties": {
+          "ids": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.:-]+$",
+              "type": "string"
+            },
+            "maxItems": 5000,
+            "minItems": 1,
+            "title": "Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "title": "StoreIds",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WorkDetail": {
+        "properties": {
+          "bundle_contents": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Bundle Contents",
+            "type": "array"
+          },
+          "display_edition_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Edition Id"
+          },
+          "display_pinned": {
+            "title": "Display Pinned",
+            "type": "boolean"
+          },
+          "editions": {
+            "items": {
+              "$ref": "#/components/schemas/EditionDetail"
+            },
+            "title": "Editions",
+            "type": "array"
+          },
+          "hltb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HLTBData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hltb_edition_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hltb Edition Id"
+          },
+          "hltb_rollup_edition_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Hltb Rollup Edition Ids",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "in_bundles": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "In Bundles",
+            "type": "array"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "opencritic": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenCriticData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/WorkSeriesRef"
+            },
+            "title": "Series",
+            "type": "array"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "display_pinned",
+          "hltb_rollup_edition_ids",
+          "series",
+          "in_bundles",
+          "bundle_contents",
+          "editions"
+        ],
+        "title": "WorkDetail",
+        "type": "object"
+      },
+      "WorkIdsRequest": {
+        "properties": {
+          "work_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Work Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "work_ids"
+        ],
+        "title": "WorkIdsRequest",
+        "type": "object"
+      },
+      "WorkMap": {
+        "properties": {
+          "works": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Works",
+            "type": "object"
+          }
+        },
+        "required": [
+          "works"
+        ],
+        "title": "WorkMap",
+        "type": "object"
+      },
+      "WorkSeriesRef": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "pinned": {
+            "title": "Pinned",
+            "type": "boolean"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          }
+        },
+        "required": [
+          "id",
+          "pinned"
+        ],
+        "title": "WorkSeriesRef",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Game data aggregator \u2014 IGDB, OpenCritic, Steam, HowLongToBeat",
+    "title": "GameDB",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/games/by-igdb/{igdb_id}": {
+      "get": {
+        "description": "Look up or import a game by its IGDB ID.",
+        "operationId": "get_game_by_igdb_api_v1_games_by_igdb__igdb_id__get",
+        "parameters": [
+          {
+            "description": "IGDB game ID",
+            "in": "path",
+            "name": "igdb_id",
+            "required": true,
+            "schema": {
+              "description": "IGDB game ID",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "title": "Igdb Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Game By Igdb",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/api/v1/games/by-rawg/{rawg_id}": {
+      "get": {
+        "description": "Look up an existing game by its legacy RAWG ID. RAWG itself is never called; unknown IDs are 404.",
+        "operationId": "get_game_by_rawg_api_v1_games_by_rawg__rawg_id__get",
+        "parameters": [
+          {
+            "description": "RAWG game ID",
+            "in": "path",
+            "name": "rawg_id",
+            "required": true,
+            "schema": {
+              "description": "RAWG game ID",
+              "exclusiveMinimum": 0,
+              "title": "Rawg Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Game By Rawg",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/api/v1/games/lookup": {
+      "post": {
+        "description": "Map legacy RAWG IDs to internal game IDs (and IGDB IDs). Read-only, no upstream calls.",
+        "operationId": "lookup_legacy_ids_api_v1_games_lookup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegacyLookup"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyLookupResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lookup Legacy Ids",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/api/v1/games/{game_id}": {
+      "get": {
+        "description": "Get full aggregated details for a game by its internal ID.\n\nRefreshes stale sources according to the configured policies.",
+        "operationId": "get_game_api_v1_games__game_id__get",
+        "parameters": [
+          {
+            "description": "Internal game ID",
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "description": "Internal game ID",
+              "exclusiveMinimum": 0,
+              "title": "Game Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Game",
+        "tags": [
+          "games"
+        ]
+      },
+      "patch": {
+        "description": "Manually set OpenCritic/HLTB/IGDB IDs, then re-fetch their data.",
+        "operationId": "patch_game_api_v1_games__game_id__patch",
+        "parameters": [
+          {
+            "description": "Internal game ID",
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "description": "Internal game ID",
+              "exclusiveMinimum": 0,
+              "title": "Game Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchGameIds"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Game",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/api/v1/games/{game_id}/refresh": {
+      "post": {
+        "description": "Force-refresh all data sources for a game.",
+        "operationId": "refresh_game_data_api_v1_games__game_id__refresh_post",
+        "parameters": [
+          {
+            "description": "Internal game ID",
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "description": "Internal game ID",
+              "exclusiveMinimum": 0,
+              "title": "Game Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh Game Data",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "description": "Health check that verifies database connectivity.",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/search": {
+      "get": {
+        "description": "Search for games by name via IGDB.\n\nResults already in gamedb include `game_id` plus cached OpenCritic and HLTB\ndata. Search never triggers OpenCritic/HLTB fetches (rate limits); import a\nresult with GET /api/games/by-igdb/{igdb_id} to get the full record.",
+        "operationId": "search_games_api_v1_search_get",
+        "parameters": [
+          {
+            "description": "Search query",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "Search query",
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Results per page",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "description": "Results per page",
+              "maximum": 40,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Games",
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/api/v1/series": {
+      "post": {
+        "operationId": "create_series_api_v1_series_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeriesCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Series",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/series/{series_id}": {
+      "get": {
+        "operationId": "get_series_api_v1_series__series_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "series_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Series Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Series",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/series/{series_id}/order": {
+      "put": {
+        "operationId": "series_order_api_v1_series__series_id__order_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "series_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Series Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeriesOrder"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesOrderResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Series Order",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/steam/apps/games": {
+      "post": {
+        "description": "Cached GameDB summaries (game id, IGDB id, OpenCritic, HLTB) for Steam apps already linked to a game.\n\nRead-only: never calls IGDB, OpenCritic or HLTB, so it is safe for whole libraries.\nApps not linked yet are simply absent from the response.",
+        "operationId": "games_for_apps_api_v1_steam_apps_games_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppGamesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SteamAppGames"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Games For Apps",
+        "tags": [
+          "steam"
+        ]
+      }
+    },
+    "/api/v1/steam/apps/import": {
+      "post": {
+        "description": "Import a Steam library into GameDB through IGDB and group it into works.\n\nIGDB only (batched, a few calls per few hundred apps); never calls OpenCritic,\nHLTB or Steam. Returns the work id for every app that matched.",
+        "operationId": "import_apps_api_v1_steam_apps_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Apps",
+        "tags": [
+          "steam"
+        ]
+      }
+    },
+    "/api/v1/steam/apps/metadata": {
+      "post": {
+        "description": "Return cached type/categories/tags for Steam apps and queue unknown ones.\n\nMetadata is fetched by a throttled background worker, so newly queued apps\ncome back with ``ready: false`` until it reaches them.",
+        "operationId": "app_metadata_api_v1_steam_apps_metadata_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppMetadataRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SteamAppMetadata"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "App Metadata",
+        "tags": [
+          "steam"
+        ]
+      }
+    },
+    "/api/v1/steam/apps/works": {
+      "post": {
+        "description": "Map Steam apps to their works (read-only; no external calls). Unknown apps are absent.",
+        "operationId": "works_for_apps_api_v1_steam_apps_works_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppGamesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkMap"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Works For Apps",
+        "tags": [
+          "steam"
+        ]
+      }
+    },
+    "/api/v1/steam/apps/{app_id}/game": {
+      "get": {
+        "description": "Resolve a Steam app ID to a GameDB game, importing it via IGDB if needed.",
+        "operationId": "game_by_steam_app_api_v1_steam_apps__app_id__game_get",
+        "parameters": [
+          {
+            "description": "Steam app ID",
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "description": "Steam app ID",
+              "exclusiveMinimum": 0,
+              "title": "App Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Game name hint, used if the app isn't known yet",
+            "in": "query",
+            "name": "name",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 300,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Game name hint, used if the app isn't known yet",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Game By Steam App",
+        "tags": [
+          "steam"
+        ]
+      }
+    },
+    "/api/v1/steam/owned": {
+      "get": {
+        "description": "List the games a Steam account owns (public game details required).",
+        "operationId": "owned_games_api_v1_steam_owned_get",
+        "parameters": [
+          {
+            "description": "SteamID64, vanity name, or profile URL",
+            "in": "query",
+            "name": "profile",
+            "required": true,
+            "schema": {
+              "description": "SteamID64, vanity name, or profile URL",
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Profile",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SteamOwned"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Owned Games",
+        "tags": [
+          "steam"
+        ]
+      }
+    },
+    "/api/v1/stores/{store}/import": {
+      "post": {
+        "description": "Map store product IDs to IGDB games, import missing ones, return work ids. IGDB only.",
+        "operationId": "import_ids_api_v1_stores__store__import_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "store",
+            "required": true,
+            "schema": {
+              "pattern": "^(gog|epic|amazon)$",
+              "title": "Store",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreIds"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Ids",
+        "tags": [
+          "stores"
+        ]
+      }
+    },
+    "/api/v1/stores/{store}/works": {
+      "post": {
+        "description": "Read-only: store ID -> work id for IDs GameDB already knows.",
+        "operationId": "works_for_ids_api_v1_stores__store__works_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "store",
+            "required": true,
+            "schema": {
+              "pattern": "^(gog|epic|amazon)$",
+              "title": "Store",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreIds"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkMap"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Works For Ids",
+        "tags": [
+          "stores"
+        ]
+      }
+    },
+    "/api/v1/works/backfill": {
+      "post": {
+        "description": "Create works for legacy games that don't have one yet (idempotent).",
+        "operationId": "backfill_api_v1_works_backfill_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackfillResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Backfill",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/works/describe": {
+      "post": {
+        "description": "Describe several works at once (merged ids resolve to their survivor). Unknown ids are omitted.",
+        "operationId": "describe_many_api_v1_works_describe_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkIdsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/WorkDetail"
+                  },
+                  "title": "Response Describe Many Api V1 Works Describe Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Describe Many",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/works/editions/{edition_id}": {
+      "patch": {
+        "operationId": "edition_settings_api_v1_works_editions__edition_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "edition_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Edition Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditionSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Edition Settings",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/works/editions/{edition_id}/promote": {
+      "post": {
+        "operationId": "promote_api_v1_works_editions__edition_id__promote_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "edition_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Edition Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverrideWithWork"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Promote",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/works/editions/{edition_id}/split": {
+      "post": {
+        "operationId": "split_api_v1_works_editions__edition_id__split_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "edition_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Edition Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverrideWithWork"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Split",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/works/for-games": {
+      "post": {
+        "description": "Map GameDB game ids to their (surviving) work id. Read-only; unknown ids are omitted.",
+        "operationId": "works_for_games_api_v1_works_for_games_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GameIdsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkMap"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Works For Games",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/works/merge": {
+      "post": {
+        "operationId": "merge_api_v1_works_merge_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MergeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverrideWithWork"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Merge",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/works/overrides": {
+      "get": {
+        "operationId": "overrides_api_v1_works_overrides_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverrideList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Overrides",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/works/overrides/{override_id}/undo": {
+      "post": {
+        "operationId": "undo_api_v1_works_overrides__override_id__undo_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "override_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Override Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverrideUndone"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Undo",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/works/regroup": {
+      "post": {
+        "description": "Re-apply IGDB grouping, series and bundles (keeps manual overrides).",
+        "operationId": "regroup_api_v1_works_regroup_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Regroup",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/works/resolve": {
+      "get": {
+        "operationId": "resolve_api_v1_works_resolve_get",
+        "parameters": [
+          {
+            "description": "rawg | steam | igdb",
+            "in": "query",
+            "name": "source",
+            "required": true,
+            "schema": {
+              "description": "rawg | steam | igdb",
+              "title": "Source",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated external ids",
+            "in": "query",
+            "name": "ids",
+            "required": true,
+            "schema": {
+              "description": "Comma-separated external ids",
+              "title": "Ids",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/ResolvedWork"
+                  },
+                  "title": "Response Resolve Api V1 Works Resolve Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve",
+        "tags": [
+          "works"
+        ]
+      }
+    },
+    "/api/v1/works/{work_id}": {
+      "get": {
+        "operationId": "get_work_api_v1_works__work_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "title": "Work Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Work",
+        "tags": [
+          "works"
+        ]
+      }
+    }
+  }
+}
