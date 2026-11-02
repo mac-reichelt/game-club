@@ -11,7 +11,7 @@ const spec = `${dir}/gamedb_v1.json`;
 const out = `${dir}/gamedb-v1.d.ts`;
 execFileSync(
   "npx",
-  ["-y", "-p", "typescript@5", "-p", "openapi-typescript@7", "openapi-typescript", spec, "-o", out],
+  ["-y", "-p", "typescript@5.9.3", "-p", "openapi-typescript@7.13.0", "openapi-typescript", spec, "-o", out],
   { stdio: "inherit" },
 );
 const sha = createHash("sha256").update(fs.readFileSync(spec)).digest("hex");
