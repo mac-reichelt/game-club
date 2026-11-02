@@ -174,6 +174,12 @@ function initSchema(db: Database.Database) {
   if (!electionCols.some((c) => c.name === "auto_close_at_votes")) {
     db.exec("ALTER TABLE elections ADD COLUMN auto_close_at_votes INTEGER");
   }
+
+  // games.avg_rating caches the review average; the review route keeps it current.
+  // Recompute once per start so it can never drift (#158).
+  db.exec(
+    "UPDATE games SET avg_rating = (SELECT AVG(rating) FROM reviews WHERE reviews.game_id = games.id)"
+  );
 }
 
 /**
