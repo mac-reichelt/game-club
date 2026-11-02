@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject, badRequest } from "@/lib/validate";
 import { timingSafeEqual } from "crypto";
 import getDb from "@/lib/db";
 import {
@@ -31,13 +32,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const body = await request.json();
-  const { name, password, avatar, inviteCode } = body as {
-    name?: string;
-    password?: string;
-    avatar?: string;
-    inviteCode?: string;
-  };
+  const body = await readJsonObject(request);
+  if (!body) return badRequest();
+  const str = (v: unknown, max: number) =>
+    typeof v === "string" && v.length <= max ? v : undefined;
+  const name = str(body.name, 50);
+  const password = str(body.password, 1024);
+  const avatar = str(body.avatar, 16);
+  const inviteCode = str(body.inviteCode, 256);
+  if (body.name !== undefined && name === undefined)
+    return badRequest("Name must be at most 50 characters");
+  if (body.avatar !== undefined && avatar === undefined)
+    return badRequest("Invalid avatar");
 
   if (!inviteCode || !safeCompare(inviteCode, configuredCode)) {
     return NextResponse.json(
