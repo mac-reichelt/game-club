@@ -102,9 +102,15 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
   async function handleLogout() {
     setLoggingOut(true);
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+    } finally {
+      window.location.replace("/login");
+    }
   }
 
   async function handleDeleteAccount(e: React.FormEvent) {
