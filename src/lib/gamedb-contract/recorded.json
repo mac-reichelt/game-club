@@ -1,0 +1,147 @@
+{
+ "game": {
+  "background_image": "https://images.igdb.com/igdb/image/upload/t_1080p/fhus0o2shprmwdzusa2s.jpg",
+  "cover_image": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob9ed.jpg",
+  "data_freshness": {
+   "hltb": "2026-10-09T00:11:19.650968+00:00",
+   "igdb": "2026-10-09T04:54:25.473415+00:00",
+   "opencritic": "2026-11-02T02:03:24.400376+00:00",
+   "rawg": "2026-10-09T00:11:18.575636+00:00",
+   "steam": "2026-10-09T00:11:18.859064+00:00"
+  },
+  "description": "Dark Souls III is an action role-playing game developed by FromSoftware and published by Bandai Namco Entertainment. Released in March 2016, it is the fourth entry in the Souls series and the final instalment in the Dark Souls trilogy. Set in the decaying kingdom of Lothric, players take on the role of the \"Ashen One,\" an undead warrior tasked with rekindling the First Flame to prevent the world from falling into darkness.\n\nThe game features challenging combat, intricate level design, and a deep, lore-rich narrative.",
+  "developers": [
+   "FromSoftware"
+  ],
+  "game_type": "game",
+  "genres": [
+   "Role-playing (RPG)",
+   "Adventure"
+  ],
+  "hltb": {
+   "completionist_hours": 100.5,
+   "id": 26803,
+   "main_extra_hours": 48.5,
+   "main_story_hours": 31.0,
+   "name": "Dark Souls III",
+   "url": "https://howlongtobeat.com/game/26803"
+  },
+  "id": 157,
+  "igdb_id": 11133,
+  "igdb_rating": 86.60451235576187,
+  "igdb_rating_count": 2010,
+  "metacritic_score": 89,
+  "name": "Dark Souls III",
+  "opencritic": {
+   "id": 1520,
+   "name": "Dark Souls III",
+   "num_reviews": 168,
+   "percent_recommended": 93.7888198757764,
+   "tier": "Mighty",
+   "top_critic_score": 89.6470588235294,
+   "url": "https://opencritic.com/game/1520/dark-souls-iii"
+  },
+  "platforms": [
+   "PlayStation 4",
+   "PC (Microsoft Windows)",
+   "Xbox One"
+  ],
+  "publishers": [
+   "Bandai Namco Entertainment",
+   "FromSoftware"
+  ],
+  "rawg_id": 2551,
+  "rawg_rating": 4.4,
+  "rawg_ratings_count": 2805,
+  "release_date": "2016-04-11",
+  "slug": "dark-souls-iii",
+  "steam": {
+   "app_id": 374320,
+   "discount_percent": 0,
+   "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/374320/header.jpg?t=1748630784",
+   "is_free": false,
+   "name": "DARK SOULS\u2122 III",
+   "price_formatted": "$59.99",
+   "short_description": "Dark Souls continues to push the boundaries with the latest, ambitious chapter in the critically-acclaimed and genre-defining series. Prepare yourself and Embrace The Darkness!",
+   "url": "https://store.steampowered.com/app/374320"
+  },
+  "store_links": {
+   "playstation": "https://store.playstation.com/en-us/concept/201190",
+   "steam": "https://store.steampowered.com/app/374320",
+   "xbox": "https://www.xbox.com/en-us/games/store/dark-souls-iii/BW2XDRNSCCPZ"
+  }
+ },
+ "search": {
+  "count": 7,
+  "query": "Dark Souls III",
+  "results": [
+   {
+    "background_image": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob9ed.jpg",
+    "game_id": 157,
+    "game_type": "game",
+    "genres": [
+     "Role-playing (RPG)",
+     "Adventure"
+    ],
+    "hltb": {
+     "completionist_hours": 100.5,
+     "main_extra_hours": 48.5,
+     "main_story_hours": 31.0
+    },
+    "igdb_id": 11133,
+    "name": "Dark Souls III",
+    "opencritic": null,
+    "platforms": [
+     "PlayStation 4",
+     "PC (Microsoft Windows)",
+     "Xbox One"
+    ],
+    "rating": 86.60451235576187,
+    "released": "2016-03-24",
+    "slug": "dark-souls-iii"
+   },
+   {
+    "background_image": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7zoz.jpg",
+    "game_id": null,
+    "game_type": "bundle",
+    "genres": [
+     "Role-playing (RPG)",
+     "Adventure"
+    ],
+    "hltb": null,
+    "igdb_id": 141472,
+    "name": "The Witcher 3: Wild Hunt + Dark Souls III",
+    "opencritic": null,
+    "platforms": [
+     "PlayStation 4",
+     "Xbox One"
+    ],
+    "rating": null,
+    "released": "2018-10-26",
+    "slug": "the-witcher-3-wild-hunt-plus-dark-souls-iii"
+   },
+   {
+    "background_image": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3h03.jpg",
+    "game_id": null,
+    "game_type": "game",
+    "genres": [
+     "Role-playing (RPG)",
+     "Adventure"
+    ],
+    "hltb": null,
+    "igdb_id": 89841,
+    "name": "Dark Souls III: Day One Edition",
+    "opencritic": null,
+    "platforms": [
+     "Windows Mixed Reality",
+     "PlayStation 4",
+     "PC (Microsoft Windows)",
+     "Xbox One"
+    ],
+    "rating": null,
+    "released": "2016-03-24",
+    "slug": "dark-souls-iii-day-one-edition"
+   }
+  ]
+ }
+}
