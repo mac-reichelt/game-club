@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject, optionalString, badRequest } from "@/lib/validate";
 import getDb from "@/lib/db";
 import {
   getUserFromToken,
@@ -18,13 +19,16 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = getDb();
-  const body = await request.json();
-  const { name, avatar, currentPassword, newPassword } = body as {
-    name?: string;
-    avatar?: string;
-    currentPassword?: string;
-    newPassword?: string;
-  };
+  const body = await readJsonObject(request);
+  if (!body) return badRequest();
+  const name = optionalString(body.name, 50);
+  const avatar = optionalString(body.avatar, 16);
+  const currentPassword = optionalString(body.currentPassword, 1024);
+  const newPassword = optionalString(body.newPassword, 1024);
+  if (name === null) return badRequest("Name must be at most 50 characters");
+  if (avatar === null) return badRequest("Invalid avatar");
+  if (currentPassword === null || newPassword === null)
+    return badRequest("Invalid password");
 
   // Validate name change
   if (name !== undefined) {
@@ -134,8 +138,10 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = getDb();
-  const body = await request.json();
-  const { currentPassword } = body as { currentPassword?: string };
+  const body = await readJsonObject(request);
+  if (!body) return badRequest();
+  const currentPassword = optionalString(body.currentPassword, 1024);
+  if (currentPassword === null) return badRequest("Invalid password");
 
   if (!currentPassword) {
     return NextResponse.json(
