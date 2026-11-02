@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
-    "seed": "npx tsx src/lib/seed.ts"
+    "seed": "npx tsx src/lib/seed.ts",
+    "gen:gamedb": "node scripts/gen-gamedb-types.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
