@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const links = [
@@ -19,14 +19,20 @@ interface NavbarUser {
 
 export default function Navbar({ user }: { user: NavbarUser }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
 
   async function handleLogout() {
     setLoggingOut(true);
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+    } finally {
+      // Full navigation so no cached authenticated UI survives sign-out.
+      window.location.replace("/login");
+    }
   }
 
   return (

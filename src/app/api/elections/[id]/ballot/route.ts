@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject, parseId, optionalString, badRequest } from "@/lib/validate";
 import { can } from "@/lib/permissions";
 import getDb from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
@@ -24,11 +25,22 @@ export async function POST(
 
   const { id } = await params;
   const db = getDb();
-  const electionId = parseInt(id);
-  const body = await request.json();
-  const { rankings } = body as { rankings: number[] };
+  const electionId = parseId(id);
+  if (electionId === null) return badRequest("Invalid election id");
+  const body = await readJsonObject(request);
+  if (!body) return badRequest();
+  const rankings = body.rankings;
 
-  if (!rankings || rankings.length === 0) {
+  if (
+    !Array.isArray(rankings) ||
+    !rankings.every((r) => Number.isSafeInteger(r) && r > 0)
+  ) {
+    return badRequest("Rankings must be a list of game ids");
+  }
+  if (new Set(rankings).size !== rankings.length) {
+    return badRequest("Each game can only be ranked once");
+  }
+  if (rankings.length === 0) {
     return NextResponse.json(
       { error: "Rankings are required" },
       { status: 400 }
@@ -78,7 +90,7 @@ export async function POST(
   ).map((r) => r.game_id);
 
   for (const gid of rankings) {
-    if (!electionGameIds.includes(gid)) {
+    if (!electionGameIds.includes(gid as number)) {
       return NextResponse.json(
         { error: `Game ${gid} is not in this election` },
         { status: 400 }
@@ -97,7 +109,7 @@ export async function POST(
   });
 
   try {
-    insertMany(rankings);
+    insertMany(rankings as number[]);
     const closed = checkAndCloseOnVoteThreshold(db, electionId);
     return NextResponse.json({ success: true, closed }, { status: 201 });
   } catch {

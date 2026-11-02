@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject, badRequest } from "@/lib/validate";
 import getDb from "@/lib/db";
 import {
   verifyPassword,
@@ -19,10 +20,12 @@ import { Member } from "@/lib/types";
 const INVALID_CREDENTIALS = "Invalid credentials";
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { name, password } = body as { name?: string; password?: string };
+  const body = await readJsonObject(request);
+  if (!body) return badRequest();
+  const name = typeof body.name === "string" ? body.name : "";
+  const password = typeof body.password === "string" ? body.password : "";
 
-  if (!name || !password) {
+  if (!name || !password || name.length > 100 || password.length > 1024) {
     return NextResponse.json(
       { error: "Name and password are required" },
       { status: 400 }

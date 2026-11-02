@@ -86,9 +86,9 @@ export default function NominationsList({
     const filtered = nominations.filter((g) => {
       if (!q) return true;
       return (
-        g.title.toLowerCase().includes(q) ||
-        (gameInfo[g.id]?.platform.toLowerCase().includes(q) ?? false) ||
-        g.nominatorName.toLowerCase().includes(q)
+        (g.title ?? "").toLowerCase().includes(q) ||
+        (gameInfo[g.id]?.platform ?? "").toLowerCase().includes(q) ||
+        (g.nominatorName ?? "").toLowerCase().includes(q)
       );
     });
 
@@ -117,7 +117,7 @@ export default function NominationsList({
           );
       }
     });
-  }, [nominations, stats, search, sortKey, sortDir]);
+  }, [nominations, stats, gameInfo, search, sortKey, sortDir]);
 
   return (
     <div>
