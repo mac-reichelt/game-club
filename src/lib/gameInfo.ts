@@ -77,14 +77,18 @@ export function buildGameInfo(game: Game, detail: GamedbDetail | null | undefine
     image: detail.cover_image || detail.background_image || "",
     description: detail.description || "",
     platform: (detail.platforms || []).join(", "),
-    released: detail.release_date,
+    released: detail.release_date ?? null,
     stores: storesFromGamedb(detail.store_links),
     opencritic:
       oc && oc.top_critic_score != null && oc.top_critic_score > 0
-        ? { score: Math.round(oc.top_critic_score), tier: oc.tier, url: oc.url }
+        ? { score: Math.round(oc.top_critic_score), tier: oc.tier ?? null, url: oc.url ?? null }
         : null,
     hltb: hasHltb
-      ? { mainStoryHours: h!.main_story_hours, mainExtraHours: h!.main_extra_hours, completionistHours: h!.completionist_hours }
+      ? {
+          mainStoryHours: h!.main_story_hours ?? null,
+          mainExtraHours: h!.main_extra_hours ?? null,
+          completionistHours: h!.completionist_hours ?? null,
+        }
       : null,
     igdbRating: detail.igdb_rating != null ? Math.round(detail.igdb_rating) : null,
     linked: true,

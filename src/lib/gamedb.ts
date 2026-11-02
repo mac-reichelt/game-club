@@ -1,4 +1,5 @@
 import fs from "fs";
+import type { components } from "@/lib/gamedb-contract/gamedb-v1";
 // Client for the gamedb service. Reads GAMEDB_URL env (server-side only).
 // gamedb is the homelab's authoritative game database service.
 
@@ -38,56 +39,15 @@ export function gamedbFetch(
   return fetch(url, { ...init, headers });
 }
 
-export interface GamedbSearchResult {
-  igdb_id: number;
-  name: string;
-  slug: string | null;
-  released: string | null;
-  background_image: string | null;
-  platforms: string[];
-  genres: string[];
-  rating: number | null;
-  game_type: string | null;
-  game_id: number | null;
-  opencritic: { top_critic_score: number | null; tier: string | null; percent_recommended: number | null } | null;
-  hltb: { main_story_hours: number | null; main_extra_hours: number | null; completionist_hours: number | null } | null;
-}
+// Types are generated from GameDB's published v1 contract (game-club #163, game-db #105):
+// src/lib/gamedb-contract/gamedb_v1.json is a pinned copy of game-db's openapi/v1.json and
+// gamedb-v1.d.ts is generated from it with `npm run gen:gamedb`. Do not hand-edit either.
+type Schemas = components["schemas"];
+export type GamedbSearchResult = Schemas["SearchResult"];
+export type GamedbDetail = Schemas["GameDetail"];
 
-export interface GamedbScore {
-  score: number | null;
-  tier: string | null;
-}
-
-export interface GamedbDetail {
-  id: number;
-  igdb_id: number | null;
-  name: string;
-  slug: string | null;
-  release_date: string | null;
-  description: string | null;
-  background_image: string | null;
-  cover_image: string | null;
-  platforms: string[];
-  genres: string[];
-  developers: string[];
-  publishers: string[];
-  game_type: string | null;
-  igdb_rating: number | null;
-  igdb_rating_count: number | null;
-  opencritic: {
-    url: string | null;
-    top_critic_score: number | null;
-    percent_recommended: number | null;
-    tier: string | null;
-  } | null;
-  steam: { app_id: number | null; review_score: number | null } | null;
-  hltb: {
-    main_story_hours: number | null;
-    main_extra_hours: number | null;
-    completionist_hours: number | null;
-  } | null;
-  store_links: Record<string, string>;
-}
+/** GameDB's versioned API root. */
+const API = `${BASE}/api/v1`;
 
 export function isGamedbConfigured(): boolean {
   return !!BASE;
@@ -98,7 +58,7 @@ export async function searchGamedb(
   pageSize = 10,
 ): Promise<GamedbSearchResult[]> {
   if (!BASE) throw new Error("GAMEDB_URL not configured");
-  const url = new URL(`${BASE}/api/search`);
+  const url = new URL(`${API}/search`);
   url.searchParams.set("q", q);
   url.searchParams.set("page_size", String(pageSize));
   const res = await gamedbFetch(url.toString(), { next: { revalidate: 3600 } });
@@ -123,7 +83,7 @@ function safeIdSegment(id: number): string {
 export async function importByIgdbId(igdbId: number): Promise<GamedbDetail> {
   if (!BASE) throw new Error("GAMEDB_URL not configured");
   const id = safeIdSegment(igdbId);
-  const res = await gamedbFetch(`${BASE}/api/games/by-igdb/${id}`);
+  const res = await gamedbFetch(`${API}/games/by-igdb/${id}`);
   if (!res.ok) throw new Error(`gamedb import failed: ${res.status}`);
   return (await res.json()) as GamedbDetail;
 }
@@ -140,7 +100,7 @@ export async function getGamedbDetail(
     return null;
   }
   const res = await gamedbFetch(
-    `${BASE}/api/games/${id}`,
+    `${API}/games/${id}`,
     options?.noCache
       ? { cache: "no-store" }
       : { next: { revalidate: 3600, tags: [gamedbDetailTag(gamedbId)] } }
@@ -159,7 +119,7 @@ export function gamedbDetailTag(gamedbId: number): string {
 export async function refreshGamedb(gamedbId: number): Promise<GamedbDetail | null> {
   if (!BASE) throw new Error("GAMEDB_URL not configured");
   const id = safeIdSegment(gamedbId);
-  const res = await gamedbFetch(`${BASE}/api/games/${id}/refresh`, { method: "POST", cache: "no-store" });
+  const res = await gamedbFetch(`${API}/games/${id}/refresh`, { method: "POST", cache: "no-store" });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`gamedb refresh failed: ${res.status}`);
   return (await res.json()) as GamedbDetail;

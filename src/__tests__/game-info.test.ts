@@ -40,7 +40,8 @@ const detail = {
   steam: null,
   hltb: { main_story_hours: 22, main_extra_hours: null, completionist_hours: 95 },
   store_links: { steam: "https://store.steampowered.com/app/1145360", bad: "javascript:alert(1)" },
-} as GamedbDetail;
+  data_freshness: {},
+} satisfies GamedbDetail;
 
 describe("buildGameInfo", () => {
   it("uses only gamedb data for linked games", () => {
