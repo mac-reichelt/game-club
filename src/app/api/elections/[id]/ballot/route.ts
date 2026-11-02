@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readJsonObject, parseId, optionalString, badRequest } from "@/lib/validate";
+import { readJsonObject, parseId, badRequest } from "@/lib/validate";
 import { can } from "@/lib/permissions";
 import getDb from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
