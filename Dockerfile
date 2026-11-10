@@ -33,8 +33,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Create data directory for SQLite
-RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+# Create data directory for SQLite, and the Next.js data/fetch cache directory
+# (fetch revalidate + cache tags for GameDB lookups, game-club #159). With a
+# read-only root filesystem, mount a tmpfs or volume at /app/.next/cache.
+RUN mkdir -p /app/data /app/.next/cache && chown nextjs:nodejs /app/data /app/.next/cache
 
 USER nextjs
 
