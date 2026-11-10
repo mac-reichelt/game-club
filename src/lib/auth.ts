@@ -84,8 +84,21 @@ export async function verifyPassword(
   }
 }
 
+/**
+ * Delete sessions past their expiry. Expired rows are already rejected by
+ * getMemberByToken; this just keeps the table from growing forever.
+ * datetime() normalises both ISO ("...T...Z") and SQLite-style timestamps.
+ */
+export function purgeExpiredSessions(db?: Database.Database): number {
+  const database = db ?? getDb();
+  return database
+    .prepare("DELETE FROM sessions WHERE datetime(expires_at) <= datetime('now')")
+    .run().changes;
+}
+
 export function createSession(memberId: number): string {
   const db = getDb();
+  purgeExpiredSessions(db);
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(
     Date.now() + 30 * 24 * 60 * 60 * 1000

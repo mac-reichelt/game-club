@@ -273,6 +273,7 @@ export default function NominationForm() {
                     className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[var(--color-surface-hover)] transition-colors text-left border-b border-[var(--color-border)] last:border-0"
                   >
                     {game.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- remote IGDB thumbnails, no next/image loader
                       <img
                         src={game.image}
                         alt={game.name}
@@ -333,6 +334,7 @@ export default function NominationForm() {
           {selectedGame && (
             <div className="flex items-start gap-4 bg-[var(--color-bg)] rounded-lg p-4 mb-4">
               {selectedGame.image ? (
+                // eslint-disable-next-line @next/next/no-img-element -- remote IGDB thumbnails, no next/image loader
                 <img
                   src={selectedGame.image}
                   alt={selectedGame.name}
