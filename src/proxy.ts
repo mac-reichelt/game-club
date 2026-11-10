@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+// Next 16 "proxy" (formerly middleware). It only checks that a session cookie
+// exists so signed-out visitors land on /login; real auth happens server-side
+// (requireAuth() in every page, authorize()/getUserFromToken() in API routes).
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow login page, auth API, and static assets
