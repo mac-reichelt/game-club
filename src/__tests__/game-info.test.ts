@@ -8,7 +8,6 @@ const game: Game = {
   title: "Hades",
   platform: "Local platform",
   description: "Local description",
-  image_url: "",
   stores_json: JSON.stringify([{ name: "itch.io", url: "https://x.itch.io/y", domain: "x.itch.io" }]),
   trailer_url: "",
   nominated_by: 1,

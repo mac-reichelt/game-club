@@ -14,7 +14,6 @@ export interface Game {
   title: string;
   platform: string;
   description: string;
-  image_url: string;
   stores_json: string;
   trailer_url: string;
   nominated_by: number;
