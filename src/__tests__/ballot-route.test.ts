@@ -39,31 +39,20 @@ function schema(): Database.Database {
   return d;
 }
 
-const admin = {
-  id: 1,
-  name: "a",
+const member = {
+  id: 2,
+  name: "b",
   avatar: "",
   joined_at: "",
-  is_admin: true,
-  permissions: ["elections.create", "elections.close", "elections.vote"],
+  is_admin: false,
+  permissions: ["elections.vote"],
 };
-const member = { ...admin, id: 2, name: "b", is_admin: false, permissions: ["elections.vote"] };
 
-function req(body: unknown, raw = false) {
+function req(body: unknown) {
   return {
     cookies: { get: () => ({ value: "t" }) },
-    json: async () => (raw ? JSON.parse(body as string) : body),
+    json: async () => body,
   } as never;
-}
-
-async function create(body: unknown, raw = false) {
-  const { POST } = await import("@/app/api/elections/route");
-  return POST(req(body, raw));
-}
-
-async function close(id: number) {
-  const { POST } = await import("@/app/api/elections/[id]/close/route");
-  return POST(req({}), { params: Promise.resolve({ id: String(id) }) });
 }
 
 const count = (sql: string) => (db.prepare(sql).get() as { c: number }).c;
