@@ -4,6 +4,12 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    read_only: true
+    tmpfs:
+      - /tmp
+      # Next.js fetch cache (GameDB lookups are cached for an hour). Without a
+      # writable cache dir every page render calls GameDB (#159).
+      - /app/.next/cache:uid=1001,gid=1001,mode=0700
     volumes:
       - gameclub-data:/app/data
     environment:
