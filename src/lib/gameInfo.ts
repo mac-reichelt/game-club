@@ -59,7 +59,7 @@ function parseLocalStores(json: string): StoreLink[] {
 export function buildGameInfo(game: Game, detail: GamedbDetail | null | undefined): GameInfo {
   if (!detail) {
     return {
-      image: /^https:\/\//.test(game.image_url) ? game.image_url : "",
+      image: "",
       description: game.description || "",
       platform: game.platform || "",
       released: null,
