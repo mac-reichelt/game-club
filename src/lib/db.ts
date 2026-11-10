@@ -41,7 +41,6 @@ function initSchema(db: Database.Database) {
       title TEXT NOT NULL,
       platform TEXT NOT NULL DEFAULT '',
       description TEXT NOT NULL DEFAULT '',
-      image_url TEXT NOT NULL DEFAULT '',
       stores_json TEXT NOT NULL DEFAULT '',
       trailer_url TEXT NOT NULL DEFAULT '',
       nominated_by INTEGER NOT NULL REFERENCES members(id),
